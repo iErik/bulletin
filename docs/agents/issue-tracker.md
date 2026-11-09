@@ -69,7 +69,7 @@ A PR has **at most 700 changed lines**, counted as additions plus deletions, lea
   git diff --shortstat FETCH_HEAD...HEAD -- . \
     ':(exclude)pnpm-lock.yaml' \
     ':(exclude)flake.lock' \
-    ':(exclude)app/**/*.svg' \
+    ':(exclude)src/**/*.svg' \
     ':(exclude)**/__snapshots__/**'
   ```
 
