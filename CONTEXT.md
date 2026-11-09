@@ -34,8 +34,18 @@ day's mood or one expense. An Entry is never dated in the
 future.
 _Avoid_: Record, log, item
 
+**Page**:
+A top-level screen of the app, one per Sidebar button:
+Dashboard, Sleep, Mood, Tasks, Expenses and Notes.
+_Avoid_: Screen, view, tab
+
+**Sidebar**:
+The vertical strip of Page buttons on the left of the app. It
+highlights the current Page.
+_Avoid_: Nav bar, menu
+
 **Dashboard**:
-The home page. It shows one Widget per Tracker, focused on the
+The home Page. It shows one Widget per Tracker, focused on the
 Selected Date.
 _Avoid_: Home, overview
 
