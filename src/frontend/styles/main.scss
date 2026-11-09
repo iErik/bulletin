@@ -1,0 +1,4 @@
+// Global styles. Components bring their own, using
+// `@use '@/styles/utils' as *` for shared helpers.
+@use 'base/normalize';
+@use 'base/reset';

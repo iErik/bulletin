@@ -1,0 +1,19 @@
+// Design constants that don't vary by Theme. Colours
+// live in the theme system as CSS custom properties.
+
+$font-family:
+  system-ui, -apple-system, 'Segoe UI', Roboto,
+  'Helvetica Neue', Arial, sans-serif;
+$font-family-mono:
+  ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+$font-size-base: 16px;
+$line-height-base: 1.5;
+
+// Multiples of the base spacing unit.
+$space-unit: 4px;
+
+$radius-small: 4px;
+$radius-medium: 8px;
+
+$duration-fast: 120ms;
