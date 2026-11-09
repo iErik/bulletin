@@ -39,6 +39,13 @@ A top-level screen of the app, one per Sidebar button:
 Dashboard, Sleep, Mood, Tasks, Expenses and Notes.
 _Avoid_: Screen, view, tab
 
+**Title Bar**:
+The full-width strip at the top of the window, part of the
+app's own layout rather than a native bar. It holds the window
+controls and the date header, and the window is dragged by its
+empty areas.
+_Avoid_: Header bar, top bar, toolbar
+
 **Sidebar**:
 The vertical strip of Page buttons on the left of the app. It
 highlights the current Page.
