@@ -81,8 +81,16 @@ _Avoid_: Current date, active date
 A Sleep Entry: one stretch of sleep, from its Head (start) to
 its Tail (end). A day can have several Periods (naps, broken
 sleep), a Period can cross midnight, and Periods never overlap.
-A Period belongs to the day its Head falls on.
+A Period belongs to the day whose noon-to-noon window contains
+its Head, so going to bed at 1 AM on the 8th counts as the
+night of the 7th.
 _Avoid_: Night, session
+
+**Timeline**:
+The Sleep Widget's per-day track: one row per day, read left to
+right from noon on that day to noon the next, on which Periods
+are drawn.
+_Avoid_: Chart, axis
 
 **Mood**:
 One of a fixed set of feelings a day can be marked with. A
