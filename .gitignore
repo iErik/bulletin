@@ -151,3 +151,4 @@ vite.config.ts.timestamp-*
 # Nix / direnv
 .direnv
 result
+.DS_Store
