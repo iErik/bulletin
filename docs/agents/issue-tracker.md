@@ -38,8 +38,8 @@ Work in this repo is organized as Linear tickets (team prefix: `BLT`). Use the L
 - [ ] Every acceptance criterion is met, and you can say how you verified each one
 - [ ] Tests added or updated for the change
 - [ ] `<lint command>` passes
-- [ ] `<typecheck command>` passes
-- [ ] `<test command>` passes
+- [ ] `pnpm typecheck` passes
+- [ ] `pnpm test` passes
 - [ ] No unrelated changes in the diff
 - [ ] The PR is within the [size limit](#pr-size)
 
@@ -56,6 +56,7 @@ A PR has **at most 700 changed lines**, counted as additions plus deletions, lea
 
 - **Generated files** are ones a tool produces rather than someone writing them by hand. For example:
   - `pnpm-lock.yaml`;
+  - `flake.lock`;
   - SVG markup files;
   - image files
   - test snapshots (`__snapshots__/`).
@@ -67,6 +68,7 @@ A PR has **at most 700 changed lines**, counted as additions plus deletions, lea
   git fetch origin master
   git diff --shortstat FETCH_HEAD...HEAD -- . \
     ':(exclude)pnpm-lock.yaml' \
+    ':(exclude)flake.lock' \
     ':(exclude)app/**/*.svg' \
     ':(exclude)**/__snapshots__/**'
   ```
@@ -98,11 +100,12 @@ Comment on the ticket with each PR's link (with "part N of M" if there's more th
 
 ### Project commands
 
-- Install: `<install placeholder>`
-- Dev server: `<dev placeholder>`
+- Install: `pnpm install`, inside the Nix dev shell
+  (`nix develop`, or enter the repo with direnv)
+- Dev server: `pnpm dev`
 - Lint: `<lint command>`
-- Typecheck: `<typecheck command>`
-- Test: `<test command>`
+- Typecheck: `pnpm typecheck`
+- Test: `pnpm test`
 
 ## When a skill says "publish to the issue tracker"
 
