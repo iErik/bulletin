@@ -1,0 +1,20 @@
+@use 'sass:list';
+@use '../base/variables' as *;
+
+/// The keyboard focus outline, in the accent colour.
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/// Animates colour changes, e.g. when switching Scheme.
+@mixin colour-transition($props...) {
+  @if list.length($props) == 0 {
+    $props: (color, background-color, border-color);
+  }
+  transition-property: $props;
+  transition-duration: $duration-fast;
+  transition-timing-function: ease-out;
+}

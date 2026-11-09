@@ -1,5 +1,7 @@
 # Electron fetches its binary lazily on first run (or,
 # on Linux, uses the Nix one), so no install script is
-# needed.
+# needed. @parcel/watcher is only used by the Sass CLI's
+# --watch mode, which Vite doesn't use.
 allowBuilds:
+  '@parcel/watcher': false
   electron: false
