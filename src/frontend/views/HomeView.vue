@@ -16,12 +16,14 @@ const DevThemeToggle = import.meta.env.DEV
   <main class="home-view">
     <section class="card">
       <h1 class="title">
-        <Icon name="bullet" class="icon" />
+        <Icon name="bullet" />
         Bulletin
       </h1>
       <p class="info">
         Platform:
-        <strong data-test="platform">{{ platform }}</strong>
+        <strong class="value" data-test="platform">
+          {{ platform }}
+        </strong>
       </p>
     </section>
     <DevThemeToggle v-if="DevThemeToggle" />
@@ -56,16 +58,12 @@ const DevThemeToggle = import.meta.env.DEV
     font-size: rem(32px);
   }
 
-  > .card > .title > .icon {
-    color: var(--color-accent);
-  }
-
   > .card > .info {
     margin-top: space(2);
     color: var(--color-text-muted);
   }
 
-  > .card > .info > strong {
+  > .card > .info > .value {
     color: var(--color-text);
   }
 }

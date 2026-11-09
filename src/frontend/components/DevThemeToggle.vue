@@ -25,7 +25,11 @@ const onScheme = (event: Event) =>
     <span class="badge">dev</span>
     <label class="field">
       Theme
-      <select :value="store.themeId" @change="onTheme">
+      <select
+        class="control"
+        :value="store.themeId"
+        @change="onTheme"
+      >
         <option
           v-for="theme in themes"
           :key="theme.id"
@@ -38,6 +42,7 @@ const onScheme = (event: Event) =>
     <label class="field">
       Scheme
       <select
+        class="control"
         :value="store.preference"
         @change="onScheme"
       >
@@ -83,7 +88,7 @@ const onScheme = (event: Event) =>
     gap: space(1);
   }
 
-  > .field > select {
+  > .field > .control {
     padding: 0 space(1);
     background: var(--color-surface);
     border: 1px solid var(--color-border);

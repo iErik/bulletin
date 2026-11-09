@@ -11,6 +11,26 @@ describe('Icon', () => {
     expect(svg.attributes('stroke')).toBe('currentColor')
   })
 
+  it('is hidden from readers without a title', () => {
+    const icon = mount(Icon, { props: { name: 'bullet' } })
+
+    const svg = icon.get('svg')
+    expect(svg.attributes('aria-hidden')).toBe('true')
+    expect(svg.attributes('role')).toBeUndefined()
+    expect(svg.attributes('aria-label')).toBeUndefined()
+  })
+
+  it('is a named image with a title', () => {
+    const icon = mount(Icon, {
+      props: { name: 'bullet', title: 'Bullet' }
+    })
+
+    const svg = icon.get('svg')
+    expect(svg.attributes('role')).toBe('img')
+    expect(svg.attributes('aria-label')).toBe('Bullet')
+    expect(svg.attributes('aria-hidden')).toBeUndefined()
+  })
+
   it('renders nothing for an unknown name', () => {
     const icon = mount(Icon, { props: { name: 'nope' } })
 

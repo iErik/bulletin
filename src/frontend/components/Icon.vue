@@ -4,6 +4,11 @@ import { computed, type Component } from 'vue'
 const props = defineProps<{
   /** The file name in `icons/`, without `.svg`. */
   name: string
+  /**
+   * Accessible name. Without one the icon is
+   * decorative and hidden from screen readers.
+   */
+  title?: string
 }>()
 
 const files = import.meta.glob<Component>(
@@ -20,6 +25,12 @@ const icons: Record<string, Component> =
   )
 
 const icon = computed(() => icons[props.name])
+
+const a11y = computed(() =>
+  props.title
+    ? { role: 'img', 'aria-label': props.title }
+    : { 'aria-hidden': 'true' }
+)
 </script>
 
 <template>
@@ -27,7 +38,7 @@ const icon = computed(() => icons[props.name])
     :is="icon"
     v-if="icon"
     class="app-icon"
-    aria-hidden="true"
+    v-bind="a11y"
   />
 </template>
 
