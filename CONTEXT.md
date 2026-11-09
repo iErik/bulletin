@@ -21,6 +21,13 @@ _Avoid_: Mode, appearance, color mode
 The concrete set of color values for one Theme in one Scheme.
 _Avoid_: Color scheme, colors
 
+**Locale**:
+The language and region that decide how dates, numbers and
+money are written, and which day starts the week. It follows
+the operating system; a user setting will be able to override
+it. The app's own text stays English regardless.
+_Avoid_: Language, region, culture
+
 ### Dashboard
 
 **Tracker**:
@@ -84,7 +91,8 @@ The set can't be edited yet.
 
 **Month Grid**:
 A calendar-shaped view of one month's days, with weeks as rows
-starting on Monday. The Mood and Habits Widgets use it.
+starting on the Locale's first day of the week. The Mood and
+Habits Widgets use it.
 _Avoid_: Calendar, heatmap
 
 **Day Pill**:
