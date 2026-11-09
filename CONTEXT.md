@@ -93,8 +93,10 @@ _Avoid_: Cell, tile, dot
 
 **Habit**:
 Something the user wants to do regularly, tracked day by day
-in the Habits Tracker. Deleting a Habit archives it: it leaves
-the list, but its Entries are kept.
+in the Habits Tracker. It has a name, unique among all Habits
+including archived ones, and an icon. Deleting a Habit archives it: it leaves
+the list, but its Entries are kept. Creating a Habit with an
+archived Habit's name restores that Habit.
 _Avoid_: Goal, routine
 
 **Category**:
