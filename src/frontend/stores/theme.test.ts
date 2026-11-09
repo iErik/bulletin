@@ -10,6 +10,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { defaultTheme } from '@/theme/themes'
 import type { Palette, Theme } from '@/theme/types'
 import { STORAGE_KEYS, useThemeStore } from './theme'
+import { stubBulletin } from '@/testing/bulletin'
 
 // A second Theme, so switching Themes can be tested.
 vi.mock('@/theme/themes', async original => {
@@ -59,6 +60,16 @@ const surface = (): string =>
     .getPropertyValue('--color-surface')
 
 const { dark, light } = defaultTheme.palettes
+
+/** Fakes the preload API; returns the colours spy. */
+const mockBridge = () => {
+  const setWindowControlsColours = vi.fn()
+  stubBulletin({
+    platform: 'linux',
+    setWindowControlsColours
+  })
+  return setWindowControlsColours
+}
 
 describe('theme store', () => {
   beforeEach(() => {
@@ -191,5 +202,44 @@ describe('theme store', () => {
 
     expect(store.themeId).toBe('default')
     expect(store.scheme).toBe('light')
+  })
+
+  it('sends the window controls colours', () => {
+    mockSystemScheme(true)
+    const send = mockBridge()
+
+    useThemeStore()
+
+    expect(send).toHaveBeenLastCalledWith({
+      background: dark.background[900],
+      symbol: dark.foreground[100]
+    })
+  })
+
+  it('resends them on Scheme change', () => {
+    mockSystemScheme(true)
+    const send = mockBridge()
+    const store = useThemeStore()
+
+    store.setPreference('light')
+
+    expect(send).toHaveBeenCalledTimes(2)
+    expect(send).toHaveBeenLastCalledWith({
+      background: light.background[100],
+      symbol: light.foreground[900]
+    })
+  })
+
+  it('resends them on OS Scheme change', () => {
+    const setSystemDark = mockSystemScheme(true)
+    const send = mockBridge()
+    useThemeStore()
+
+    setSystemDark(false)
+
+    expect(send).toHaveBeenLastCalledWith({
+      background: light.background[100],
+      symbol: light.foreground[900]
+    })
   })
 })

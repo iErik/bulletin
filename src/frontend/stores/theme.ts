@@ -1,9 +1,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { applyPalette } from '@/theme/semantic'
+import {
+  applyPalette,
+  resolveSemantic
+} from '@/theme/semantic'
 import { DEFAULT_THEME_ID, themes } from '@/theme/themes'
 import {
   SCHEME_PREFERENCES,
+  type Palette,
   type Scheme,
   type SchemePreference
 } from '@/theme/types'
@@ -58,9 +62,27 @@ const storedPreference = (): SchemePreference => {
 }
 
 /**
+ * Sends the Title Bar's colours to main, which paints
+ * the window controls overlay with them (Linux and
+ * Windows only).
+ */
+const pushControlColours = (
+  palette: Palette,
+  scheme: Scheme
+): void => {
+  const colours = resolveSemantic(palette, scheme)
+  // The bridge is absent outside Electron, e.g. tests.
+  window.bulletin?.setWindowControlsColours({
+    background: colours.surface,
+    symbol: colours.text
+  })
+}
+
+/**
  * The active Theme and Scheme preference. Changing
  * either one, or the OS Scheme while the preference is
- * `system`, rewrites the semantic CSS custom properties.
+ * `system`, rewrites the semantic CSS custom properties
+ * and recolours the window controls.
  */
 export const useThemeStore = defineStore('theme', () => {
   const themeId = ref(storedTheme())
@@ -86,7 +108,10 @@ export const useThemeStore = defineStore('theme', () => {
 
   watch(
     [palette, scheme],
-    ([value, current]) => applyPalette(value, current),
+    ([value, current]) => {
+      applyPalette(value, current)
+      pushControlColours(value, current)
+    },
     { immediate: true, flush: 'sync' }
   )
   const sync = { flush: 'sync' } as const

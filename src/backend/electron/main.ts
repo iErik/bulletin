@@ -1,6 +1,16 @@
 import { join } from 'node:path'
-import { app, BrowserWindow } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  nativeTheme
+} from 'electron'
 import { guardNavigation } from './navigation'
+import {
+  handleWindowControls,
+  INITIAL_COLOURS
+} from './window-controls'
+import { windowFrameOptions } from './window-options'
 
 // Set by electron-vite while running `pnpm dev`.
 const devUrl = app.isPackaged
@@ -15,10 +25,17 @@ app.on('web-contents-created', (_event, contents) => {
 })
 
 function createWindow(): void {
+  const scheme = nativeTheme.shouldUseDarkColors
+    ? 'dark'
+    : 'light'
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
+    ...windowFrameOptions(
+      process.platform,
+      INITIAL_COLOURS[scheme]
+    ),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -32,6 +49,12 @@ function createWindow(): void {
   if (devUrl) void win.loadURL(devUrl)
   else void win.loadFile(indexHtml)
 }
+
+handleWindowControls(
+  ipcMain,
+  sender => BrowserWindow.fromWebContents(sender),
+  process.platform
+)
 
 void app.whenReady().then(() => {
   createWindow()
