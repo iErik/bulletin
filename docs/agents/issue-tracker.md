@@ -50,6 +50,12 @@ The test, lint and typecheck items apply only if the project has them. If it doe
 - Commit messages and the PR title start with the ticket ID: `BLT-12: Add retry to GraphQL client`.
 - PR description includes: link to the ticket, a short summary of the change, how it was verified, and any deviations from the ticket or decisions I should look at.
 
+### Line length
+
+Keep lines to 60 characters or fewer where possible.
+SVG files (`*.svg`) are exempt: leave their markup
+as the tool exported it, even on a single long line.
+
 ### PR size
 
 A PR has **at most 700 changed lines**, counted as additions plus deletions, leaving out generated files.
