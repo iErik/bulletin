@@ -82,6 +82,15 @@ One of a fixed set of feelings a day can be marked with. A
 Mood Entry assigns one Mood to one day, or the day has none.
 The set can't be edited yet.
 
+**Month Grid**:
+A calendar-shaped view of one month's days, with weeks as rows
+starting on Monday. The Mood and Habits Widgets use it.
+_Avoid_: Calendar, heatmap
+
+**Day Pill**:
+One day's cell in a Month Grid.
+_Avoid_: Cell, tile, dot
+
 **Habit**:
 Something the user wants to do regularly, tracked day by day
 in the Habits Tracker. Deleting a Habit archives it: it leaves
