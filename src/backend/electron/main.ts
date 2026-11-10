@@ -10,6 +10,7 @@ import {
   openDatabase,
   openErrorMessage
 } from '../storage/database'
+import { handleStorage } from '../storage/ipc'
 import { storagePaths } from '../storage/paths'
 import { guardNavigation } from './navigation'
 import {
@@ -65,18 +66,19 @@ handleWindowControls(
 )
 
 /**
- * Opens and migrates the database. On failure, reports
- * the error and quits: the app never opens without its
- * data.
+ * Opens and migrates the database, and serves it over
+ * IPC. On failure, reports the error and quits: the app
+ * never opens without its data.
  */
 function startStorage(): boolean {
   try {
-    openDatabase(storagePaths({
+    const db = openDatabase(storagePaths({
       packaged: app.isPackaged,
       userData: app.getPath('userData'),
       appPath: app.getAppPath(),
       resourcesPath: process.resourcesPath
     }))
+    handleStorage(ipcMain, db)
     return true
   } catch (error) {
     console.error('Could not open the database:', error)

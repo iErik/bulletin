@@ -10,8 +10,8 @@ name: Release
 on:
   push:
     branches: [master]
-    # What ships in the app. TODO(BLT-20): add the
-    # Drizzle migrations folder, unless it's under src/
+    # What ships in the app, including the Drizzle
+    # migrations under src/backend/storage.
     paths:
       - 'src/**'
       - 'resources/**'
