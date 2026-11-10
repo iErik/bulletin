@@ -36,3 +36,21 @@ export const windowFrameOptions = (
     }
   }
 }
+
+/**
+ * The Figma "App Window" frame's size, in CSS pixels.
+ * The main window opens at it and can't shrink below.
+ */
+const MIN_WINDOW_SIZE = {
+  width: 1228,
+  height: 834
+} as const
+
+/** The main window's initial and minimum size. */
+export const windowSizeOptions =
+  (): BrowserWindowConstructorOptions => ({
+    width: MIN_WINDOW_SIZE.width,
+    height: MIN_WINDOW_SIZE.height,
+    minWidth: MIN_WINDOW_SIZE.width,
+    minHeight: MIN_WINDOW_SIZE.height
+  })

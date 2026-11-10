@@ -10,7 +10,10 @@ import {
   handleWindowControls,
   INITIAL_COLOURS
 } from './window-controls'
-import { windowFrameOptions } from './window-options'
+import {
+  windowFrameOptions,
+  windowSizeOptions
+} from './window-options'
 
 // Set by electron-vite while running `pnpm dev`.
 const devUrl = app.isPackaged
@@ -29,8 +32,7 @@ function createWindow(): void {
     ? 'dark'
     : 'light'
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    ...windowSizeOptions(),
     show: false,
     ...windowFrameOptions(
       process.platform,
