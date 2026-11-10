@@ -1,6 +1,7 @@
 // Splits single-line imports longer than `max` characters
 // into one imported name per line. Imports without named
-// imports can't get shorter, so they're left alone.
+// imports can't get shorter, so they're left alone, and
+// imports with comments are only reported, never fixed.
 
 export default {
   meta: {
@@ -37,16 +38,20 @@ export default {
         const close = source.getTokenAfter(named.at(-1),
           token => token.value === '}')
 
+        const split = fixer => fixer.replaceTextRange(
+          [open.range[0], close.range[1]],
+          '{\n'
+            + named.map(spec => '  ' + source.getText(spec))
+              .join(',\n')
+            + '\n}')
+        const hasComments =
+          source.getCommentsInside(node).length > 0
+
         context.report({
           node,
           messageId: 'tooLong',
           data: { length },
-          fix: fixer => fixer.replaceTextRange(
-            [open.range[0], close.range[1]],
-            '{\n'
-              + named.map(spec => '  ' + source.getText(spec))
-                .join(',\n')
-              + '\n}')
+          fix: hasComments ? null : split
         })
       }
     }

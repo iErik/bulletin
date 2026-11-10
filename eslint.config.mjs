@@ -114,7 +114,9 @@ export default defineConfig(
     languageOptions: {
       parserOptions: {
         parser: tseslint.parser,
-        projectService: true,
+        // The renderer's project adds the .vue shim, which
+        // vue-tsc's own project must not see
+        project: ['tsconfig.node.json', 'tsconfig.eslint.json'],
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue']
       }

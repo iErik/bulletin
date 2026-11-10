@@ -16,17 +16,17 @@ export interface PathsInput {
   readonly resourcesPath: string
 }
 
+export interface StoragePaths {
+  readonly file: string
+  readonly migrationsFolder: string
+}
+
 /**
  * Where the database file and the migrations folder
  * are. Development builds use their own file. Packaged
  * builds read migrations from the app's resources,
  * where `electron-builder.yml` copies them.
  */
-export interface StoragePaths {
-  readonly file: string
-  readonly migrationsFolder: string
-}
-
 export const storagePaths = (
   input: PathsInput
 ): StoragePaths => ({

@@ -22,7 +22,7 @@
     "lint": "pnpm lint:es && pnpm lint:style",
     "lint:es": "eslint --max-warnings 0 .",
     "lint:style": "stylelint --max-warnings 0 \"**/*.{scss,vue}\"",
-    "lint:fix": "eslint --fix . && stylelint --fix \"**/*.{scss,vue}\"",
+    "lint:fix": "eslint --fix .; e=$?; stylelint --fix \"**/*.{scss,vue}\" || e=1; exit $e",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage"
