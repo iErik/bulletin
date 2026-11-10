@@ -1,0 +1,61 @@
+# Packages the app with electron-builder. The release
+# workflow runs it once per platform; locally, run
+# `pnpm build`, then `pnpm exec electron-builder --mac`
+# (or --linux, --win). The builds aren't signed
+productName: Bulletin
+appId: org.isidore.Bulletin
+
+directories:
+  # Where the icons are looked up
+  buildResources: resources
+  output: release
+
+# electron-vite's output. Runtime dependencies are added
+# from node_modules on top of these
+files:
+  - out/**
+  - package.json
+
+# The release workflow publishes with the GitHub CLI, and
+# there's no auto-update: no update feed or app-update.yml
+publish: null
+
+# TODO(BLT-20): copy the Drizzle migrations folder into
+# the app's resources (ADR 0001). The folder doesn't
+# exist yet: BLT-20 picks its path, then enables this
+# with that path, so the main process finds it under
+# process.resourcesPath once packaged
+# extraResources:
+#   - from: <migrations folder>
+#     to: migrations
+
+mac:
+  category: public.app-category.lifestyle
+  target: dmg
+  icon: resources/icon.icns
+  # Ad-hoc signature, no certificate: Apple Silicon won't
+  # run an app without one. No hardened runtime, which
+  # only matters for notarization
+  identity: '-'
+  hardenedRuntime: false
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
+
+linux:
+  category: Office
+  target: [AppImage, deb, rpm]
+  # The standard icon sizes, taken from the .icns
+  icon: resources/icon.icns
+  # x64 only. ${arch} would differ per format (x86_64,
+  # amd64)
+  artifactName: ${productName}-${version}-linux-x64.${ext}
+
+win:
+  target: [nsis, portable]
+  icon: resources/icon.ico
+
+nsis:
+  artifactName: ${productName}-${version}-win-${arch}-setup.${ext}
+
+portable:
+  artifactName: >-
+    ${productName}-${version}-win-${arch}-portable.${ext}
