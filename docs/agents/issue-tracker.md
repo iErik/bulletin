@@ -65,7 +65,9 @@ A PR has **at most 700 changed lines**, counted as additions plus deletions, lea
   - `flake.lock`;
   - SVG markup files;
   - image files
-  - test snapshots (`__snapshots__/`).
+  - test snapshots (`__snapshots__/`);
+  - Drizzle migrations (`src/backend/storage/migrations/`),
+    written by `pnpm db:generate`.
 
   Binary files add no lines anyway. If a PR adds a new kind of generated file, add it here and to the command below.
 - **Measure it** before opening the PR, and again before asking for review:
@@ -76,7 +78,8 @@ A PR has **at most 700 changed lines**, counted as additions plus deletions, lea
     ':(exclude)pnpm-lock.yaml' \
     ':(exclude)flake.lock' \
     ':(exclude)src/**/*.svg' \
-    ':(exclude)**/__snapshots__/**'
+    ':(exclude)**/__snapshots__/**' \
+    ':(exclude)src/backend/storage/migrations/**'
   ```
 
   The insertions plus deletions it reports must be 700 or fewer. The repo is a bare clone without remote-tracking branches, so there's no `origin/master` to compare against: `FETCH_HEAD` is the `master` just fetched.
