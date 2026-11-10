@@ -1,3 +1,4 @@
+import type { SleepApi } from './sleep'
 import type { WeightApi } from './weight'
 
 /**
@@ -28,6 +29,8 @@ export interface BulletinApi {
   ): void
   /** The Weight Tracker's Entries. */
   readonly weight: WeightApi
+  /** The Sleep Tracker's Periods. */
+  readonly sleep: SleepApi
 }
 
 export const BRIDGE_KEY = 'bulletin'

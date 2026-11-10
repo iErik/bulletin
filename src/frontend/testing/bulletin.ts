@@ -1,19 +1,20 @@
 import { vi } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
 import type {
-  WeightApi,
-  WeightEntry
-} from '@shared/weight'
+  NewSleepPeriod,
+  SleepApi
+} from '@shared/sleep'
+import type { WeightApi } from '@shared/weight'
 
 /** Resolves every call with `value`, successfully. */
 const resolves = (value: unknown) =>
   vi.fn().mockResolvedValue({ ok: true, value })
 
-/** Resolves every call with its own Entry. */
-const echoes = () =>
-  vi.fn(async (value: WeightEntry) => ({
+/** Resolves every call with its own payload. */
+const echoes = <T>(make = (value: T) => value) =>
+  vi.fn(async (value: T) => ({
     ok: true as const,
-    value
+    value: make(value)
   }))
 
 /**
@@ -23,6 +24,15 @@ const echoes = () =>
 const fakeWeight = (): WeightApi => ({
   list: resolves([]),
   create: echoes(),
+  update: echoes(),
+  delete: resolves(null)
+})
+
+/** Empty Sleep storage; created Periods get id 1. */
+const fakeSleep = (): SleepApi => ({
+  list: resolves([]),
+  create: echoes((period: NewSleepPeriod) =>
+    ({ id: 1, ...period })),
   update: echoes(),
   delete: resolves(null)
 })
@@ -38,6 +48,7 @@ export const fakeBulletin = (
   platform: 'testos',
   setWindowControlsColours: vi.fn(),
   weight: fakeWeight(),
+  sleep: fakeSleep(),
   ...overrides
 })
 
