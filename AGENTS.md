@@ -22,3 +22,10 @@ the repo root. See `docs/agents/domain.md`.
 Vitest, with a `renderer` and a `main` project, a
 shared `window.bulletin` fake and written conventions.
 See `docs/agents/testing.md`.
+
+### Releases
+
+Merging to `master` releases the app, and the release
+workflow owns `package.json`'s `version`: change it
+only to start a new version line. See
+`docs/agents/releases.md`.
