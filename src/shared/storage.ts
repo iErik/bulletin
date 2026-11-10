@@ -17,8 +17,13 @@ export interface DateRange {
  * code:
  * - `invalid-payload`: the payload has the wrong shape
  *   or breaks a rule; `field` names the first bad one;
- * - `future-date`: the Entry is dated after today;
+ * - `future-date`: the Entry is dated after today, or
+ *   a Period ends after now;
  * - `not-found`: there's no Entry to change;
+ * - `reversed-period`: a Period doesn't end after it
+ *   starts;
+ * - `period-too-long`: a Period is over 24 hours;
+ * - `overlapping-period`: a Period overlaps another;
  * - `internal`: anything unexpected, logged in main.
  */
 export type StorageError =
@@ -28,6 +33,9 @@ export type StorageError =
     }
   | { readonly code: 'future-date' }
   | { readonly code: 'not-found' }
+  | { readonly code: 'reversed-period' }
+  | { readonly code: 'period-too-long' }
+  | { readonly code: 'overlapping-period' }
   | { readonly code: 'internal' }
 
 export type StorageErrorCode = StorageError['code']

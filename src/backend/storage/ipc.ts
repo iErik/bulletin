@@ -1,8 +1,15 @@
 import type { IpcMain } from 'electron'
 import type { StorageResult } from '@shared/storage'
+import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import type { Database } from './database'
 import { StorageFailure } from './errors'
+import {
+  createSleep,
+  deleteSleep,
+  listSleep,
+  updateSleep
+} from './sleep'
 import {
   createWeight,
   deleteWeight,
@@ -40,7 +47,11 @@ const OPERATIONS: Record<string, Operation> = {
   [WEIGHT_CHANNELS.list]: listWeight,
   [WEIGHT_CHANNELS.create]: (db, p) => createWeight(db, p),
   [WEIGHT_CHANNELS.update]: (db, p) => updateWeight(db, p),
-  [WEIGHT_CHANNELS.delete]: deleteWeight
+  [WEIGHT_CHANNELS.delete]: deleteWeight,
+  [SLEEP_CHANNELS.list]: listSleep,
+  [SLEEP_CHANNELS.create]: (db, p) => createSleep(db, p),
+  [SLEEP_CHANNELS.update]: (db, p) => updateSleep(db, p),
+  [SLEEP_CHANNELS.delete]: deleteSleep
 }
 
 /** Registers one `ipc.handle` per storage operation. */

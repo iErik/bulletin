@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import { StorageFailure } from './errors'
 import { handleStorage, runOperation } from './ipc'
@@ -68,6 +69,26 @@ describe('handleStorage', () => {
       to: '2026-01-01'
     })).toEqual({ ok: true, value: [entry] })
     expect(await call(WEIGHT_CHANNELS.delete, entry.date))
+      .toEqual({ ok: true, value: null })
+  })
+
+  it('handles every Sleep channel', async () => {
+    const call = serve()
+    const start = new Date(2026, 0, 1, 23).getTime()
+    const end = start + 8 * 60 * 60 * 1000
+    const period = { id: 1, start, end }
+
+    expect(await call(SLEEP_CHANNELS.create, {
+      start,
+      end
+    })).toEqual({ ok: true, value: period })
+    expect(await call(SLEEP_CHANNELS.update, period))
+      .toEqual({ ok: true, value: period })
+    expect(await call(SLEEP_CHANNELS.list, {
+      from: '2026-01-01',
+      to: '2026-01-01'
+    })).toEqual({ ok: true, value: [period] })
+    expect(await call(SLEEP_CHANNELS.delete, 1))
       .toEqual({ ok: true, value: null })
   })
 
