@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { fakeBulletin, stubBulletin } from '@/testing/bulletin'
+import {
+  fakeBulletin,
+  stubBulletin
+} from '@/testing/bulletin'
 import HomeView from './HomeView.vue'
 
 const platformText = (): string =>
