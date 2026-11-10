@@ -1,0 +1,50 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "fc86f7e2-a7b7-47d7-8d6e-081b7f105396",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "weight",
+      "entityType": "tables"
+    },
+    {
+      "table": "weight",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "grams",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "weight_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    }
+  ],
+  "renames": []
+}

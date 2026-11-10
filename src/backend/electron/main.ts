@@ -2,15 +2,24 @@ import { join } from 'node:path'
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   nativeTheme
 } from 'electron'
+import {
+  openDatabase,
+  openErrorMessage
+} from '../storage/database'
+import { storagePaths } from '../storage/paths'
 import { guardNavigation } from './navigation'
 import {
   handleWindowControls,
   INITIAL_COLOURS
 } from './window-controls'
-import { windowFrameOptions } from './window-options'
+import {
+  windowFrameOptions,
+  windowSizeOptions
+} from './window-options'
 
 // Set by electron-vite while running `pnpm dev`.
 const devUrl = app.isPackaged
@@ -29,8 +38,7 @@ function createWindow(): void {
     ? 'dark'
     : 'light'
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    ...windowSizeOptions(),
     show: false,
     ...windowFrameOptions(
       process.platform,
@@ -56,7 +64,33 @@ handleWindowControls(
   process.platform
 )
 
+/**
+ * Opens and migrates the database. On failure, reports
+ * the error and quits: the app never opens without its
+ * data.
+ */
+function startStorage(): boolean {
+  try {
+    openDatabase(storagePaths({
+      packaged: app.isPackaged,
+      userData: app.getPath('userData'),
+      appPath: app.getAppPath(),
+      resourcesPath: process.resourcesPath
+    }))
+    return true
+  } catch (error) {
+    console.error('Could not open the database:', error)
+    dialog.showErrorBox(
+      'Bulletin could not open its data',
+      openErrorMessage(error)
+    )
+    app.exit(1)
+    return false
+  }
+}
+
 void app.whenReady().then(() => {
+  if (!startStorage()) return
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

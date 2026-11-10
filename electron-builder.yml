@@ -20,14 +20,14 @@ files:
 # there's no auto-update: no update feed or app-update.yml
 publish: null
 
-# TODO(BLT-20): copy the Drizzle migrations folder into
-# the app's resources (ADR 0001). The folder doesn't
-# exist yet: BLT-20 picks its path, then enables this
-# with that path, so the main process finds it under
-# process.resourcesPath once packaged
-# extraResources:
-#   - from: <migrations folder>
-#     to: migrations
+# Drizzle's migrations, applied at startup (ADR 0001).
+# The main process reads them from
+# process.resourcesPath/migrations once packaged (see
+# src/backend/storage/paths.ts). Only the SQL is needed
+extraResources:
+  - from: src/backend/storage/migrations
+    to: migrations
+    filter: ['**/migration.sql']
 
 mac:
   category: public.app-category.lifestyle
