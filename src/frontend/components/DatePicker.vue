@@ -5,7 +5,7 @@
 // chosen month's length.
 import { computed } from 'vue'
 import { getDaysInMonth } from 'date-fns'
-import { formatDate } from '@/locale/format'
+import { formatDate, formatNumber } from '@/locale/format'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
 
@@ -16,7 +16,7 @@ const store = useSelectedDateStore()
 
 const year = computed(() => store.day.getFullYear())
 const month = computed(() => store.day.getMonth())
-const date = computed(() => store.day.getDate())
+const dayOfMonth = computed(() => store.day.getDate())
 
 const range = (from: number, to: number): number[] =>
   Array.from(
@@ -60,25 +60,27 @@ const days = computed(() => {
   )
 })
 
-/**
- * Selects the given parts, keeping the others. The day
- * is clamped to the month's length here, and to today
- * by the store.
- */
-const select = (parts: {
-  year?: number
-  month?: number
-  date?: number
-}): void => {
-  const y = parts.year ?? year.value
-  const m = parts.month ?? month.value
-  const length = getDaysInMonth(new Date(y, m, 1))
-  const d = Math.min(parts.date ?? date.value, length)
-  store.setDay(new Date(y, m, d))
+// Sets one part from its dropdown, keeping the others.
+// The day is clamped to the month's length here, and
+// to today by the store.
+const select = (
+  part: 'day' | 'month' | 'year',
+  event: Event
+): void => {
+  const { value } = event.target as HTMLSelectElement
+  const parts = {
+    year: year.value,
+    month: month.value,
+    day: dayOfMonth.value,
+    [part]: Number(value)
+  }
+  const length = getDaysInMonth(
+    new Date(parts.year, parts.month, 1)
+  )
+  store.setDay(new Date(
+    parts.year, parts.month, Math.min(parts.day, length)
+  ))
 }
-
-const valueOf = (event: Event): number =>
-  Number((event.target as HTMLSelectElement).value)
 </script>
 
 <template>
@@ -90,18 +92,18 @@ const valueOf = (event: Event): number =>
     <select
       class="field"
       aria-label="Day"
-      :value="date"
-      @change="select({ date: valueOf($event) })"
+      :value="dayOfMonth"
+      @change="select('day', $event)"
     >
       <option v-for="d in days" :key="d" :value="d">
-        {{ String(d).padStart(2, '0') }}
+        {{ formatNumber(d, { minimumIntegerDigits: 2 }) }}
       </option>
     </select>
     <select
       class="field"
       aria-label="Month"
       :value="month"
-      @change="select({ month: valueOf($event) })"
+      @change="select('month', $event)"
     >
       <option
         v-for="m in months"
@@ -115,10 +117,10 @@ const valueOf = (event: Event): number =>
       class="field"
       aria-label="Year"
       :value="year"
-      @change="select({ year: valueOf($event) })"
+      @change="select('year', $event)"
     >
       <option v-for="y in years" :key="y" :value="y">
-        {{ y }}
+        {{ formatNumber(y, { useGrouping: false }) }}
       </option>
     </select>
   </div>

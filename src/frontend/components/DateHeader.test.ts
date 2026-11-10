@@ -1,14 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi }
-  from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { setLocaleOverride } from '@/locale/format'
+import { today, useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
 import DateHeader from './DateHeader.vue'
-
-// Today is November 9th, 2026. Months are 0-based.
-const today = new Date(2026, 10, 9)
 
 let header: VueWrapper | undefined
 
@@ -39,20 +35,14 @@ const button = (name: string) =>
     (b.attributes('aria-label') ?? b.text()) === name
   )!
 
+// Months are 0-based.
 describe('DateHeader', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({
-      now: new Date(2026, 10, 9, 15, 30)
-    })
-    setLocaleOverride('en-US')
-  })
+  useFixedToday()
 
   afterEach(() => {
     header?.unmount()
     header = undefined
     document.body.innerHTML = ''
-    setLocaleOverride(null)
-    vi.useRealTimers()
   })
 
   it('shows today at launch', () => {
@@ -128,17 +118,10 @@ describe('DateHeader', () => {
     it('closes on an outside click', async () => {
       const { header } = await open()
 
-      header.get('.date-picker').element.dispatchEvent(
-        new PointerEvent('pointerdown', { bubbles: true })
-      )
-      await header.vm.$nextTick()
-      expect(header.find('.date-picker').exists())
-        .toBe(true)
+      const backdrop = header.get('.backdrop')
+      expect(backdrop.classes()).toContain('no-drag')
 
-      document.body.dispatchEvent(
-        new PointerEvent('pointerdown', { bubbles: true })
-      )
-      await header.vm.$nextTick()
+      await backdrop.trigger('pointerdown')
       expect(header.find('.date-picker').exists())
         .toBe(false)
     })

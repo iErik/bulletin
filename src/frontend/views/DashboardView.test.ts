@@ -1,14 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import DashboardView from './DashboardView.vue'
+
+let dashboard: VueWrapper | undefined
 
 // Stands in for the Title Bar the header goes into.
 const mountDashboard = () => {
   const bar = document.createElement('div')
   bar.id = 'title-bar-content'
   document.body.append(bar)
-  return mount(DashboardView, {
+  return dashboard = mount(DashboardView, {
     attachTo: document.body,
     global: { plugins: [createPinia()] }
   })
@@ -16,6 +18,8 @@ const mountDashboard = () => {
 
 describe('DashboardView', () => {
   afterEach(() => {
+    dashboard?.unmount()
+    dashboard = undefined
     document.body.innerHTML = ''
   })
 

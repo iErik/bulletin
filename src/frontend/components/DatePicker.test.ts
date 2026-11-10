@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi }
-  from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { setLocaleOverride } from '@/locale/format'
+import { useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
 import DatePicker from './DatePicker.vue'
@@ -28,17 +28,7 @@ const options = (
     .map(option => option.text())
 
 describe('DatePicker', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({
-      now: new Date(2026, 10, 9, 15, 30)
-    })
-    setLocaleOverride('en-US')
-  })
-
-  afterEach(() => {
-    setLocaleOverride(null)
-    vi.useRealTimers()
-  })
+  useFixedToday()
 
   it('shows the Selected Date', () => {
     const { picker } = mountOn(new Date(2025, 2, 4))

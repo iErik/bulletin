@@ -17,7 +17,6 @@ const store = useSelectedDateStore()
 
 const label = computed(() => formatDate(store.day, 'long'))
 
-const root = ref<HTMLElement>()
 const trigger = ref<HTMLButtonElement>()
 const isOpen = ref(false)
 
@@ -45,28 +44,17 @@ const onKeydown = (event: KeyboardEvent): void => {
   event.preventDefault()
 }
 
-// Closes the popover on a press anywhere outside the
-// header, the popover included.
-const onPointerdown = (event: PointerEvent): void => {
-  const target = event.target as Node | null
-  if (!root.value?.contains(target)) isOpen.value = false
-}
-
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
-  document.addEventListener('pointerdown', onPointerdown)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
-  document.removeEventListener(
-    'pointerdown', onPointerdown
-  )
 })
 </script>
 
 <template>
-  <div ref="root" class="date-header">
+  <div class="date-header">
     <button
       class="step no-drag" type="button"
       aria-label="Previous day"
@@ -98,6 +86,13 @@ onBeforeUnmount(() => {
     >
       Today
     </button>
+    <!-- Catches outside clicks. No-drag, as Electron
+      sends no events from the Title Bar's drag area. -->
+    <div
+      v-if="isOpen"
+      class="backdrop no-drag"
+      @pointerdown="isOpen = false"
+    />
     <DatePicker v-if="isOpen" class="popover" />
   </div>
 </template>
@@ -145,7 +140,13 @@ onBeforeUnmount(() => {
     color: var(--color-text-muted);
   }
 
-  // Below the header, over the page.
+  > .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+  }
+
+  // Below the header, over the page and the backdrop.
   > .popover {
     position: absolute;
     top: calc(100% + #{space(1)});
