@@ -69,6 +69,17 @@ describe('openDatabase', () => {
     expect(backups()).toEqual([])
   })
 
+  it('keeps one Weight Entry per day', () => {
+    const insert = open().$client.prepare(
+      'INSERT INTO weight (date, grams) VALUES (?, ?)'
+    )
+
+    expect(() => insert.run(null, 70000)).toThrow()
+    insert.run('2026-06-15', 70000)
+    expect(() => insert.run('2026-06-15', 71000))
+      .toThrow()
+  })
+
   it('opens a migrated in-memory database', () => {
     const db = memoryDatabase()
 
@@ -115,5 +126,15 @@ describe('openDatabase', () => {
     expect(open).toThrow()
 
     expect(readFileSync(file)).toEqual(before)
+  })
+
+  it('removes a new file when the first one fails', () => {
+    rmSync(folder, { recursive: true })
+    mkdirSync(folder)
+    addMigration('20990101000000_broken', 'CREATE TABLE (')
+
+    expect(open).toThrow()
+
+    expect(readdirSync(dir)).toEqual(['migrations'])
   })
 })

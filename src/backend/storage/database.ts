@@ -1,4 +1,8 @@
-import { copyFileSync, existsSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  rmSync
+} from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { drizzle } from 'drizzle-orm/node-sqlite'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
@@ -41,6 +45,12 @@ export const pendingMigrations = (
 export const backupPath = (file: string, now: Date) =>
   `${file}.bak-${now.toISOString().replace(/[:.]/g, '-')}`
 
+/** Deletes a database file and its journal files. */
+const removeFile = (file: string) => {
+  for (const suffix of ['', '-journal', '-wal', '-shm'])
+    rmSync(file + suffix, { force: true })
+}
+
 export interface OpenOptions {
   /** The database file, or `:memory:`. */
   readonly file: string
@@ -55,6 +65,8 @@ export interface OpenOptions {
  * Migrations run in one transaction: if one fails, it
  * rolls back, the database is closed and the error is
  * thrown, so the app never opens a half-migrated file.
+ * Drizzle creates its bookkeeping table before that
+ * transaction, so a file this call created is removed.
  */
 export const openDatabase = ({
   file,
@@ -75,6 +87,7 @@ export const openDatabase = ({
     return db
   } catch (error) {
     client.close()
+    if (file !== ':memory:' && !existed) removeFile(file)
     throw error
   }
 }

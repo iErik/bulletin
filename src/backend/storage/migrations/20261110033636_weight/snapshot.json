@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "9442225d-7684-4e12-b67d-3176ee6f17b7",
+  "id": "fc86f7e2-a7b7-47d7-8d6e-081b7f105396",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -38,6 +38,12 @@
       ],
       "nameExplicit": false,
       "entityType": "pks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
     }
   ],
   "renames": []
