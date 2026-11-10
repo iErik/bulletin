@@ -23,6 +23,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "date-fns": "^4.4.0",
     "pinia": "^4.1.0",
     "vue": "^3.5.45",
     "vue-router": "^4.6.4"
