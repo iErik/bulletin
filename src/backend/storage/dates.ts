@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { DateRange } from '@shared/storage'
 import { StorageFailure } from './errors'
 
 const pad = (n: number): string =>
@@ -43,3 +44,20 @@ export const assertNotFuture = (
   if (date > localDate(now))
     throw new StorageFailure({ code: 'future-date' })
 }
+
+/** Noon, local time, `days` after `date`. */
+const noonAfter = (date: string, days = 0): number => {
+  const [y, m, d] = date.split('-').map(Number)
+  return new Date(y!, m! - 1, d! + days, 12).getTime()
+}
+
+/**
+ * The epoch-ms window covered by a range of days, each
+ * running from noon to noon the next day (local time):
+ * from noon on `from`, up to but excluding noon on the
+ * day after `to`.
+ */
+export const noonWindow = ({ from, to }: DateRange) => ({
+  start: noonAfter(from),
+  end: noonAfter(to, 1)
+})
