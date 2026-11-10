@@ -2,8 +2,10 @@
 // The Dashboard Page: one Widget per Tracker, in the
 // Figma grid. Each Widget is placed by its class, so a
 // Tracker's real Widget replaces its placeholder here
-// without touching the grid.
+// without touching the grid. Its date header goes in
+// the Title Bar.
 import { defineAsyncComponent } from 'vue'
+import DateHeader from '@/components/DateHeader.vue'
 import Widget from '@/components/Widget.vue'
 
 // Loaded lazily so production builds drop it entirely.
@@ -15,6 +17,9 @@ const DevThemeToggle = import.meta.env.DEV
 </script>
 
 <template>
+  <Teleport defer to="#title-bar-content">
+    <DateHeader />
+  </Teleport>
   <main class="dashboard-view">
     <Widget class="sleep" title="Sleep" />
     <Widget class="expenses" title="Expenses" />
