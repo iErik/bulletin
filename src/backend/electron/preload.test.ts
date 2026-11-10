@@ -5,10 +5,11 @@ import {
   WINDOW_CONTROLS_CHANNEL,
   type BulletinApi
 } from '@shared/bridge'
+import { WEIGHT_CHANNELS } from '@shared/weight'
 
 vi.mock('electron', () => ({
   contextBridge: { exposeInMainWorld: vi.fn() },
-  ipcRenderer: { send: vi.fn() }
+  ipcRenderer: { send: vi.fn(), invoke: vi.fn() }
 }))
 
 const exposed = async (): Promise<BulletinApi> => {
@@ -42,4 +43,20 @@ describe('preload', () => {
       colours
     )
   })
+
+  it.each(Object.entries(WEIGHT_CHANNELS))(
+    'invokes weight.%s on %s',
+    async (method, channel) => {
+      const api = await exposed()
+      const call = api.weight[
+        method as keyof BulletinApi['weight']
+      ] as (payload: unknown) => unknown
+      call('payload')
+
+      expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+        channel,
+        'payload'
+      )
+    }
+  )
 })

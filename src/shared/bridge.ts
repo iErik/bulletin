@@ -1,3 +1,5 @@
+import type { WeightApi } from './weight'
+
 /**
  * Colours of the window controls on Linux and Windows,
  * as CSS colour strings.
@@ -24,6 +26,8 @@ export interface BulletinApi {
   setWindowControlsColours(
     colours: WindowControlsColours
   ): void
+  /** The Weight Tracker's Entries. */
+  readonly weight: WeightApi
 }
 
 export const BRIDGE_KEY = 'bulletin'

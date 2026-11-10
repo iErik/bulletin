@@ -1,5 +1,31 @@
 import { vi } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
+import type {
+  WeightApi,
+  WeightEntry
+} from '@shared/weight'
+
+/** Resolves every call with `value`, successfully. */
+const resolves = (value: unknown) =>
+  vi.fn().mockResolvedValue({ ok: true, value })
+
+/** Resolves every call with its own Entry. */
+const echoes = () =>
+  vi.fn(async (value: WeightEntry) => ({
+    ok: true as const,
+    value
+  }))
+
+/**
+ * Empty storage: lists are empty, writes echo their
+ * payload and deletes succeed.
+ */
+const fakeWeight = (): WeightApi => ({
+  list: resolves([]),
+  create: echoes(),
+  update: echoes(),
+  delete: resolves(null)
+})
 
 /**
  * A fake preload API for renderer tests. Typed against
@@ -11,6 +37,7 @@ export const fakeBulletin = (
 ): BulletinApi => ({
   platform: 'testos',
   setWindowControlsColours: vi.fn(),
+  weight: fakeWeight(),
   ...overrides
 })
 
