@@ -14,7 +14,9 @@ import { afterEach, beforeEach, describe, expect, it }
   from 'vitest'
 import {
   backupPath,
+  OpenDatabaseError,
   openDatabase,
+  openErrorMessage,
   pendingMigrations
 } from './database'
 import {
@@ -136,5 +138,78 @@ describe('openDatabase', () => {
     expect(open).toThrow()
 
     expect(readdirSync(dir)).toEqual(['migrations'])
+  })
+
+  it('reports why a migration failed', () => {
+    open().$client.close()
+    addMigration(
+      '20990101000000_ok',
+      'CREATE TABLE ok (id integer);'
+    )
+    addMigration(
+      '20990102000000_broken',
+      'CREATE TABLE ok (name text);'
+    )
+
+    const error = catchError(open)
+
+    expect(error).toBeInstanceOf(OpenDatabaseError)
+    expect(error).toMatchObject({
+      reason: 'table ok already exists',
+      migration: '20990102000000_broken',
+      backup: backupPath(file, now)
+    })
+  })
+})
+
+/** Runs `fn` and returns what it throws. */
+const catchError = (fn: () => unknown): unknown => {
+  try {
+    fn()
+  } catch (error) {
+    return error
+  }
+  throw new Error('expected a throw')
+}
+
+describe('openErrorMessage', () => {
+  it('names the reason, migration and copy', () => {
+    const error = new OpenDatabaseError(
+      'disk I/O error',
+      '20990101000000_next',
+      '/data/bulletin.db.bak-1',
+      undefined
+    )
+
+    expect(openErrorMessage(error)).toBe(
+      'Your data was not changed. A copy was saved'
+        + ' to\n/data/bulletin.db.bak-1\n\n'
+        + 'Details: disk I/O error\n'
+        + '(migration 20990101000000_next)'
+    )
+  })
+
+  it('leaves out what is unknown', () => {
+    const error = new OpenDatabaseError(
+      'database is locked',
+      undefined,
+      undefined,
+      undefined
+    )
+
+    expect(openErrorMessage(error)).toBe(
+      'Your data was not changed.\n\n'
+        + 'Details: database is locked'
+    )
+  })
+
+  it('falls back to the innermost cause', () => {
+    const error = new Error('outer', {
+      cause: new Error('inner')
+    })
+
+    expect(openErrorMessage(error)).toBe(
+      'Your data was not changed.\n\nDetails: inner'
+    )
   })
 })

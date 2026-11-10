@@ -6,7 +6,10 @@ import {
   ipcMain,
   nativeTheme
 } from 'electron'
-import { openDatabase } from '../storage/database'
+import {
+  openDatabase,
+  openErrorMessage
+} from '../storage/database'
 import { storagePaths } from '../storage/paths'
 import { guardNavigation } from './navigation'
 import {
@@ -79,7 +82,7 @@ function startStorage(): boolean {
     console.error('Could not open the database:', error)
     dialog.showErrorBox(
       'Bulletin could not open its data',
-      `${String(error)}\n\nYour data was not changed.`
+      openErrorMessage(error)
     )
     app.exit(1)
     return false
