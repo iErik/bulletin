@@ -35,9 +35,12 @@
 
         # The npm prebuilt Electron does not run on NixOS,
         # so Linux uses the nixpkgs binary instead.
+        # electron-vite reads ELECTRON_EXEC_PATH; the
+        # electron package itself reads the override.
         linuxEnv = lib.optionalAttrs stdenv.hostPlatform.isLinux {
           ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
           ELECTRON_OVERRIDE_DIST_PATH = "${electron}/bin";
+          ELECTRON_EXEC_PATH = "${electron}/bin/electron";
         };
       in
       {
