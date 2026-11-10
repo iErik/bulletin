@@ -12,7 +12,7 @@ export const today = new Date(2026, 10, 9)
 export const useFixedToday = (): void => {
   beforeEach(() => {
     vi.useFakeTimers({
-      now: new Date(2026, 10, 9, 15, 30)
+      now: new Date(today).setHours(15, 30)
     })
     setLocaleOverride('en-US')
   })

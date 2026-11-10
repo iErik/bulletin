@@ -60,9 +60,8 @@ const days = computed(() => {
   )
 })
 
-// Sets one part from its dropdown, keeping the others.
-// The day is clamped to the month's length here, and
-// to today by the store.
+// Sets one part, keeping the others. The day is clamped
+// to the month's length here, then to today by the store.
 const select = (
   part: 'day' | 'month' | 'year',
   event: Event

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { setLocaleOverride } from '@/locale/format'
-import { useFixedToday } from '@/testing/clock'
+import { today, useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
 import DatePicker from './DatePicker.vue'
@@ -124,6 +124,6 @@ describe('DatePicker', () => {
     await picker.get('[aria-label="Year"]')
       .setValue('2026')
 
-    expect(store.day).toEqual(new Date(2026, 10, 9))
+    expect(store.day).toEqual(today)
   })
 })

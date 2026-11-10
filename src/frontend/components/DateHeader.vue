@@ -113,6 +113,8 @@ onBeforeUnmount(() => {
   > .step,
   > .date,
   > .today {
+    position: relative; // Above the backdrop
+    z-index: 10;
     padding: space(1) space(2);
     color: inherit;
     text-transform: uppercase;
