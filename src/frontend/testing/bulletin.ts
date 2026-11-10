@@ -10,6 +10,7 @@ export const fakeBulletin = (
   overrides: Partial<BulletinApi> = {}
 ): BulletinApi => ({
   platform: 'testos',
+  setWindowControlsColours: vi.fn(),
   ...overrides
 })
 

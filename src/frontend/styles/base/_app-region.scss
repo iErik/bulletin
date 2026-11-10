@@ -1,0 +1,6 @@
+// Window dragging. The Title Bar drags the window; add
+// `no-drag` to an interactive element inside it (a
+// button, an input) so it receives clicks instead.
+.no-drag {
+  -webkit-app-region: no-drag;
+}
