@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
+import type { MoodApi } from '@shared/mood'
 import type {
   NewSleepPeriod,
   SleepApi
@@ -37,6 +38,14 @@ const fakeSleep = (): SleepApi => ({
   delete: resolves(null)
 })
 
+/** Empty Mood storage, like `fakeWeight`. */
+const fakeMood = (): MoodApi => ({
+  list: resolves([]),
+  create: echoes(),
+  update: echoes(),
+  delete: resolves(null)
+})
+
 /**
  * A fake preload API for renderer tests. Typed against
  * `BulletinApi`, so it stops compiling when the bridge
@@ -49,6 +58,7 @@ export const fakeBulletin = (
   setWindowControlsColours: vi.fn(),
   weight: fakeWeight(),
   sleep: fakeSleep(),
+  mood: fakeMood(),
   ...overrides
 })
 

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import { StorageFailure } from './errors'
@@ -89,6 +90,22 @@ describe('handleStorage', () => {
       to: '2026-01-01'
     })).toEqual({ ok: true, value: [period] })
     expect(await call(SLEEP_CHANNELS.delete, 1))
+      .toEqual({ ok: true, value: null })
+  })
+
+  it('handles every Mood channel', async () => {
+    const call = serve()
+    const entry = { date: '2026-01-01', mood: 'okay' }
+
+    expect(await call(MOOD_CHANNELS.create, entry))
+      .toEqual({ ok: true, value: entry })
+    expect(await call(MOOD_CHANNELS.update, entry))
+      .toEqual({ ok: true, value: entry })
+    expect(await call(MOOD_CHANNELS.list, {
+      from: '2026-01-01',
+      to: '2026-01-01'
+    })).toEqual({ ok: true, value: [entry] })
+    expect(await call(MOOD_CHANNELS.delete, entry.date))
       .toEqual({ ok: true, value: null })
   })
 

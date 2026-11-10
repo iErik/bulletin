@@ -56,3 +56,22 @@ export const sleep = sqliteTable(
     )
   ]
 )
+
+/**
+ * Mood Entries: at most one per day, keyed by the local
+ * calendar date, holding a Mood key. Like Weight's, the
+ * text primary key needs a check to rule out NULL.
+ */
+export const mood = sqliteTable(
+  'mood',
+  {
+    date: text().primaryKey(),
+    mood: text().notNull()
+  },
+  table => [
+    check(
+      'mood_date_not_null',
+      sql`${table.date} IS NOT NULL`
+    )
+  ]
+)
