@@ -35,7 +35,8 @@ export default defineConfig({
           environment: 'node',
           include: [
             'src/backend/**/*.test.ts',
-            'src/shared/**/*.test.ts'
+            'src/shared/**/*.test.ts',
+            'scripts/**/*.test.ts'
           ]
         }
       }

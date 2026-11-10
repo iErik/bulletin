@@ -6,10 +6,10 @@ script runs both.
 
 ## Projects
 
-| Project    | Environment | Tests under                           |
-|------------|-------------|---------------------------------------|
-| `renderer` | happy-dom   | `src/frontend/`                       |
-| `main`     | Node        | `src/backend/`, `src/shared/`         |
+| Project    | Environment | Tests under                               |
+|------------|-------------|-------------------------------------------|
+| `renderer` | happy-dom   | `src/frontend/`                           |
+| `main`     | Node        | `src/backend/`, `src/shared/`, `scripts/` |
 
 - **`renderer`** has the Vue and SVG plugins, and runs
   `src/frontend/testing/setup.ts` before each file.
@@ -21,6 +21,10 @@ script runs both.
   module without side effects that takes Electron
   objects as parameters (see
   `src/backend/electron/navigation.ts`).
+- **`scripts/`** holds the repo's Node scripts, such
+  as the release workflow's `next-version.mts`. Their
+  tests run in `main`, and `pnpm typecheck` covers
+  them (`tsconfig.node.json`).
 - Both projects resolve the `@` and `@shared` aliases.
 - To add a project, add an entry to `test.projects`
   with `extends: true`, a `name` and its `include`.

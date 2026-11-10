@@ -16,6 +16,8 @@
     "drizzle.config.ts",
     "vitest.config.mts",
     "src/backend/**/*.ts",
-    "src/shared/**/*.ts"
+    "src/shared/**/*.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.mts"
   ]
 }
