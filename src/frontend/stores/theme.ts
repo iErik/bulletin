@@ -129,7 +129,7 @@ export const useThemeStore = defineStore('theme', () => {
   const setTheme = (id: string): void => {
     if (isThemeId(id)) themeId.value = id
   }
-  const setPreference = (value: SchemePreference) => {
+  const setPreference = (value: SchemePreference): void => {
     preference.value = value
   }
 

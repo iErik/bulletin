@@ -37,7 +37,7 @@ Work in this repo is organized as Linear tickets (team prefix: `BLT`). Use the L
 
 - [ ] Every acceptance criterion is met, and you can say how you verified each one
 - [ ] Tests added or updated for the change
-- [ ] `<lint command>` passes
+- [ ] `pnpm lint` passes
 - [ ] `pnpm typecheck` passes
 - [ ] `pnpm test` passes
 - [ ] No unrelated changes in the diff
@@ -47,12 +47,23 @@ The test, lint and typecheck items apply only if the project has them. If it doe
 
 ### Commits and PRs
 
+- Commit from inside the Nix dev shell (`nix develop`,
+  or direnv). The pre-commit hook (lefthook, installed
+  by `pnpm install`) runs ESLint and Stylelint through
+  `pnpm` on the staged files, and blocks the commit on
+  any finding. It doesn't fix anything: run
+  `pnpm lint:fix`, then stage the fixes.
 - Commit messages and the PR title start with the ticket ID: `BLT-12: Add retry to GraphQL client`.
 - PR description includes: link to the ticket, a short summary of the change, how it was verified, and any deviations from the ticket or decisions I should look at.
 
 ### Line length
 
 Keep lines to 60 characters or fewer where possible.
+That's a guideline: lint doesn't check it. The hard
+limit is 80 columns, which `pnpm lint` enforces for
+code, Vue templates, comments and SCSS. Lines whose
+excess is a URL, string, template literal or regex
+may pass it.
 SVG files (`*.svg`) are exempt: leave their markup
 as the tool exported it, even on a single long line.
 
@@ -112,7 +123,9 @@ Comment on the ticket with each PR's link (with "part N of M" if there's more th
 - Install: `pnpm install`, inside the Nix dev shell
   (`nix develop`, or enter the repo with direnv)
 - Dev server: `pnpm dev`
-- Lint: `<lint command>`
+- Lint: `pnpm lint` (ESLint and Stylelint; any
+  finding fails, warnings included)
+- Fix what lint can fix automatically: `pnpm lint:fix`
 - Typecheck: `pnpm typecheck`
 - Test: `pnpm test` (see `docs/agents/testing.md`)
 - Test in watch mode: `pnpm test:watch`

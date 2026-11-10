@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, type Mock } from 'vitest'
 import { WINDOW_CONTROLS_CHANNEL } from '@shared/bridge'
 import {
   applyColours,
@@ -8,7 +8,8 @@ import {
 
 const valid = { background: '#121419', symbol: '#f5f6f8' }
 
-const fakeWindow = () => ({ setTitleBarOverlay: vi.fn() })
+const fakeWindow = (): { setTitleBarOverlay: Mock } =>
+  ({ setTitleBarOverlay: vi.fn() })
 
 describe('parseColours', () => {
   it.each([

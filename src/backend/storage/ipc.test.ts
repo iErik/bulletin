@@ -6,8 +6,8 @@ import { StorageFailure } from './errors'
 import { handleStorage, runOperation } from './ipc'
 import { memoryDatabase } from './testing'
 
-type Handler = (event: object, payload: unknown) =>
-  Promise<unknown>
+type Handler =
+  (event: object, payload: unknown) => Promise<unknown>
 
 const serve = () => {
   const handlers = new Map<string, Handler>()
@@ -16,7 +16,7 @@ const serve = () => {
       handlers.set(channel, fn)
     })
   }
-  handleStorage(ipc as never, memoryDatabase())
+  handleStorage(ipc, memoryDatabase())
   return (channel: string, payload: unknown) =>
     handlers.get(channel)!({}, payload)
 }
@@ -30,7 +30,7 @@ describe('runOperation', () => {
   })
 
   it('returns a typed failure', async () => {
-    const fail = async () => {
+    const fail = async (): Promise<never> => {
       throw new StorageFailure({ code: 'not-found' })
     }
 
@@ -43,7 +43,7 @@ describe('runOperation', () => {
   it('hides unexpected errors', async () => {
     const log = vi.spyOn(console, 'error')
       .mockImplementation(() => {})
-    const fail = async () => {
+    const fail = async (): Promise<never> => {
       throw new Error('SQLITE_ERROR: no such table')
     }
 

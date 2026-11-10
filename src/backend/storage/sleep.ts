@@ -65,10 +65,11 @@ const assertNoOverlap = (
       self === undefined ? undefined : ne(sleep.id, self)
     ))
     .get()
-  if (clash)
+  if (clash) {
     throw new StorageFailure({
       code: 'overlapping-period'
     })
+  }
 }
 
 /**
@@ -107,7 +108,7 @@ export const createSleep = async (
       .values(period)
       .returning()
       .get()
-    return toPeriod(row!)
+    return toPeriod(row)
   })
 }
 

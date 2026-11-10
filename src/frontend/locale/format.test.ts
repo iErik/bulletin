@@ -8,7 +8,9 @@ import {
 
 // The override is module state: import a fresh copy in
 // each test.
-const loadIn = async (tag: string) => {
+const loadIn = async (
+  tag: string
+): Promise<typeof import('./format')> => {
   const format = await import('./format')
   format.setLocaleOverride(tag)
   return format

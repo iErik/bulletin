@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import {
+  mount,
+  type DOMWrapper,
+  type VueWrapper
+} from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { today, useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
@@ -8,7 +12,12 @@ import DateHeader from './DateHeader.vue'
 
 let header: VueWrapper | undefined
 
-const mountHeader = () => {
+interface Mounted {
+  header: VueWrapper
+  store: ReturnType<typeof useSelectedDateStore>
+}
+
+const mountHeader = (): Mounted => {
   const pinia = createPinia()
   setActivePinia(pinia)
   header = mount(DateHeader, {
@@ -22,7 +31,7 @@ const press = async (
   key: string,
   init: KeyboardEventInit = {},
   target: EventTarget = window
-) => {
+): Promise<void> => {
   target.dispatchEvent(new KeyboardEvent(
     'keydown',
     { key, bubbles: true, ...init }
@@ -30,7 +39,9 @@ const press = async (
   await header?.vm.$nextTick()
 }
 
-const button = (name: string) =>
+const button = (
+  name: string
+): DOMWrapper<HTMLButtonElement> =>
   header!.findAll('button').find(b =>
     (b.attributes('aria-label') ?? b.text()) === name
   )!
@@ -61,7 +72,7 @@ describe('DateHeader', () => {
 
   it('steps with ‹ and ›, not past today', async () => {
     const { store } = mountHeader()
-    const isDisabled = (name: string) =>
+    const isDisabled = (name: string): boolean =>
       button(name).attributes('disabled') !== undefined
 
     expect(isDisabled('Next day')).toBe(true)
@@ -88,7 +99,7 @@ describe('DateHeader', () => {
   })
 
   describe('popover', () => {
-    const open = async () => {
+    const open = async (): Promise<Mounted> => {
       const result = mountHeader()
       await result.header.get('.date').trigger('click')
       return result

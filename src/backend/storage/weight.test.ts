@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { WeightEntry } from '@shared/weight'
 import type { Database } from './database'
 import { memoryDatabase } from './testing'
 import {
@@ -17,14 +18,15 @@ beforeEach(() => {
   db = memoryDatabase()
 })
 
-const create = (value: unknown) =>
+const create = (value: unknown): Promise<WeightEntry> =>
   createWeight(db, value, now)
-const all = () =>
+const all = (): Promise<WeightEntry[]> =>
   listWeight(db, { from: '2000-01-01', to: today })
 const failsWith = (
   promise: Promise<unknown>,
   error: object
-) => expect(promise).rejects.toMatchObject({ error })
+): Promise<void> =>
+  expect(promise).rejects.toMatchObject({ error })
 
 describe('createWeight', () => {
   it('saves an Entry', async () => {

@@ -22,7 +22,14 @@ export interface PathsInput {
  * builds read migrations from the app's resources,
  * where `electron-builder.yml` copies them.
  */
-export const storagePaths = (input: PathsInput) => ({
+export interface StoragePaths {
+  readonly file: string
+  readonly migrationsFolder: string
+}
+
+export const storagePaths = (
+  input: PathsInput
+): StoragePaths => ({
   file: join(
     input.userData,
     input.packaged ? 'bulletin.db' : 'bulletin-dev.db'

@@ -13,7 +13,9 @@ import { useSelectedDateStore } from './selected-date'
 const day = (date: number, month = 10): Date =>
   new Date(2026, month, date)
 
-const freshStore = () => {
+const freshStore = (): ReturnType<
+  typeof useSelectedDateStore
+> => {
   setActivePinia(createPinia())
   return useSelectedDateStore()
 }

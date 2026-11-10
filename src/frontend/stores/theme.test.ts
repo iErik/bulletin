@@ -4,7 +4,8 @@ import {
   describe,
   expect,
   it,
-  vi
+  vi,
+  type Mock
 } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { defaultTheme } from '@/theme/themes'
@@ -62,7 +63,7 @@ const surface = (): string =>
 const { dark, light } = defaultTheme.palettes
 
 /** Fakes the preload API; returns the colours spy. */
-const mockBridge = () => {
+const mockBridge = (): Mock => {
   const setWindowControlsColours = vi.fn()
   stubBulletin({
     platform: 'linux',
@@ -189,7 +190,7 @@ describe('theme store', () => {
 
   it('falls back to defaults when storage fails', () => {
     mockSystemScheme(true)
-    const fail = () => {
+    const fail = (): never => {
       throw new Error('denied')
     }
     vi.spyOn(Storage.prototype, 'getItem')

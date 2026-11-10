@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { stubBulletin } from '@/testing/bulletin'
 import TitleBar from './TitleBar.vue'
 
-const mountOn = (platform: string) => {
+const mountOn = (platform: string): VueWrapper => {
   stubBulletin({ platform })
   return mount(TitleBar, {
     slots: { default: '<h1 class="date">Today</h1>' }
   })
 }
 
-const inset = (bar: ReturnType<typeof mountOn>) =>
+const inset = (bar: VueWrapper): string =>
   (bar.element as HTMLElement).style
     .getPropertyValue('--title-bar-controls')
 

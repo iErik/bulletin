@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, type Mock } from 'vitest'
 import {
   guardNavigation,
   isAppUrl,
@@ -59,8 +59,14 @@ type Navigate = Parameters<GuardedContents['on']>[1]
 type OpenHandler =
   Parameters<GuardedContents['setWindowOpenHandler']>[0]
 
+interface FakeContents {
+  contents: GuardedContents
+  navigate: (url: string) => { preventDefault: Mock }
+  open: () => ReturnType<OpenHandler> | undefined
+}
+
 /** A fake web contents that records the guards. */
-const fakeContents = () => {
+const fakeContents = (): FakeContents => {
   let navigate: Navigate | undefined
   let openHandler: OpenHandler | undefined
   const contents: GuardedContents = {

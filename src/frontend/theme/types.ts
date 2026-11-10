@@ -9,8 +9,8 @@ export const SCHEMES: readonly Scheme[] = ['dark', 'light']
  */
 export type SchemePreference = Scheme | 'system'
 
-export const SCHEME_PREFERENCES:
-  readonly SchemePreference[] = ['system', ...SCHEMES]
+export const SCHEME_PREFERENCES: readonly SchemePreference[] =
+  ['system', ...SCHEMES]
 
 /** A step in a colour scale, lightest (100) to darkest. */
 export type Shade =

@@ -5,7 +5,9 @@
 # electron-winstaller (from electron-builder) only picks
 # a 7-Zip binary for Squirrel.Windows, a target we don't
 # build.
+# lefthook's postinstall installs the Git hooks.
 allowBuilds:
   '@parcel/watcher': false
   electron: false
   electron-winstaller: false
+  lefthook: true

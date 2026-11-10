@@ -9,7 +9,9 @@ defineProps<{ title: string }>()
 <template>
   <section class="widget-frame">
     <header class="header">
-      <h2 class="title">{{ title }}</h2>
+      <h2 class="title">
+        {{ title }}
+      </h2>
     </header>
     <div class="body">
       <slot />

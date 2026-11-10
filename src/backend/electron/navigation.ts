@@ -40,9 +40,9 @@ export function isAppUrl(
   } catch {
     return false
   }
-  if (pages.devUrl) {
+  if (pages.devUrl)
     return target.origin === new URL(pages.devUrl).origin
-  }
+
   const index = pathToFileURL(pages.indexHtml)
   return target.protocol === 'file:'
     && target.pathname === index.pathname

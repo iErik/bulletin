@@ -95,9 +95,8 @@ void app.whenReady().then(() => {
   if (!startStorage()) return
   createWindow()
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (BrowserWindow.getAllWindows().length === 0)
       createWindow()
-    }
   })
 })
 

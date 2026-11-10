@@ -22,11 +22,12 @@ export const windowFrameOptions = (
   platform: string,
   colours: WindowControlsColours
 ): BrowserWindowConstructorOptions => {
-  if (platform === 'darwin')
+  if (platform === 'darwin') {
     return {
       titleBarStyle: 'hidden',
       trafficLightPosition: { ...TRAFFIC_LIGHTS }
     }
+  }
   return {
     titleBarStyle: 'hidden',
     titleBarOverlay: {

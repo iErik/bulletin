@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { setLocaleOverride } from '@/locale/format'
 import { today, useFixedToday } from '@/testing/clock'
@@ -8,7 +8,12 @@ import { useSelectedDateStore }
 import DatePicker from './DatePicker.vue'
 
 // Today is November 9th, 2026. Months are 0-based.
-const mountOn = (day?: Date) => {
+interface Mounted {
+  picker: VueWrapper
+  store: ReturnType<typeof useSelectedDateStore>
+}
+
+const mountOn = (day?: Date): Mounted => {
   const pinia = createPinia()
   setActivePinia(pinia)
   const store = useSelectedDateStore()
@@ -20,9 +25,9 @@ const mountOn = (day?: Date) => {
 }
 
 const options = (
-  picker: ReturnType<typeof mountOn>['picker'],
+  picker: VueWrapper,
   label: string
-) =>
+): string[] =>
   picker
     .findAll(`[aria-label="${label}"] option`)
     .map(option => option.text())
@@ -33,7 +38,7 @@ describe('DatePicker', () => {
   it('shows the Selected Date', () => {
     const { picker } = mountOn(new Date(2025, 2, 4))
 
-    const value = (label: string) =>
+    const value = (label: string): string =>
       (picker.get(`[aria-label="${label}"]`)
         .element as HTMLSelectElement).value
 

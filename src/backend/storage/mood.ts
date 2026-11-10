@@ -65,7 +65,7 @@ export const createMood = async (
       set: { mood: entry.mood }
     })
     .returning()
-  return toEntry(row!)
+  return toEntry(row)
 }
 
 /** Changes the Mood of an existing day's Entry. */
