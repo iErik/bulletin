@@ -4,6 +4,7 @@ import {
   WINDOW_CONTROLS_CHANNEL,
   type BulletinApi
 } from '@shared/bridge'
+import { MOOD_CHANNELS, type MoodApi } from '@shared/mood'
 import {
   SLEEP_CHANNELS,
   type SleepApi
@@ -35,7 +36,8 @@ const api: BulletinApi = {
   setWindowControlsColours: colours =>
     ipcRenderer.send(WINDOW_CONTROLS_CHANNEL, colours),
   weight: invoker<WeightApi>(WEIGHT_CHANNELS),
-  sleep: invoker<SleepApi>(SLEEP_CHANNELS)
+  sleep: invoker<SleepApi>(SLEEP_CHANNELS),
+  mood: invoker<MoodApi>(MOOD_CHANNELS)
 }
 
 contextBridge.exposeInMainWorld(BRIDGE_KEY, api)

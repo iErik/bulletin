@@ -1,0 +1,158 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "89aeda4a-f90f-4a18-8e80-5ef03d9956fe",
+  "prevIds": [
+    "1a71adb0-8cba-4111-995d-5aefa4aa0b29"
+  ],
+  "ddl": [
+    {
+      "name": "mood",
+      "entityType": "tables"
+    },
+    {
+      "name": "sleep",
+      "entityType": "tables"
+    },
+    {
+      "name": "weight",
+      "entityType": "tables"
+    },
+    {
+      "table": "mood",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "mood",
+      "name": "mood",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "start",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "end",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "grams",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_start",
+      "columns": [
+        {
+          "value": "start",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "mood",
+      "name": "mood_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "mood",
+      "name": "mood_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_end_after_start",
+      "value": "\"end\" > \"start\"",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_at_most_24_hours",
+      "value": "\"end\" - \"start\" <= 86400000",
+      "entityType": "checks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    }
+  ],
+  "renames": []
+}

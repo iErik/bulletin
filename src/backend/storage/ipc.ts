@@ -1,9 +1,16 @@
 import type { IpcMain } from 'electron'
 import type { StorageResult } from '@shared/storage'
+import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import type { Database } from './database'
 import { StorageFailure } from './errors'
+import {
+  createMood,
+  deleteMood,
+  listMood,
+  updateMood
+} from './mood'
 import {
   createSleep,
   deleteSleep,
@@ -51,7 +58,11 @@ const OPERATIONS: Record<string, Operation> = {
   [SLEEP_CHANNELS.list]: listSleep,
   [SLEEP_CHANNELS.create]: (db, p) => createSleep(db, p),
   [SLEEP_CHANNELS.update]: (db, p) => updateSleep(db, p),
-  [SLEEP_CHANNELS.delete]: deleteSleep
+  [SLEEP_CHANNELS.delete]: deleteSleep,
+  [MOOD_CHANNELS.list]: listMood,
+  [MOOD_CHANNELS.create]: (db, p) => createMood(db, p),
+  [MOOD_CHANNELS.update]: (db, p) => updateMood(db, p),
+  [MOOD_CHANNELS.delete]: deleteMood
 }
 
 /** Registers one `ipc.handle` per storage operation. */
