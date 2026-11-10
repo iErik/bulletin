@@ -7,7 +7,6 @@ const src = (path: string): string =>
   fileURLToPath(new URL(`./src/${path}`, import.meta.url))
 
 export default defineConfig({
-  plugins: [vue(), svgLoader()],
   resolve: {
     alias: {
       '@': src('frontend'),
@@ -15,7 +14,41 @@ export default defineConfig({
     }
   },
   test: {
-    environment: 'happy-dom',
-    include: ['src/**/*.test.ts']
+    projects: [
+      {
+        extends: true,
+        plugins: [vue(), svgLoader()],
+        test: {
+          name: 'renderer',
+          environment: 'happy-dom',
+          include: ['src/frontend/**/*.test.ts'],
+          setupFiles: ['src/frontend/testing/setup.ts'],
+          unstubGlobals: true
+        }
+      },
+      {
+        // Node only: shared code tested here proves it
+        // doesn't touch the DOM.
+        extends: true,
+        test: {
+          name: 'main',
+          environment: 'node',
+          include: [
+            'src/backend/**/*.test.ts',
+            'src/shared/**/*.test.ts'
+          ]
+        }
+      }
+    ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text'],
+      include: ['src/**/*.{ts,vue}'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.d.ts',
+        'src/frontend/testing/**'
+      ]
+    }
   }
 })

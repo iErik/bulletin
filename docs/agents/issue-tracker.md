@@ -111,7 +111,9 @@ Comment on the ticket with each PR's link (with "part N of M" if there's more th
 - Dev server: `pnpm dev`
 - Lint: `<lint command>`
 - Typecheck: `pnpm typecheck`
-- Test: `pnpm test`
+- Test: `pnpm test` (see `docs/agents/testing.md`)
+- Test in watch mode: `pnpm test:watch`
+- Test coverage report: `pnpm test:coverage`
 
 ## When a skill says "publish to the issue tracker"
 
