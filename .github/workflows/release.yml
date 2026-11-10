@@ -1,0 +1,96 @@
+# Packages the app for every platform and checks the
+# files. For now it only runs by hand and stops there: no
+# version, no tag, no release. Part 3 of BLT-6 (BLT-32)
+# adds those, and the push trigger
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  package:
+    name: Package (${{ matrix.os }})
+    needs: checks
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: mac
+            runner: macos-latest
+            flags: --mac --x64 --arm64
+            files: release/Bulletin-*.dmg
+          - os: win
+            runner: windows-latest
+            flags: --win --x64
+            files: release/Bulletin-*.exe
+          - os: linux
+            runner: ubuntu-latest
+            flags: --linux --x64
+            files: |
+              release/Bulletin-*.AppImage
+              release/Bulletin-*.deb
+              release/Bulletin-*.rpm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # electron-builder needs rpmbuild for the .rpm
+      - if: matrix.os == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - run: >-
+          pnpm exec electron-builder ${{ matrix.flags }}
+          --publish never
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: packages-${{ matrix.os }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  # Every package job uploaded, and together they hold
+  # exactly the files a release ships, no more, no less
+  files:
+    name: Check the files
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: packages
+
+      - name: Check the files
+        run: |
+          base="Bulletin-$(jq -r .version package.json)"
+          printf '%s\n' \
+            "$base-linux-x64.AppImage" \
+            "$base-linux-x64.deb" \
+            "$base-linux-x64.rpm" \
+            "$base-mac-arm64.dmg" \
+            "$base-mac-x64.dmg" \
+            "$base-win-x64-portable.exe" \
+            "$base-win-x64-setup.exe" \
+            | sort > expected.txt
+          ls packages | sort > actual.txt
+          diff expected.txt actual.txt
