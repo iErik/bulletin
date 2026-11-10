@@ -52,10 +52,17 @@ const dateLocale = (): DateLocale => {
  *   2026" (the date header);
  * - `short`: "Sep 12", "12 de set.";
  * - `month`: "September", "setembro";
+ * - `monthShort`: "Sep", "set.";
+ * - `monthYear`: "September 2026", "setembro de 2026";
  * - `weekday`: "Mon", "seg.".
  */
 export type DateStyle =
-  'long' | 'short' | 'month' | 'weekday'
+  | 'long'
+  | 'short'
+  | 'month'
+  | 'monthShort'
+  | 'monthYear'
+  | 'weekday'
 
 const INTL_STYLES: Readonly<Record<
   Exclude<DateStyle, 'long'>,
@@ -63,6 +70,8 @@ const INTL_STYLES: Readonly<Record<
 >> = {
   short: { month: 'short', day: 'numeric' },
   month: { month: 'long' },
+  monthShort: { month: 'short' },
+  monthYear: { month: 'long', year: 'numeric' },
   weekday: { weekday: 'short' }
 }
 
