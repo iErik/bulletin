@@ -6,7 +6,7 @@ import DashboardView from './DashboardView.vue'
 let dashboard: VueWrapper | undefined
 
 // Stands in for the Title Bar the header goes into.
-const mountDashboard = () => {
+const mountDashboard = (): VueWrapper => {
   const bar = document.createElement('div')
   bar.id = 'title-bar-content'
   document.body.append(bar)

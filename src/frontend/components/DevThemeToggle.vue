@@ -10,10 +10,10 @@ import {
 
 const store = useThemeStore()
 
-const onTheme = (event: Event) =>
+const onTheme = (event: Event): void =>
   store.setTheme((event.target as HTMLSelectElement).value)
 
-const onScheme = (event: Event) =>
+const onScheme = (event: Event): void =>
   store.setPreference(
     (event.target as HTMLSelectElement)
       .value as SchemePreference

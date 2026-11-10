@@ -36,7 +36,8 @@ export default defineConfig({
           include: [
             'src/backend/**/*.test.ts',
             'src/shared/**/*.test.ts',
-            'scripts/**/*.test.ts'
+            'scripts/**/*.test.ts',
+            'eslint-rules/**/*.test.mjs'
           ]
         }
       }

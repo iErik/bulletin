@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { SleepPeriod } from '@shared/sleep'
 import type { Database } from './database'
 import {
   createSleep,
@@ -9,7 +10,7 @@ import {
 import { memoryDatabase } from './testing'
 
 /** Epoch ms of a local time in June 2026. */
-const at = (day: number, hour: number, minute = 0) =>
+const at = (day: number, hour: number, minute = 0): number =>
   new Date(2026, 5, day, hour, minute).getTime()
 
 const HOUR = 60 * 60 * 1000
@@ -21,26 +22,33 @@ beforeEach(() => {
   db = memoryDatabase()
 })
 
-const create = (start: number, end: number) =>
+const create = (
+  start: number,
+  end: number
+): Promise<SleepPeriod> =>
   createSleep(db, { start, end }, now)
-const update = (value: unknown) =>
+const update = (value: unknown): Promise<SleepPeriod> =>
   updateSleep(db, value, now)
-const heads = async (from: string, to = from) =>
+const heads = async (
+  from: string,
+  to = from
+): Promise<number[]> =>
   (await listSleep(db, { from, to }))
     .map(period => period.start)
-const all = () =>
+const all = (): Promise<SleepPeriod[]> =>
   listSleep(db, { from: '2000-01-01', to: '2026-06-15' })
 const failsWith = (
   promise: Promise<unknown>,
   error: object
-) => expect(promise).rejects.toMatchObject({ error })
+): Promise<void> =>
+  expect(promise).rejects.toMatchObject({ error })
 
 describe('createSleep', () => {
   it('saves a Period', async () => {
     const period = await create(at(9, 23), at(10, 7))
 
     expect(period).toEqual({
-      id: expect.any(Number),
+      id: expect.any(Number) as number,
       start: at(9, 23),
       end: at(10, 7)
     })

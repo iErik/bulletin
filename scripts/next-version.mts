@@ -40,16 +40,17 @@ const PRERELEASE =
 // `1.0.0-beta.3` -> { line: '1.0.0-beta', number: 3 }
 export function parseVersion(
   version: string
-): { line: string, number: number } {
+): { line: string; number: number } {
   const match =
     STABLE.exec(version) ?? PRERELEASE.exec(version)
 
-  if (!match)
+  if (!match) {
     throw new Error(
-      `"${version}" isn't a release version: use ` +
-      'X.Y.Z or X.Y.Z-<word>.N, e.g. 0.2.0 or ' +
-      '1.0.0-beta.1'
+      `"${version}" isn't a release version: use `
+      + 'X.Y.Z or X.Y.Z-<word>.N, e.g. 0.2.0 or '
+      + '1.0.0-beta.1'
     )
+  }
 
   return { line: match[1], number: Number(match[2]) }
 }
@@ -100,11 +101,12 @@ export function setVersion(
   const pattern = /^ {2}"version": "[^"]*"/gm
   const matches = text.match(pattern) ?? []
 
-  if (matches.length !== 1)
+  if (matches.length !== 1) {
     throw new Error(
-      'Expected one top-level "version" in ' +
-      `package.json, found ${matches.length}`
+      'Expected one top-level "version" in '
+      + `package.json, found ${matches.length}`
     )
+  }
 
   return text.replace(pattern, `  "version": "${version}"`)
 }
@@ -134,7 +136,8 @@ function report(output: string): void {
 if (import.meta.main) {
   const file = new URL('../package.json', import.meta.url)
   const text = readFileSync(file, 'utf8')
-  const current: string = JSON.parse(text).version
+  const { version: current } =
+    JSON.parse(text) as { version: string }
   const [command, released] = process.argv.slice(2)
 
   if (command === 'bump') {
@@ -147,8 +150,8 @@ if (import.meta.main) {
     const version = nextVersion(current, remoteTags())
 
     report(
-      `version=${version}\n` +
-      `prerelease=${isPrerelease(version)}\n`
+      `version=${version}\n`
+      + `prerelease=${isPrerelease(version)}\n`
     )
   }
 }

@@ -1,4 +1,4 @@
-# Type-checks, builds and tests the app. Runs on pull
+# Lints, type-checks, builds and tests the app. Runs on pull
 # requests, and before every release (release.yml calls it)
 name: Checks
 
@@ -30,6 +30,7 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test

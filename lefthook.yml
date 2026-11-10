@@ -1,0 +1,17 @@
+# Lints the staged files before each commit, with no
+# autofix: any finding blocks the commit. The jobs run
+# pnpm, so commit from inside the Nix shell. Typecheck
+# and tests are left to CI.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: eslint
+      glob: '*.{ts,mts,js,mjs,vue}'
+      run: >-
+        pnpm exec eslint --max-warnings 0
+        --no-warn-ignored {staged_files}
+    - name: stylelint
+      glob: '*.{scss,vue}'
+      run: >-
+        pnpm exec stylelint --max-warnings 0
+        --allow-empty-input {staged_files}

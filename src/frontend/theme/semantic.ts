@@ -66,10 +66,11 @@ export const applyPalette = (
   el: HTMLElement = document.documentElement
 ): void => {
   const colours = resolveSemantic(palette, scheme)
-  for (const [token, colour] of Object.entries(colours))
+  for (const [token, colour] of Object.entries(colours)) {
     el.style.setProperty(
       cssVar(token as SemanticToken),
       colour
     )
+  }
   el.style.colorScheme = scheme
 }

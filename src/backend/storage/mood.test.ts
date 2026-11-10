@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { MOODS } from '@shared/mood'
+import { MOODS, type MoodEntry } from '@shared/mood'
 import type { Database } from './database'
 import {
   createMood,
@@ -18,14 +18,15 @@ beforeEach(() => {
   db = memoryDatabase()
 })
 
-const create = (value: unknown) =>
+const create = (value: unknown): Promise<MoodEntry> =>
   createMood(db, value, now)
-const all = () =>
+const all = (): Promise<MoodEntry[]> =>
   listMood(db, { from: '2000-01-01', to: today })
 const failsWith = (
   promise: Promise<unknown>,
   error: object
-) => expect(promise).rejects.toMatchObject({ error })
+): Promise<void> =>
+  expect(promise).rejects.toMatchObject({ error })
 
 describe('MOODS', () => {
   it('has unique keys and colour tokens', () => {

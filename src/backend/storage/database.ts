@@ -42,11 +42,11 @@ export const pendingMigrations = (
 }
 
 /** Where `file` is backed up before migrating. */
-export const backupPath = (file: string, now: Date) =>
+export const backupPath = (file: string, now: Date): string =>
   `${file}.bak-${now.toISOString().replace(/[:.]/g, '-')}`
 
 /** Deletes a database file and its journal files. */
-const removeFile = (file: string) => {
+const removeFile = (file: string): void => {
   for (const suffix of ['', '-journal', '-wal', '-shm'])
     rmSync(file + suffix, { force: true })
 }
@@ -150,9 +150,10 @@ export const openDatabase = ({
 export const openErrorMessage = (
   error: unknown
 ): string => {
-  if (!(error instanceof OpenDatabaseError))
+  if (!(error instanceof OpenDatabaseError)) {
     return `Your data was not changed.\n\n`
       + `Details: ${innermostReason(error)}`
+  }
   const copy = error.backup
     ? ` A copy was saved to\n${error.backup}`
     : ''

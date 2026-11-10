@@ -67,7 +67,7 @@ export const createWeight = async (
       set: { grams: entry.grams }
     })
     .returning()
-  return toEntry(row!)
+  return toEntry(row)
 }
 
 /** Changes the grams of an existing day's Entry. */

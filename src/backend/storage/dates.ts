@@ -19,7 +19,7 @@ export const localDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine(value => {
     const [y, m, d] = value.split('-').map(Number)
-    const date = new Date(y!, m! - 1, d!)
+    const date = new Date(y, m - 1, d)
     return localDate(date) === value
   }, 'Not a calendar date')
 
@@ -48,7 +48,7 @@ export const assertNotFuture = (
 /** Noon, local time, `days` after `date`. */
 const noonAfter = (date: string, days = 0): number => {
   const [y, m, d] = date.split('-').map(Number)
-  return new Date(y!, m! - 1, d! + days, 12).getTime()
+  return new Date(y, m - 1, d + days, 12).getTime()
 }
 
 /**
@@ -57,7 +57,9 @@ const noonAfter = (date: string, days = 0): number => {
  * from noon on `from`, up to but excluding noon on the
  * day after `to`.
  */
-export const noonWindow = ({ from, to }: DateRange) => ({
+export const noonWindow = (
+  { from, to }: DateRange
+): { start: number; end: number } => ({
   start: noonAfter(from),
   end: noonAfter(to, 1)
 })

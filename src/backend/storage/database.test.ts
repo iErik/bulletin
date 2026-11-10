@@ -17,7 +17,8 @@ import {
   OpenDatabaseError,
   openDatabase,
   openErrorMessage,
-  pendingMigrations
+  pendingMigrations,
+  type Database
 } from './database'
 import {
   memoryDatabase,
@@ -40,7 +41,7 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-const open = () =>
+const open = (): Database =>
   openDatabase({
     file,
     migrationsFolder: folder,
@@ -48,12 +49,12 @@ const open = () =>
   })
 
 /** Adds a migration to the temp folder. */
-const addMigration = (name: string, sql: string) => {
+const addMigration = (name: string, sql: string): void => {
   mkdirSync(join(folder, name))
   writeFileSync(join(folder, name, 'migration.sql'), sql)
 }
 
-const backups = () =>
+const backups = (): string[] =>
   readdirSync(dir).filter(name => name.includes('.bak-'))
 
 describe('openDatabase', () => {
@@ -61,7 +62,7 @@ describe('openDatabase', () => {
     const db = open()
 
     const tables = db.$client
-      .prepare("SELECT name FROM sqlite_master")
+      .prepare('SELECT name FROM sqlite_master')
       .all()
       .map(row => row.name)
 

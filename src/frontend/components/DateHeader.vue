@@ -20,7 +20,9 @@ const label = computed(() => formatDate(store.day, 'long'))
 const trigger = ref<HTMLButtonElement>()
 const isOpen = ref(false)
 
-const isEditable = (target: EventTarget | null) =>
+const isEditable = (
+  target: EventTarget | null
+): boolean =>
   target instanceof HTMLElement
   && (target.isContentEditable
     || target.closest('input, textarea, select')
@@ -56,7 +58,8 @@ onBeforeUnmount(() => {
 <template>
   <div class="date-header">
     <button
-      class="step no-drag" type="button"
+      class="step no-drag"
+      type="button"
       aria-label="Previous day"
       @click="store.step(-1)"
     >
@@ -64,7 +67,8 @@ onBeforeUnmount(() => {
     </button>
     <button
       ref="trigger"
-      class="date no-drag" type="button"
+      class="date no-drag"
+      type="button"
       aria-haspopup="dialog"
       :aria-expanded="isOpen"
       @click="isOpen = !isOpen"
@@ -72,7 +76,8 @@ onBeforeUnmount(() => {
       {{ label }}
     </button>
     <button
-      class="step no-drag" type="button"
+      class="step no-drag"
+      type="button"
       aria-label="Next day"
       :disabled="store.isToday"
       @click="store.step(1)"
@@ -80,7 +85,8 @@ onBeforeUnmount(() => {
       ›
     </button>
     <button
-      class="today no-drag" type="button"
+      class="today no-drag"
+      type="button"
       :disabled="store.isToday"
       @click="store.goToday()"
     >

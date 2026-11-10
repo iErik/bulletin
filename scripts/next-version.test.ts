@@ -72,9 +72,10 @@ describe('nextVersion', () => {
       '1.0.0-beta.2.1', '0.1.0+build.1'
     ]
 
-    for (const version of invalid)
+    for (const version of invalid) {
       expect(() => nextVersion(version, TAGS))
         .toThrow(/release version/)
+    }
   })
 })
 

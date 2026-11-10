@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { vi, type Mock } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
 import type { MoodApi } from '@shared/mood'
 import type {
@@ -8,11 +8,13 @@ import type {
 import type { WeightApi } from '@shared/weight'
 
 /** Resolves every call with `value`, successfully. */
-const resolves = (value: unknown) =>
+const resolves = (value: unknown): Mock =>
   vi.fn().mockResolvedValue({ ok: true, value })
 
 /** Resolves every call with its own payload. */
-const echoes = <T>(make = (value: T) => value) =>
+const echoes = <T>(
+  make = (value: T) => value
+): Mock<(value: T) => Promise<{ ok: true; value: T }>> =>
   vi.fn(async (value: T) => ({
     ok: true as const,
     value: make(value)

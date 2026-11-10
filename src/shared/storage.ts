@@ -28,9 +28,9 @@ export interface DateRange {
  */
 export type StorageError =
   | {
-      readonly code: 'invalid-payload'
-      readonly field: string
-    }
+    readonly code: 'invalid-payload'
+    readonly field: string
+  }
   | { readonly code: 'future-date' }
   | { readonly code: 'not-found' }
   | { readonly code: 'reversed-period' }
