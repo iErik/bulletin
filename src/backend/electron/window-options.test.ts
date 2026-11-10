@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { windowFrameOptions } from './window-options'
+import {
+  windowFrameOptions,
+  windowSizeOptions
+} from './window-options'
 
 const colours = { background: '#111111', symbol: '#eeeeee' }
 
@@ -26,4 +29,15 @@ describe('windowFrameOptions', () => {
         })
     }
   )
+})
+
+describe('windowSizeOptions', () => {
+  it('opens at and keeps the Figma frame size', () => {
+    expect(windowSizeOptions()).toEqual({
+      width: 1228,
+      height: 834,
+      minWidth: 1228,
+      minHeight: 834
+    })
+  })
 })
