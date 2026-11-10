@@ -5,6 +5,7 @@
   "description": "A desktop bullet-journal app",
   "license": "SEE LICENSE IN LICENSE",
   "main": "out/main/index.js",
+  "packageManager": "pnpm@11.27.0",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
