@@ -1,3 +1,5 @@
+import type { MoodKey } from '@shared/mood'
+
 /** The light or dark variant of a Theme. */
 export type Scheme = 'dark' | 'light'
 
@@ -23,6 +25,8 @@ export interface Palette {
   readonly background: Scale
   readonly foreground: Scale
   readonly accent: Scale
+  /** Each Mood's colour, as `--color-mood-<key>`. */
+  readonly mood: Readonly<Record<MoodKey, string>>
 }
 
 /** A named visual identity: one Palette per Scheme. */
