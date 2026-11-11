@@ -79,9 +79,10 @@ const fakeHabits = (): HabitsApi => {
 }
 
 /**
- * No Transactions and no Categories: created
- * Transactions get id 1, and created Categories are
- * Category 1 with the given name.
+ * No Transactions, Categories or Budgets: created
+ * Transactions get id 1, created Categories are
+ * Category 1 with the given name, and set Budgets
+ * echo back.
  */
 const fakeExpenses = (): ExpensesApi => ({
   list: resolves([]),
@@ -93,7 +94,9 @@ const fakeExpenses = (): ExpensesApi => ({
   createCategory: vi.fn(async (name: string) => ({
     ok: true as const,
     value: { id: 1, name }
-  }))
+  })),
+  getBudget: resolves(null),
+  setBudget: echoes()
 })
 
 /**

@@ -178,6 +178,18 @@ describe('handleStorage', () => {
     ))
   })
 
+  it('handles the Budget channels', async () => {
+    const call = serve()
+    const budget = { month: '2026-01', amount: 150_000 }
+
+    expect(await call(EXPENSES_CHANNELS.setBudget, budget))
+      .toEqual({ ok: true, value: budget })
+    expect(await call(
+      EXPENSES_CHANNELS.getBudget,
+      '2026-03'
+    )).toEqual({ ok: true, value: budget })
+  })
+
   it('rejects invalid payloads', async () => {
     const call = serve()
 
