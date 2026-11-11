@@ -9,6 +9,9 @@ import { StorageFailure } from './errors'
 import {
   archiveHabit,
   createHabit,
+  createHabitEntry,
+  deleteHabitEntry,
+  listHabitEntries,
   listHabits,
   unarchiveHabit,
   updateHabit
@@ -75,7 +78,11 @@ const OPERATIONS: Record<string, Operation> = {
   [HABITS_CHANNELS.create]: (db, p) => createHabit(db, p),
   [HABITS_CHANNELS.update]: updateHabit,
   [HABITS_CHANNELS.archive]: archiveHabit,
-  [HABITS_CHANNELS.unarchive]: unarchiveHabit
+  [HABITS_CHANNELS.unarchive]: unarchiveHabit,
+  [HABITS_CHANNELS.listEntries]: listHabitEntries,
+  [HABITS_CHANNELS.createEntry]: (db, p) =>
+    createHabitEntry(db, p),
+  [HABITS_CHANNELS.deleteEntry]: deleteHabitEntry
 }
 
 /** Registers one `ipc.handle` per storage operation. */

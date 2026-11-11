@@ -26,6 +26,8 @@ export interface DateRange {
  * - `overlapping-period`: a Period overlaps another;
  * - `name-taken`: another Habit, `active` or
  *   `archived`, already has the name;
+ * - `archived-habit`: the Habit is archived, so it
+ *   takes no new Entries;
  * - `internal`: anything unexpected, logged in main.
  */
 export type StorageError =
@@ -42,6 +44,7 @@ export type StorageError =
     readonly code: 'name-taken'
     readonly habit: 'active' | 'archived'
   }
+  | { readonly code: 'archived-habit' }
   | { readonly code: 'internal' }
 
 export type StorageErrorCode = StorageError['code']
