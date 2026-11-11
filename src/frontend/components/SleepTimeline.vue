@@ -69,18 +69,28 @@ const head = ref<EpochMs | null>(null)
 const refusal = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saving = ref(false)
-/** The Period being dragged, and which end. */
+/**
+ * The Period being dragged, which end, and the time
+ * under the pointer when it was pressed.
+ */
 const grabbed = shallowRef<{
   saved: SleepPeriod
   end: End
+  from: EpochMs | null
 } | null>(null)
 
-/** Where the drag would move the grabbed Period. */
+// The end moves by as much as the pointer has since
+// the press, so pressing off its centre doesn't jump
+// it, and a press without moving changes nothing.
 const moved = computed(() => {
   const at = pointer.value
   if (!grabbed.value || !at) return null
-  const { saved, end } = grabbed.value
-  return drag(saved, end, at.time,
+  const { saved, end, from } = grabbed.value
+  if (at.time === from) return null
+  const to = from === null
+    ? at.time
+    : saved[end] + at.time - from
+  return drag(saved, end, to,
     months.periods.value, Date.now())
 })
 
@@ -151,7 +161,8 @@ function hoverOn(
   day: Date
 ): { fraction: number; text: string } | null {
   const at = moved.value && grabbed.value
-    ? dragged(moved.value[grabbed.value.end])
+    ? dragged(moved.value[grabbed.value.end],
+        grabbed.value.end)
     : pointer.value
   if (at?.key !== key) return null
   if (head.value === null && !moved.value
@@ -163,11 +174,15 @@ function hoverOn(
   }
 }
 
-/** A dragged end's time, on the row it's drawn on. */
-const dragged = (time: EpochMs): {
+// A dragged end's time, on the row it's drawn on. A
+// Tail on noon ends the row before.
+const dragged = (time: EpochMs, end: End): {
   key: string
   time: EpochMs
-} => ({ key: localDate(rowOf(time)), time })
+} => ({
+  key: localDate(rowOf(end === 'end' ? time - 1 : time)),
+  time
+})
 
 /** The snapped time under the pointer on `day`'s row. */
 const timeAt = (event: MouseEvent, day: Date): EpochMs => {
@@ -236,13 +251,18 @@ const save = async (
 const grab = (period: SleepPeriod, end: End): void => {
   if (saving.value || head.value !== null) return
   saveError.value = null
-  grabbed.value = { saved: period, end }
+  grabbed.value = {
+    saved: period,
+    end,
+    from: pointer.value?.time ?? null
+  }
   window.addEventListener('pointerup', release)
   window.addEventListener('pointercancel', drop)
 }
 
 const drop = (): void => {
   grabbed.value = null
+  pointer.value = null
   window.removeEventListener('pointerup', release)
   window.removeEventListener('pointercancel', drop)
 }
@@ -423,12 +443,14 @@ watch(() => store.today, today => {
             <span
               v-if="segment.head"
               class="handle -start"
-              @pointerdown.stop="grab(segment.period, 'start')"
+              @pointerdown.stop="
+                grab(segment.period, 'start')"
             />
             <span
               v-if="segment.tail"
               class="handle -end"
-              @pointerdown.stop="grab(segment.period, 'end')"
+              @pointerdown.stop="
+                grab(segment.period, 'end')"
             />
           </div>
           <div

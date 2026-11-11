@@ -558,14 +558,14 @@ describe('SleepTimeline, dragging', () => {
   })
 
   // 1 AM to 9 AM on the 8th, in row "7th".
-  const night = {
+  const period = {
     id: 1,
     start: at(10, 8, 1),
     end: at(10, 8, 9)
   }
 
   it('moves the Tail and saves on release', async () => {
-    storing([night])
+    storing([period])
     await mountTimeline()
     const api = window.bulletin
 
@@ -576,7 +576,7 @@ describe('SleepTimeline, dragging', () => {
 
     await release()
     expect(api.sleep.update).toHaveBeenCalledWith(
-      { ...night, end: at(10, 8, 10) }
+      { ...period, end: at(10, 8, 10) }
     )
     expect(row('2026-11-07').get('.caption').text())
       .toMatch(/^1:00\sAM to 10:00\sAM$/)
@@ -587,9 +587,51 @@ describe('SleepTimeline, dragging', () => {
       .toBe(false)
   })
 
+  it('leaves it on a press without moving', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await move('2026-11-07', x(24 + 9, 20))
+    await row('2026-11-07').get('.handle.-end')
+      .trigger('pointerdown')
+    await release()
+
+    expect(window.bulletin.sleep.update)
+      .not.toHaveBeenCalled()
+    expect(row('2026-11-07').find('.hover').exists())
+      .toBe(false)
+  })
+
+  it('moves the end as far as the pointer', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await move('2026-11-07', x(24 + 9, 20))
+    await grab('2026-11-07', 'end',
+      ['2026-11-07', x(24 + 9, 50)])
+    await release()
+
+    expect(window.bulletin.sleep.update)
+      .toHaveBeenCalledWith(
+        { ...period, end: at(10, 8, 9, 30) }
+      )
+  })
+
+  it('shows a Tail on noon on its row', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await grab('2026-11-07', 'end',
+      ['2026-11-07', x(36)])
+
+    expect(hover('2026-11-07')).toMatch(/^12:00\sPM$/)
+    expect(row('2026-11-08').find('.hover').exists())
+      .toBe(false)
+  })
+
   it('stops at a neighbouring Period', async () => {
     storing([
-      night,
+      period,
       { id: 2, start: at(10, 8, 11), end: at(10, 8, 12) }
     ])
     await mountTimeline()
@@ -600,7 +642,7 @@ describe('SleepTimeline, dragging', () => {
 
     expect(window.bulletin.sleep.update)
       .toHaveBeenCalledWith(
-        { ...night, end: at(10, 8, 11) }
+        { ...period, end: at(10, 8, 11) }
       )
   })
 
@@ -628,7 +670,7 @@ describe('SleepTimeline, dragging', () => {
   })
 
   it('puts it back on a storage error', async () => {
-    storing([night])
+    storing([period])
     window.bulletin.sleep.update = vi.fn()
       .mockResolvedValue({
         ok: false,

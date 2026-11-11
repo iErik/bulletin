@@ -100,12 +100,23 @@ describe('selection', () => {
     })
 
     it('stays within 24 hours and the past', () => {
-      const alone = { id: 4, start: at(9, 10), end: at(9, 11) }
+      const alone = {
+        id: 4,
+        start: at(9, 10),
+        end: at(9, 11)
+      }
+      const earlier = {
+        ...alone,
+        start: at(8, 10),
+        end: at(8, 11)
+      }
 
       expect(drag(alone, 'start', at(7, 1), [], now).start)
         .toBe(at(8, 11))
       expect(drag(alone, 'end', at(9, 20), [], now).end)
         .toBe(at(9, 15, 30))
+      expect(drag(earlier, 'end', at(9, 14), [], now).end)
+        .toBe(at(9, 10))
     })
   })
 
