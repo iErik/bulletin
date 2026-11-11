@@ -1,3 +1,4 @@
+import { MOODS, type Mood } from '@shared/mood'
 import type { Palette, Scheme, Shade } from './types'
 
 /**
@@ -13,7 +14,10 @@ export type SemanticToken =
   | 'accent'
   | 'text-on-accent'
 
-type ScaleRef = readonly [keyof Palette, Shade]
+type ScaleRef = readonly [
+  Exclude<keyof Palette, 'mood'>,
+  Shade
+]
 
 /** Where each token points in a Palette, per Scheme. */
 export const SEMANTIC_MAP: Readonly<
@@ -56,9 +60,14 @@ export const resolveSemantic = (
     Record<SemanticToken, string>
 }
 
+/** A Mood's colour, as a CSS value. */
+export const moodColour = (mood: Mood): string =>
+  `var(--color-${mood.colour})`
+
 /**
- * Writes the semantic custom properties for a Palette
- * onto `el` (the root element by default).
+ * Writes the semantic custom properties and the Mood
+ * colours for a Palette onto `el` (the root element by
+ * default).
  */
 export const applyPalette = (
   palette: Palette,
@@ -70,6 +79,12 @@ export const applyPalette = (
     el.style.setProperty(
       cssVar(token as SemanticToken),
       colour
+    )
+  }
+  for (const mood of MOODS) {
+    el.style.setProperty(
+      `--color-${mood.colour}`,
+      palette.mood[mood.key]
     )
   }
   el.style.colorScheme = scheme

@@ -14,6 +14,24 @@ describe('Widget', () => {
       .toBe('7')
   })
 
+  it('puts actions in its header', () => {
+    const widget = mount(Widget, {
+      props: { title: 'Mood' },
+      slots: { actions: '<button>Save</button>' }
+    })
+
+    expect(widget.get('.header > .actions > button')
+      .text()).toBe('Save')
+  })
+
+  it('has no actions without the slot', () => {
+    const widget = mount(Widget, {
+      props: { title: 'Mood' }
+    })
+
+    expect(widget.find('.actions').exists()).toBe(false)
+  })
+
   it('has an empty body without a slot', () => {
     const widget = mount(Widget, {
       props: { title: 'Mood' }
