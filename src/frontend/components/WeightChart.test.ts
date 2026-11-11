@@ -1,4 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
 import {
   enableAutoUnmount,
   mount,
@@ -13,6 +19,10 @@ const ENTRIES: WeightEntry[] = [
   { date: '2026-07-02', grams: 63_400 },
   { date: '2026-09-10', grams: 65_000 }
 ]
+
+// The plot spans x 44 to 371 at the default size.
+const LEFT = 44
+const RIGHT = 371
 
 const mountChart = (
   props: Partial<{
@@ -35,6 +45,13 @@ const texts = (
 ): string[] =>
   chart.findAll(selector).map(el => el.text())
 
+const tooltip = (
+  chart: VueWrapper
+): string | undefined =>
+  chart.find('.tooltip').exists()
+    ? chart.get('.tooltip').text()
+    : undefined
+
 describe('WeightChart', () => {
   useFixedToday()
   enableAutoUnmount(afterEach)
@@ -55,6 +72,63 @@ describe('WeightChart', () => {
   it('labels the y axis every 10 kg', () => {
     expect(texts(mountChart(), '.tick'))
       .toEqual(['60 kg', '70 kg', '80 kg'])
+  })
+
+  describe('hovering', () => {
+    it('snaps the tooltip to the nearest Entry', async () => {
+      const chart = mountChart()
+      const svg = chart.get('svg')
+
+      await svg.trigger('pointermove', { clientX: LEFT })
+      expect(tooltip(chart)).toBe('Mar 2, 70.0 kg')
+      expect(chart.find('.cursor').exists()).toBe(true)
+
+      await svg.trigger('pointermove', { clientX: RIGHT })
+      expect(tooltip(chart)).toBe('Sep 10, 65.0 kg')
+    })
+
+    it('hides when the pointer leaves', async () => {
+      const chart = mountChart()
+      const svg = chart.get('svg')
+
+      await svg.trigger('pointermove', { clientX: LEFT })
+      await svg.trigger('pointerleave')
+
+      expect(tooltip(chart)).toBeUndefined()
+      expect(chart.find('.cursor').exists()).toBe(false)
+    })
+  })
+
+  describe('the keyboard', () => {
+    it('steps between Entries from the Selected Date', async () => {
+      const chart = mountChart()
+      const svg = chart.get('svg')
+      const press = (key: string): Promise<void> =>
+        svg.trigger('keydown', { key })
+
+      await press('ArrowRight')
+      expect(tooltip(chart)).toBe('Jul 2, 63.4 kg')
+      await press('ArrowRight')
+      expect(tooltip(chart)).toBe('Sep 10, 65.0 kg')
+      await press('ArrowRight')
+      expect(tooltip(chart)).toBe('Sep 10, 65.0 kg')
+      await press('ArrowLeft')
+      await press('ArrowLeft')
+      expect(tooltip(chart)).toBe('Mar 2, 70.0 kg')
+      await press('Escape')
+      expect(tooltip(chart)).toBeUndefined()
+    })
+
+    it('keeps arrows from the date header', async () => {
+      const onKeydown = vi.fn()
+      window.addEventListener('keydown', onKeydown)
+      const svg = mountChart().get('svg')
+
+      await svg.trigger('keydown', { key: 'ArrowLeft' })
+      window.removeEventListener('keydown', onKeydown)
+
+      expect(onKeydown).not.toHaveBeenCalled()
+    })
   })
 
   describe('the glow', () => {
