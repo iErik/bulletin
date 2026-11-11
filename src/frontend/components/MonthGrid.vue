@@ -4,8 +4,9 @@
 // The using Widget decides each Day Pill's colour and
 // label, and what activating it does; the grid owns
 // the layout, the states, the tooltip and the
-// keyboard. Days after today are dimmed and inert, and
-// the Selected Date's Day Pill is outlined.
+// keyboard. Days after today, and any the Widget
+// disables, are dimmed and inert; the Selected Date's
+// Day Pill is outlined.
 import { computed, nextTick, ref, watch } from 'vue'
 import { isAfter, isSameDay, isSameMonth } from 'date-fns'
 import { monthWeeks, weekdays } from '@/month-grid/layout'
@@ -20,6 +21,8 @@ const props = defineProps<{
   label: (day: Date) => string
   /** A CSS colour, or none for the placeholder. */
   colour?: (day: Date) => string | undefined
+  /** Days to dim and ignore, besides future ones. */
+  disabled?: (day: Date) => boolean
 }>()
 
 const emit = defineEmits<{ activate: [day: Date] }>()
@@ -37,6 +40,9 @@ const headers = computed(() =>
 
 const isFuture = (day: Date): boolean =>
   isAfter(day, store.today)
+
+const isDisabled = (day: Date): boolean =>
+  isFuture(day) || (props.disabled?.(day) ?? false)
 
 /** Last non-future day's day of month, or 0. */
 const lastActiveDay = computed(() => {
@@ -89,7 +95,7 @@ const STEPS: Readonly<Record<string, number>> = {
 }
 
 const activate = (day: Date): void => {
-  if (isFuture(day)) return
+  if (isDisabled(day)) return
   focused.value = day.getDate()
   emit('activate', day)
 }
@@ -166,12 +172,12 @@ const pillStyle = (
           :class="{
             '-filled': colour?.(day) !== undefined,
             '-selected': isSameDay(day, store.day),
-            '-future': isFuture(day)
+            '-disabled': isDisabled(day)
           }"
           type="button"
           :style="pillStyle(day)"
           :aria-label="describe(day)"
-          :aria-disabled="isFuture(day) || undefined"
+          :aria-disabled="isDisabled(day) || undefined"
           :tabindex="day.getDate() === focused ? 0 : -1"
           @click="activate(day)"
           @keydown="onKeydown($event, day)"
@@ -240,7 +246,7 @@ const pillStyle = (
     outline-offset: 2px;
   }
 
-  > .pill.-future {
+  > .pill.-disabled {
     cursor: default;
     opacity: 0.35;
   }

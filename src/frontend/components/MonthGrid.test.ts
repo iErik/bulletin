@@ -118,13 +118,30 @@ describe('MonthGrid', () => {
       await pill(wrapper, 10).trigger('click')
 
       expect(pill(wrapper, 9).classes())
-        .not.toContain('-future')
+        .not.toContain('-disabled')
       expect(pill(wrapper, 10).classes())
-        .toContain('-future')
+        .toContain('-disabled')
       expect(pill(wrapper, 10).attributes('aria-disabled'))
         .toBe('true')
       expect(wrapper.emitted('activate')).toBeUndefined()
     })
+
+    it('dims and ignores the days it’s told to',
+      async () => {
+        const wrapper = mountGrid({
+          disabled: (day: Date) => day.getDate() < 3
+        })
+
+        await pill(wrapper, 2).trigger('click')
+
+        expect(pill(wrapper, 2).classes())
+          .toContain('-disabled')
+        expect(pill(wrapper, 2).attributes('aria-disabled'))
+          .toBe('true')
+        expect(pill(wrapper, 3).classes())
+          .not.toContain('-disabled')
+        expect(wrapper.emitted('activate')).toBeUndefined()
+      })
 
     it('outlines only the Selected Date', async () => {
       const wrapper = mountGrid()
