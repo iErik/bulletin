@@ -105,6 +105,16 @@ describe('WeightChart', () => {
         .toBeCloseTo(47.6)
       expect(glow.attributes('clip-path')).toBeUndefined()
     })
+
+    it('outside the window shows the empty state', () => {
+      const chart = mountChart({
+        entries: [{ date: '2024-01-02', grams: 63_400 }]
+      })
+
+      expect(chart.get('.notice').text())
+        .toBe('No weight logged yet')
+      expect(chart.find('.dot').exists()).toBe(false)
+    })
   })
 
   it('has no dot with a curve', () => {

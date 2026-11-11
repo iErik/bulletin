@@ -95,12 +95,21 @@ const curve = computed(() => {
 })
 
 // A lone Entry has no curve to draw, so it gets a dot.
+// One just outside the window would be clipped away.
 const dot = computed(() => {
-  const only = points.value.curve
-  return only.length === 1
+  const only = visible.value
+  const lone = points.value.curve.length === 1
+  return lone && only.length === 1
     ? { cx: x.value(only[0].x), cy: y.value(only[0].y) }
     : undefined
 })
+
+// Nothing shows without an Entry in the window or a
+// curve crossing it.
+const empty = computed(() =>
+  visible.value.length === 0
+  && points.value.curve.length < 2
+)
 
 const glow = computed(() => {
   const at = dayX(span.value, props.day)
@@ -242,7 +251,7 @@ const insets = {
     <p v-if="failed" class="notice" role="alert">
       Couldn't load your weight
     </p>
-    <p v-else-if="points.curve.length === 0" class="notice">
+    <p v-else-if="empty" class="notice">
       No weight logged yet
     </p>
   </div>
