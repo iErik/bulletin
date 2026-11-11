@@ -68,6 +68,28 @@ const label = (
 const name = (wrapper: VueWrapper): string =>
   wrapper.get('.actions > .name').text()
 
+const nameButton = (
+  wrapper: VueWrapper
+): DOMWrapper<HTMLButtonElement> =>
+  wrapper.find<HTMLButtonElement>('.actions > .name')
+
+/** Opens the Habit list and returns its rows. */
+const openList = async (
+  wrapper: VueWrapper
+): Promise<DOMWrapper<HTMLLIElement>[]> => {
+  await nameButton(wrapper).trigger('click')
+  await flushPromises()
+  return wrapper.findAll<HTMLLIElement>('.row')
+}
+
+const archiveRow = async (
+  row: DOMWrapper<HTMLLIElement>
+): Promise<void> => {
+  await row.get('.controls > .control').trigger('click')
+  await row.get('.-confirm').trigger('click')
+  await flushPromises()
+}
+
 const failWith = {
   ok: false,
   error: { code: 'internal' }
@@ -279,6 +301,85 @@ describe('HabitsWidget', () => {
     expect(wrapper.find('.actions').exists()).toBe(false)
     expect(wrapper.find('.month-grid').exists()).toBe(false)
   })
+
+  it('opens the list from the name', async () => {
+    const { wrapper } = await mountWidget()
+
+    const rows = await openList(wrapper)
+
+    expect(nameButton(wrapper).attributes('aria-expanded'))
+      .toBe('true')
+    expect(wrapper.find('.month-grid').exists()).toBe(false)
+    expect(rows.map(row => row.get('.count').text()))
+      .toEqual(['1 / 30 days', '1 / 30 days'])
+  })
+
+  it('switches Habit and closes the list', async () => {
+    const { wrapper } = await mountWidget()
+    const rows = await openList(wrapper)
+
+    await rows[1].get('.choose').trigger('click')
+    await flushPromises()
+
+    expect(name(wrapper)).toBe('Running')
+    expect(localStorage.getItem(CURRENT_HABIT_KEY))
+      .toBe('2')
+    expect(label(wrapper, 5)).toBe('Nov 5 · Done')
+    expect(document.activeElement)
+      .toBe(nameButton(wrapper).element)
+  })
+
+  it.each([
+    ['the name', async (wrapper: VueWrapper) => {
+      await nameButton(wrapper).trigger('click')
+    }],
+    ['Escape', async (wrapper: VueWrapper) => {
+      await wrapper.get('.choose')
+        .trigger('keydown', { key: 'Escape' })
+    }],
+    ['a click outside', async () => {
+      document.body.click()
+    }]
+  ])('closes the list on %s', async (_, close) => {
+    const { wrapper } = await mountWidget()
+    await openList(wrapper)
+
+    await close(wrapper)
+    await flushPromises()
+
+    expect(wrapper.find('.habit-list').exists())
+      .toBe(false)
+    expect(nameButton(wrapper).attributes('aria-expanded'))
+      .toBe('false')
+    expect(document.activeElement)
+      .toBe(nameButton(wrapper).element)
+  })
+
+  it('switches to the oldest when the current one goes',
+    async () => {
+      localStorage.setItem(CURRENT_HABIT_KEY, '2')
+      const { wrapper, api } = await mountWidget()
+      const rows = await openList(wrapper)
+
+      await archiveRow(rows[1])
+
+      expect(api.habits.archive).toHaveBeenCalledWith(2)
+      expect(wrapper.findAll('.row')).toHaveLength(1)
+      expect(name(wrapper)).toBe('Reading')
+      expect(localStorage.getItem(CURRENT_HABIT_KEY))
+        .toBe('1')
+    })
+
+  it('shows the empty state when the last one goes',
+    async () => {
+      const { wrapper } = await mountWidget([HABITS[0]])
+      const rows = await openList(wrapper)
+
+      await archiveRow(rows[0])
+
+      expect(wrapper.text()).toContain('No habits yet')
+      expect(wrapper.find('.actions').exists()).toBe(false)
+    })
 
   it('says when the Habits can’t load', async () => {
     const api = stubBulletin()
