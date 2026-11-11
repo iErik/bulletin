@@ -9,6 +9,7 @@ import DateHeader from '@/components/DateHeader.vue'
 import SleepTimeline
   from '@/components/SleepTimeline.vue'
 import Widget from '@/components/Widget.vue'
+import WeightWidget from '@/components/WeightWidget.vue'
 
 // Loaded lazily so production builds drop it entirely.
 const DevThemeToggle = import.meta.env.DEV
@@ -29,7 +30,7 @@ const DevThemeToggle = import.meta.env.DEV
     <Widget class="expenses" title="Expenses" />
     <Widget class="mood" title="Mood" />
     <Widget class="habits" title="Habits" />
-    <Widget class="weight" title="Weight" />
+    <WeightWidget class="weight" />
     <DevThemeToggle v-if="DevThemeToggle" class="dev" />
   </main>
 </template>
