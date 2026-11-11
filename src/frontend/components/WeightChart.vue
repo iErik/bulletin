@@ -1,13 +1,16 @@
 <script setup lang="ts">
 // The Weight Widget's chart: Entries over 11 months
 // centred on `day`, as a glowing area under a monotone
-// curve. The glow marks `day` on the curve.
+// curve. The glow marks `day` on the curve. Hovering,
+// or ← and → while focused, snaps a dashed line and a
+// tooltip to the nearest Entry.
 import {
   computed,
   onBeforeUnmount,
   onMounted,
   ref,
-  useId
+  useId,
+  watch
 } from 'vue'
 import { getDaysInMonth } from 'date-fns'
 import { scaleLinear } from 'd3-scale'
@@ -19,12 +22,16 @@ import {
   chartWindow,
   curveAt,
   dayX,
+  nearestIndex,
   windowDays,
   yDomain,
   yTicks,
   type Point
 } from '@/weight/chart'
-import { formatAxisKg } from '@/weight/format'
+import {
+  formatAxisKg,
+  formatWeight
+} from '@/weight/format'
 
 const props = defineProps<{
   /** The Selected Date. */
@@ -38,6 +45,8 @@ const props = defineProps<{
 // Room for the axis labels, in pixels.
 const PAD = { top: 8, right: 4, bottom: 22, left: 44 }
 const GLOW_RADIUS = 64
+// Half the tooltip's height, to keep it inside.
+const TIP_HALF = 14
 
 const root = ref<HTMLElement>()
 const size = ref({ width: 375, height: 150 })
@@ -151,6 +160,83 @@ const label = computed(() => {
   return `Weight chart, ${from} to ${to}`
 })
 
+// The visible Entry the dashed line and tooltip snap
+// to: never an interpolated value.
+const active = ref<number>()
+const tip = computed(() => {
+  const p = active.value === undefined
+    ? undefined
+    : visible.value[active.value]
+  if (!p) return undefined
+  const left = x.value(p.x)
+  const at = y.value(p.y)
+  return {
+    left,
+    y: at,
+    top: Math.min(
+      Math.max(at, TIP_HALF),
+      size.value.height - TIP_HALF
+    ),
+    // Left of the line towards the right edge
+    flipped: left > size.value.width * 0.6,
+    text: `${formatDate(p.date, 'short')}, `
+      + formatWeight(p.entry.grams)
+  }
+})
+
+// Another month or a reload can drop its Entry.
+watch(visible, () => {
+  active.value = undefined
+})
+
+const hide = (): void => {
+  active.value = undefined
+}
+
+// No Entry in the window (-1) hides it.
+const snap = (index: number): void => {
+  active.value = index < 0 ? undefined : index
+}
+
+const onPointerMove = (event: PointerEvent): void => {
+  const { left } = (event.currentTarget as Element)
+    .getBoundingClientRect()
+  snap(nearestIndex(
+    visible.value,
+    x.value.invert(event.clientX - left)
+  ))
+}
+
+const STEPS: Readonly<Record<string, -1 | 1>> = {
+  ArrowLeft: -1,
+  ArrowRight: 1
+}
+
+// From the Entry nearest the Selected Date, then one
+// Entry at a time, stopping at the ends.
+const stepFrom = (step: -1 | 1): number =>
+  active.value === undefined
+    ? nearestIndex(
+        visible.value,
+        dayX(span.value, props.day)
+      )
+    : Math.min(
+        Math.max(active.value + step, 0),
+        visible.value.length - 1
+      )
+
+const onKeydown = (event: KeyboardEvent): void => {
+  if (event.metaKey || event.ctrlKey || event.altKey)
+    return
+  const step = STEPS[event.key]
+  if (step) snap(stepFrom(step))
+  else if (event.key === 'Escape' && tip.value) hide()
+  else return
+  event.preventDefault()
+  // Keeps the date header's ← → shortcuts out of it.
+  event.stopPropagation()
+}
+
 const ids = {
   clip: useId(),
   fill: useId(),
@@ -172,8 +258,13 @@ const insets = {
       class="plot"
       :width="size.width"
       :height="size.height"
+      tabindex="0"
       role="img"
       :aria-label="label"
+      @pointermove="onPointerMove"
+      @pointerleave="hide"
+      @keydown="onKeydown"
+      @blur="hide"
     >
       <defs>
         <clipPath :id="ids.clip">
@@ -246,7 +337,30 @@ const insets = {
           r="3"
         />
       </g>
+
+      <line
+        v-if="tip"
+        class="cursor"
+        :x1="tip.left"
+        :x2="tip.left"
+        :y1="plot.top"
+        :y2="tip.y"
+      />
     </svg>
+
+    <!-- Kept mounted, so screen readers announce it -->
+    <p
+      v-show="tip"
+      class="tooltip"
+      :class="{ '-flipped': tip?.flipped }"
+      role="status"
+      :style="tip && {
+        left: `${tip.left}px`,
+        top: `${tip.top}px`
+      }"
+    >
+      {{ tip?.text }}
+    </p>
 
     <p v-if="failed" class="notice" role="alert">
       Couldn't load your weight
@@ -268,6 +382,11 @@ const insets = {
 
   > .plot {
     display: block;
+    border-radius: $radius-small;
+    @include focus-ring;
+
+    // Inside, as the chart clips its overflow.
+    &:focus-visible { outline-offset: -2px; }
   }
 
   > .plot > .tick,
@@ -309,6 +428,32 @@ const insets = {
     fill: none;
     stroke: var(--color-text-muted);
     stroke-width: 1.5;
+  }
+
+  .cursor {
+    stroke: var(--color-text-muted);
+    stroke-dasharray: 4 3;
+    stroke-width: 1;
+  }
+
+  // Beside the Entry, as in Figma.
+  > .tooltip {
+    position: absolute;
+    z-index: 1;
+    padding: space(1) space(2);
+    font-size: rem(11px);
+    white-space: nowrap;
+    color: var(--color-text);
+    pointer-events: none;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: $radius-small;
+    transform: translate(#{space(2)}, -50%);
+
+    &.-flipped {
+      transform:
+        translate(calc(-100% - #{space(2)}), -50%);
+    }
   }
 
   > .notice {
