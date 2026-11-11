@@ -51,6 +51,21 @@ describe('format', () => {
   )
 
   it.each([
+    ['en-US', 'Sep', 'September 2026'],
+    ['pt-BR', 'set.', 'setembro de 2026']
+  ])(
+    'writes short months and months with years in %s',
+    async (tag, monthShort, monthYear) => {
+      const { formatDate } = await loadIn(tag)
+
+      expect(formatDate(SEP_14, 'monthShort'))
+        .toBe(monthShort)
+      expect(formatDate(SEP_14, 'monthYear'))
+        .toBe(monthYear)
+    }
+  )
+
+  it.each([
     ['en-US', '2:05 AM', '2:30 PM'],
     ['pt-BR', '2:05', '14:30']
   ])(
