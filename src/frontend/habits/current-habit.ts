@@ -7,7 +7,7 @@ import type { Habit } from '@shared/habits'
 export const CURRENT_HABIT_KEY = 'bulletin.habit'
 
 /** The stored id; `null` if absent or unreadable. */
-export const readCurrentHabit = (): number | null => {
+export const readCurrentHabitId = (): number | null => {
   try {
     const value = localStorage.getItem(CURRENT_HABIT_KEY)
     const id = Number(value)
@@ -17,7 +17,7 @@ export const readCurrentHabit = (): number | null => {
   }
 }
 
-export const writeCurrentHabit = (id: number): void => {
+export const writeCurrentHabitId = (id: number): void => {
   try {
     localStorage.setItem(CURRENT_HABIT_KEY, String(id))
   } catch {

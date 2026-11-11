@@ -209,6 +209,69 @@ describe('HabitsWidget', () => {
     expect(label(wrapper, 31)).toBe('Oct 31 · Done')
   })
 
+  it('ignores days till the month loads', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.habits.list)
+      .mockResolvedValue({ ok: true, value: HABITS })
+    vi.mocked(api.habits.listEntries)
+      .mockReturnValue(new Promise(() => {}))
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    widget = mount(HabitsWidget, {
+      attachTo: document.body,
+      global: { plugins: [pinia] }
+    })
+    await flushPromises()
+
+    await pill(widget, 4).trigger('click')
+
+    expect(label(widget, 4)).toBe('Nov 4 · Not done')
+    expect(api.habits.createEntry).not.toHaveBeenCalled()
+  })
+
+  it('keeps a day being saved through a reload',
+    async () => {
+      const { wrapper, api } = await mountWidget()
+      let saved = (): void => {}
+      vi.mocked(api.habits.createEntry).mockReturnValue(
+        new Promise(resolve => {
+          saved = () => resolve({ ok: true, value: {
+            habitId: 1, date: '2026-11-04'
+          } })
+        }))
+      const store = useSelectedDateStore()
+
+      await pill(wrapper, 4).trigger('click')
+      store.setDay(new Date(2026, 9, 15))
+      await flushPromises()
+      store.setDay(new Date(2026, 10, 9))
+      await flushPromises()
+      expect(label(wrapper, 4)).toBe('Nov 4 · Done')
+
+      saved()
+      await flushPromises()
+      expect(label(wrapper, 4)).toBe('Nov 4 · Done')
+    })
+
+  it('shows the month again after a failed load',
+    async () => {
+      const { wrapper, api } = await mountWidget()
+      const store = useSelectedDateStore()
+      vi.mocked(api.habits.listEntries)
+        .mockResolvedValueOnce(failWith)
+
+      store.setDay(new Date(2026, 9, 15))
+      await flushPromises()
+      expect(wrapper.get('[role="alert"]').text())
+        .toBe('Couldn’t load this month.')
+
+      store.setDay(new Date(2026, 10, 9))
+      await flushPromises()
+      expect(wrapper.find('[role="alert"]').exists())
+        .toBe(false)
+      expect(label(wrapper, 3)).toBe('Nov 3 · Done')
+    })
+
   it('shows the empty state without Habits', async () => {
     const { wrapper } = await mountWidget([])
 

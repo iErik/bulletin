@@ -14,8 +14,8 @@ import MonthGrid from '@/components/MonthGrid.vue'
 import Widget from '@/components/Widget.vue'
 import {
   pickCurrentHabit,
-  readCurrentHabit,
-  writeCurrentHabit
+  readCurrentHabitId,
+  writeCurrentHabitId
 } from '@/habits/current-habit'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
@@ -27,12 +27,12 @@ const month = computed(() => startOfMonth(store.day))
 
 /** The active Habits, oldest first; null till loaded. */
 const habits = shallowRef<Habit[] | null>(null)
-const remembered = readCurrentHabit()
+const remembered = readCurrentHabitId()
 const current = computed(() =>
   pickCurrentHabit(habits.value ?? [], remembered))
 
 watch(current, habit => {
-  if (habit) writeCurrentHabit(habit.id)
+  if (habit) writeCurrentHabitId(habit.id)
 })
 
 const entryKey = (entry: HabitEntry): string =>
@@ -40,14 +40,27 @@ const entryKey = (entry: HabitEntry): string =>
 
 /** The month's Habit Entries, by `entryKey`. */
 const done = shallowRef(new Set<string>())
-const failed = ref(false)
+/** The month `done` holds, as a time; null till then. */
+const loaded = ref<number | null>(null)
+const habitsFailed = ref(false)
+const entriesFailed = ref(false)
 const error = ref<string | null>(null)
+
+const loadError = computed(() =>
+  habitsFailed.value
+    ? 'Couldn’t load the Habits.'
+    : entriesFailed.value
+      ? 'Couldn’t load this month.'
+      : null)
+
+/** Days being written, by `entryKey`. */
+const writing = new Set<string>()
 
 const loadHabits = async (): Promise<void> => {
   const result = await window.bulletin.habits
     .list('active')
   if (result.ok) habits.value = result.value
-  else failed.value = true
+  else habitsFailed.value = true
 }
 
 // Bumped by each load, so a load it overtook is dropped.
@@ -61,20 +74,30 @@ const loadEntries = async (from: Date): Promise<void> => {
       to: localDate(endOfMonth(from))
     })
   if (asked !== generation) return
-  if (result.ok)
-    done.value = new Set(result.value.map(entryKey))
-  else failed.value = true
+  entriesFailed.value = !result.ok
+  if (!result.ok) return
+  const next = new Set(result.value.map(entryKey))
+  // Days still being written keep what the click set.
+  for (const key of writing) {
+    if (done.value.has(key)) next.add(key)
+    else next.delete(key)
+  }
+  done.value = next
+  loaded.value = from.getTime()
 }
 
-/** The current Habit's Entry for `day`, if any. */
-const entryOf = (day: Date): HabitEntry | null =>
+/**
+ * The Entry `day` would have for the current Habit,
+ * whether or not it exists; null without a Habit.
+ */
+const entryFor = (day: Date): HabitEntry | null =>
   current.value && {
     habitId: current.value.id,
     date: localDate(day)
   }
 
 const isDone = (day: Date): boolean => {
-  const entry = entryOf(day)
+  const entry = entryFor(day)
   return entry !== null && done.value.has(entryKey(entry))
 }
 
@@ -95,11 +118,10 @@ const setDone = (key: string, value: boolean): void => {
   done.value = next
 }
 
-/** Days being written, by `entryKey`. */
-const writing = new Set<string>()
-
 const toggle = async (day: Date): Promise<void> => {
-  const entry = entryOf(day)
+  // Till the month loads, every day reads not done.
+  if (loaded.value !== month.value.getTime()) return
+  const entry = entryFor(day)
   if (!entry) return
   const key = entryKey(entry)
   if (writing.has(key)) return
@@ -134,8 +156,8 @@ watch(
     <template v-if="current" #actions>
       <span class="name">{{ current.name }}</span>
     </template>
-    <p v-if="failed" class="message" role="alert">
-      Couldn’t load the Habits.
+    <p v-if="loadError" class="message" role="alert">
+      {{ loadError }}
     </p>
     <p v-else-if="habits && !current" class="message">
       No habits yet

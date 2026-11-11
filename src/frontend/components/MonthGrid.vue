@@ -44,28 +44,28 @@ const isFuture = (day: Date): boolean =>
 const isDisabled = (day: Date): boolean =>
   isFuture(day) || (props.disabled?.(day) ?? false)
 
-/** Last non-future day's day of month, or 0. */
-const lastActiveDay = computed(() => {
-  const days = weeks.value.flat()
+/** The enabled days' days of the month, in order. */
+const activeDays = computed(() =>
+  weeks.value.flat()
     .filter((day): day is Date =>
-      day !== null && !isFuture(day))
-  return days.at(-1)?.getDate() ?? 0
-})
+      day !== null && !isDisabled(day))
+    .map(day => day.getDate()))
 
 // Roving tabindex: the one Day Pill in the Tab order,
 // by day of the month.
 const focused = ref(1)
 
 watch(
-  [() => store.day, () => props.month],
+  [() => store.day, () => props.month, activeDays],
   () => {
     const start = isSameMonth(store.day, props.month)
       ? store.day.getDate()
       : 1
-    focused.value = Math.max(
-      1,
-      Math.min(start, lastActiveDay.value)
-    )
+    // The enabled day at or before it, else the first.
+    const days = activeDays.value
+    focused.value = days.findLast(d => d <= start)
+      ?? days[0]
+      ?? 1
   },
   { immediate: true }
 )
@@ -107,7 +107,7 @@ const onKeydown = (
   const step = STEPS[event.key]
   if (step !== undefined) {
     const target = day.getDate() + step
-    if (target >= 1 && target <= lastActiveDay.value) {
+    if (activeDays.value.includes(target)) {
       focused.value = target
       pills.get(target)?.focus()
     }

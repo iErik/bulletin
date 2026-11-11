@@ -252,6 +252,30 @@ describe('MonthGrid', () => {
       expect(focusedDay()).toBe(9)
     })
 
+    it('skips the days it’s told to', async () => {
+      const wrapper = mountGrid({
+        disabled: (day: Date) => day.getDate() < 8
+      })
+      pill(wrapper, 9).element.focus()
+
+      await press(pill(wrapper, 9), 'ArrowUp')
+      expect(focusedDay()).toBe(9)
+
+      await press(pill(wrapper, 9), 'ArrowLeft')
+      await press(pill(wrapper, 8), 'ArrowLeft')
+      expect(focusedDay()).toBe(8)
+    })
+
+    it('keeps the Tab stop off disabled days', () => {
+      const wrapper = mountGrid({
+        month: new Date(2026, 9, 1),
+        disabled: (day: Date) => day.getDate() < 5
+      })
+
+      expect(pill(wrapper, 5).attributes('tabindex'))
+        .toBe('0')
+    })
+
     it('stays inside the month', async () => {
       const wrapper = mountGrid()
       pill(wrapper, 1).element.focus()

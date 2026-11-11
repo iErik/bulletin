@@ -3,8 +3,8 @@ import type { Habit } from '@shared/habits'
 import {
   CURRENT_HABIT_KEY,
   pickCurrentHabit,
-  readCurrentHabit,
-  writeCurrentHabit
+  readCurrentHabitId,
+  writeCurrentHabitId
 } from './current-habit'
 
 const habit = (id: number): Habit => ({
@@ -17,11 +17,11 @@ const habit = (id: number): Habit => ({
 
 describe('current Habit', () => {
   it('remembers the id', () => {
-    writeCurrentHabit(7)
+    writeCurrentHabitId(7)
 
     expect(localStorage.getItem(CURRENT_HABIT_KEY))
       .toBe('7')
-    expect(readCurrentHabit()).toBe(7)
+    expect(readCurrentHabitId()).toBe(7)
   })
 
   it.each([null, '', 'abc', '1.5'])(
@@ -30,7 +30,7 @@ describe('current Habit', () => {
       if (value !== null)
         localStorage.setItem(CURRENT_HABIT_KEY, value)
 
-      expect(readCurrentHabit()).toBeNull()
+      expect(readCurrentHabitId()).toBeNull()
     }
   )
 
