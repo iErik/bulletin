@@ -42,10 +42,13 @@ describe('DashboardView', () => {
   ])(
     'places the %s Widget in its grid area',
     (area, title) => {
-      const widget = mountDashboard()
+      const cell = mountDashboard()
         .get(`.dashboard-view > .${area}`)
+      // The Mood Widget wraps its frame.
+      const widget = cell.classes('widget-frame')
+        ? cell
+        : cell.get('.widget-frame')
 
-      expect(widget.classes()).toContain('widget-frame')
       expect(widget.get('.title').text()).toBe(title)
     }
   )
