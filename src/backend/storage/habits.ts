@@ -9,8 +9,8 @@ import {
   type Habit,
   type HabitStatus
 } from '@shared/habits'
+import { localDate } from '@shared/dates'
 import type { Database } from './database'
-import { localDate } from './dates'
 import { parse, StorageFailure } from './errors'
 import { habits } from './schema'
 
