@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { HABIT_ICONS, type Habit } from '@shared/habits'
+import {
+  HABIT_ICONS,
+  type Habit,
+  type HabitEntry
+} from '@shared/habits'
 import type { Database } from './database'
 import {
   archiveHabit,
   createHabit,
+  createHabitEntry,
+  deleteHabitEntry,
+  listHabitEntries,
   listHabits,
   unarchiveHabit,
   updateHabit
@@ -23,6 +30,10 @@ const create = (value: unknown): Promise<Habit> =>
   createHabit(db, value, now)
 const read = (): Promise<Habit> =>
   create({ name: 'Read', icon: 'reading' })
+const mark = (value: unknown): Promise<HabitEntry> =>
+  createHabitEntry(db, value, now)
+const entries = (): Promise<HabitEntry[]> =>
+  listHabitEntries(db, { from: '2000-01-01', to: today })
 const failsWith = (
   promise: Promise<unknown>,
   error: object
@@ -65,6 +76,7 @@ describe('createHabit', () => {
 
   it('restores an archived Habit by name', async () => {
     const habit = await read()
+    await mark({ habitId: habit.id, date: today })
     await archiveHabit(db, habit.id)
 
     const restored = await createHabit(
@@ -79,6 +91,9 @@ describe('createHabit', () => {
     })
     expect(await listHabits(db, 'active'))
       .toEqual([restored])
+    expect(await entries()).toEqual([
+      { habitId: habit.id, date: today }
+    ])
   })
 
   it.each([
@@ -181,14 +196,18 @@ describe('updateHabit', () => {
 })
 
 describe('archiveHabit and unarchiveHabit', () => {
-  it('archive and restore a Habit', async () => {
+  it('archive and restore, keeping Entries', async () => {
     const habit = await read()
+    await mark({ habitId: habit.id, date: today })
 
     expect(await archiveHabit(db, habit.id))
       .toEqual({ ...habit, archived: true })
     expect(await listHabits(db, 'active')).toEqual([])
     expect(await unarchiveHabit(db, habit.id))
       .toEqual(habit)
+    expect(await entries()).toEqual([
+      { habitId: habit.id, date: today }
+    ])
   })
 
   it('reject a missing Habit', async () => {
@@ -201,17 +220,156 @@ describe('archiveHabit and unarchiveHabit', () => {
   })
 })
 
-describe('the habits table', () => {
-  it('backs up the name rules', () => {
+describe('createHabitEntry', () => {
+  it('marks a day done, once', async () => {
+    const { id } = await read()
+    const entry = { habitId: id, date: today }
+
+    expect(await mark(entry)).toEqual(entry)
+    expect(await mark(entry)).toEqual(entry)
+    expect(await entries()).toEqual([entry])
+  })
+
+  it('rejects an archived Habit', async () => {
+    const { id } = await read()
+    await archiveHabit(db, id)
+
+    await failsWith(mark({ habitId: id, date: today }), {
+      code: 'archived-habit'
+    })
+    expect(await entries()).toEqual([])
+  })
+
+  it('rejects a missing Habit', () =>
+    failsWith(mark({ habitId: 9, date: today }), {
+      code: 'not-found'
+    }))
+
+  it('rejects a future date', async () => {
+    const { id } = await read()
+
+    await failsWith(
+      mark({ habitId: id, date: '2026-06-16' }),
+      { code: 'future-date' }
+    )
+  })
+
+  it.each([
+    ['date', { habitId: 1, date: '2026-02-30' }],
+    ['habitId', { habitId: -1, date: today }],
+    ['habitId', { habitId: 1.5, date: today }],
+    ['habitId', { date: today }],
+    ['', { habitId: 1, date: today, done: true }]
+  ])('rejects an invalid %s: %j', (field, value) =>
+    failsWith(mark(value), {
+      code: 'invalid-payload',
+      field
+    }))
+})
+
+describe('listHabitEntries', () => {
+  it('lists the range by day, then Habit', async () => {
+    const may = new Date(2026, 4, 1)
+    const run = await createHabit(
+      db,
+      { name: 'Run', icon: 'running' },
+      may
+    )
+    const read2 = await createHabit(
+      db,
+      { name: 'Read', icon: 'reading' },
+      may
+    )
+    for (const [habit, date] of [
+      [read2, '2026-06-01'],
+      [run, '2026-06-01'],
+      [read2, '2026-05-31'],
+      [run, '2026-06-10'],
+      [read2, '2026-06-11']
+    ] as const) await mark({ habitId: habit.id, date })
+    await archiveHabit(db, run.id)
+
+    expect(await listHabitEntries(db, {
+      from: '2026-06-01',
+      to: '2026-06-10'
+    })).toEqual([
+      { habitId: run.id, date: '2026-06-01' },
+      { habitId: read2.id, date: '2026-06-01' },
+      { habitId: run.id, date: '2026-06-10' }
+    ])
+  })
+
+  it.each([
+    ['to', { from: today }],
+    ['to', { from: today, to: '2026-06-14' }]
+  ])('rejects an invalid %s: %j', (field, range) =>
+    failsWith(listHabitEntries(db, range), {
+      code: 'invalid-payload',
+      field
+    }))
+})
+
+describe('deleteHabitEntry', () => {
+  it('marks a day not done', async () => {
+    const { id } = await read()
+    await mark({ habitId: id, date: today })
+    await mark({ habitId: id, date: '2026-06-14' })
+
+    expect(await deleteHabitEntry(db, {
+      habitId: id,
+      date: today
+    })).toBeNull()
+    expect(await entries()).toEqual([
+      { habitId: id, date: '2026-06-14' }
+    ])
+  })
+
+  it("works on an archived Habit's Entry", async () => {
+    const { id } = await read()
+    await mark({ habitId: id, date: today })
+    await archiveHabit(db, id)
+
+    expect(await deleteHabitEntry(db, {
+      habitId: id,
+      date: today
+    })).toBeNull()
+  })
+
+  it('rejects a day without an Entry', () =>
+    failsWith(
+      deleteHabitEntry(db, { habitId: 1, date: today }),
+      { code: 'not-found' }
+    ))
+
+  it('rejects an invalid payload', () =>
+    failsWith(deleteHabitEntry(db, { habitId: 1 }), {
+      code: 'invalid-payload',
+      field: 'date'
+    }))
+})
+
+describe('the habit tables', () => {
+  it('back up the name and Entry rules', () => {
     const habit = db.$client.prepare(
       'INSERT INTO habits (name, icon, created)'
         + ' VALUES (?, ?, ?)'
     )
     habit.run('Read', 'reading', today)
+    const entry = db.$client.prepare(
+      'INSERT INTO habit_entries (habit_id, date)'
+        + ' VALUES (?, ?)'
+    )
+    entry.run(1, today)
 
     expect(() => habit.run('READ', 'reading', today))
       .toThrow(/UNIQUE constraint failed/)
     expect(() => habit.run(' ', 'reading', today))
       .toThrow(/CHECK constraint failed/)
+    expect(() => entry.run(1, today))
+      .toThrow(/UNIQUE constraint failed/)
+    expect(() => entry.run(1, null))
+      .toThrow(/NOT NULL constraint failed/)
+    expect(() => entry.run(null, today))
+      .toThrow(/NOT NULL constraint failed/)
   })
 })

@@ -52,7 +52,7 @@ const fakeMood = (): MoodApi => ({
 /**
  * No Habits yet: created and changed Habits are
  * Habit 1, created 2026-01-01, with the payload's
- * fields.
+ * fields. Its Entries work like `fakeWeight`.
  */
 const fakeHabits = (): HabitsApi => {
   const habit: Habit = {
@@ -67,7 +67,10 @@ const fakeHabits = (): HabitsApi => {
     create: echoes(changes => ({ ...habit, ...changes })),
     update: echoes(changes => ({ ...habit, ...changes })),
     archive: resolves({ ...habit, archived: true }),
-    unarchive: resolves(habit)
+    unarchive: resolves(habit),
+    listEntries: resolves([]),
+    createEntry: echoes(),
+    deleteEntry: resolves(null)
   }
 }
 
