@@ -8,7 +8,7 @@
 // the Selected Date's Day Pill is outlined.
 import { computed, nextTick, ref, watch } from 'vue'
 import { isAfter, isSameDay, isSameMonth } from 'date-fns'
-import { monthWeeks, weekdays } from '@/calendar/month'
+import { monthWeeks, weekdays } from '@/month-grid/layout'
 import { firstDayOfWeek, formatDate } from '@/locale/format'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
@@ -38,8 +38,8 @@ const headers = computed(() =>
 const isFuture = (day: Date): boolean =>
   isAfter(day, store.today)
 
-/** The last day of the month that isn't future. */
-const lastActive = computed(() => {
+/** Last non-future day's day of month, or 0. */
+const lastActiveDay = computed(() => {
   const days = weeks.value.flat()
     .filter((day): day is Date =>
       day !== null && !isFuture(day))
@@ -58,7 +58,7 @@ watch(
       : 1
     focused.value = Math.max(
       1,
-      Math.min(start, lastActive.value)
+      Math.min(start, lastActiveDay.value)
     )
   },
   { immediate: true }
@@ -101,7 +101,7 @@ const onKeydown = (
   const step = STEPS[event.key]
   if (step !== undefined) {
     const target = day.getDate() + step
-    if (target >= 1 && target <= lastActive.value) {
+    if (target >= 1 && target <= lastActiveDay.value) {
       focused.value = target
       pills.get(target)?.focus()
     }
@@ -215,8 +215,8 @@ const pillStyle = (
     color: var(--color-text-muted);
   }
 
-  // The placeholder, or the using Widget's colour with
-  // a glow, as in Figma.
+  // The placeholder, or the using Widget's colour. A
+  // Widget adds any further styling, such as a glow.
   > .pill {
     align-self: center;
     height: 100%;
@@ -226,7 +226,6 @@ const pillStyle = (
     border-radius: $radius-small;
     @include colour-transition(
       background-color,
-      box-shadow,
       opacity
     );
     @include focus-ring;
@@ -234,8 +233,6 @@ const pillStyle = (
 
   > .pill.-filled {
     background: var(--pill-colour);
-    box-shadow: 0 0 rem(9px)
-      color-mix(in sRGB, var(--pill-colour) 45%, transparent);
   }
 
   > .pill.-selected {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthWeeks, weekdays, type Slot } from './month'
+import { monthWeeks, weekdays, type Slot } from './layout'
 
 const SUNDAY = 0
 const MONDAY = 1
@@ -10,18 +10,24 @@ const numbers = (weeks: Slot[][]): number[][] =>
 
 // Months are 0-based.
 describe('monthWeeks', () => {
-  it('starts a month that begins on the first weekday', () => {
-    // June 1st, 2026 is a Monday.
-    const weeks = numbers(
-      monthWeeks(new Date(2026, 5, 17), MONDAY)
-    )
+  it.each([
+    [MONDAY, [1, 2, 3, 4, 5, 6, 7], [29, 30, 0, 0, 0, 0, 0]],
+    [SUNDAY, [0, 1, 2, 3, 4, 5, 6], [28, 29, 30, 0, 0, 0, 0]]
+  ])(
+    'lays out a month starting Monday (start %i)',
+    (start, first, last) => {
+      // June 1st, 2026 is a Monday.
+      const weeks = numbers(
+        monthWeeks(new Date(2026, 5, 17), start)
+      )
 
-    expect(weeks[0]).toEqual([1, 2, 3, 4, 5, 6, 7])
-    expect(weeks).toHaveLength(5)
-    expect(weeks[4]).toEqual([29, 30, 0, 0, 0, 0, 0])
-  })
+      expect(weeks).toHaveLength(5)
+      expect(weeks[0]).toEqual(first)
+      expect(weeks[4]).toEqual(last)
+    }
+  )
 
-  it('fits a 28-day month starting on Sunday in 4 rows', () => {
+  it('fits a Sunday-first February in 4 rows', () => {
     // February 1st, 2026 is a Sunday.
     const weeks = numbers(
       monthWeeks(new Date(2026, 1, 1), SUNDAY)

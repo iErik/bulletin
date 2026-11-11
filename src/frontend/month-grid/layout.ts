@@ -22,12 +22,12 @@ export const monthWeeks = (
   weekStartsOn: number
 ): Slot[][] => {
   const first = startOfMonth(month)
-  const lead = (first.getDay() - weekStartsOn + 7) % 7
+  const blanks = (first.getDay() - weekStartsOn + 7) % 7
   const length = getDaysInMonth(first)
-  const count = Math.ceil((lead + length) / 7) * 7
+  const count = Math.ceil((blanks + length) / 7) * 7
 
   const slots = Array.from({ length: count }, (_, i) => {
-    const day = i - lead
+    const day = i - blanks
     return day >= 0 && day < length
       ? addDays(first, day)
       : null

@@ -112,7 +112,7 @@ describe('MonthGrid', () => {
   })
 
   describe('states', () => {
-    it('dims days after today and ignores them', async () => {
+    it('dims and ignores days after today', async () => {
       const wrapper = mountGrid()
 
       await pill(wrapper, 10).trigger('click')
