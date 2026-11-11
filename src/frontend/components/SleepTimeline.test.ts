@@ -15,6 +15,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import type { SleepApi, SleepPeriod } from '@shared/sleep'
 import type { DateRange } from '@shared/storage'
+import { localDate } from '@shared/dates'
+import { rowOf } from '@/sleep/timeline'
 import { stubBulletin } from '@/testing/bulletin'
 import { useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
@@ -43,32 +45,31 @@ const fakeLayout = (): void => {
     })
 }
 
+/** Epoch ms of `hour`:`minute` on a 2026 day. */
 const at = (
   month: number,
   day: number,
-  h: number,
-  m = 0
-): number => new Date(2026, month, day, h, m).getTime()
+  hour: number,
+  minute = 0
+): number =>
+  new Date(2026, month, day, hour, minute).getTime()
 
-/** Sleep storage holding `periods`, listed by Head. */
-const storing = (
-  periods: SleepPeriod[]
-): SleepApi['list'] =>
-  vi.fn(async ({ from, to }: DateRange) => {
-    const key = (time: number): string => {
-      const d = new Date(time - 12 * 3_600_000)
-      return [
-        d.getFullYear(),
-        String(d.getMonth() + 1).padStart(2, '0'),
-        String(d.getDate()).padStart(2, '0')
-      ].join('-')
-    }
-    return {
+/**
+ * Stubs sleep storage holding `periods`, listed by the
+ * row of their Head, as the real storage does.
+ */
+const storing = (periods: SleepPeriod[]): void => {
+  const list: SleepApi['list'] = vi.fn(
+    async ({ from, to }: DateRange) => ({
       ok: true as const,
-      value: periods.filter(p =>
-        key(p.start) >= from && key(p.start) <= to)
-    }
-  })
+      value: periods.filter(p => {
+        const key = localDate(rowOf(p.start))
+        return key >= from && key <= to
+      })
+    })
+  )
+  stubBulletin({ sleep: { ...stubBulletin().sleep, list } })
+}
 
 let timeline: VueWrapper | undefined
 
@@ -149,11 +150,9 @@ describe('SleepTimeline', () => {
   })
 
   it("draws a Period in its Head's row", async () => {
-    const night = { id: 1, start: at(10, 8, 1), end: at(10, 8, 9) }
-    stubBulletin({ sleep: {
-      ...stubBulletin().sleep,
-      list: storing([night])
-    } })
+    storing([
+      { id: 1, start: at(10, 8, 1), end: at(10, 8, 9) }
+    ])
     await mountTimeline()
 
     const period = row('2026-11-07').get('.period')
@@ -170,14 +169,9 @@ describe('SleepTimeline', () => {
   })
 
   it('continues a Period past noon', async () => {
-    stubBulletin({ sleep: {
-      ...stubBulletin().sleep,
-      list: storing([{
-        id: 1,
-        start: at(10, 8, 6),
-        end: at(10, 8, 15)
-      }])
-    } })
+    storing([
+      { id: 1, start: at(10, 8, 6), end: at(10, 8, 15) }
+    ])
     await mountTimeline()
 
     expect(row('2026-11-07').get('.period').classes())
@@ -187,13 +181,10 @@ describe('SleepTimeline', () => {
   })
 
   it('totals several Periods in the caption', async () => {
-    stubBulletin({ sleep: {
-      ...stubBulletin().sleep,
-      list: storing([
-        { id: 1, start: at(10, 8, 0), end: at(10, 8, 6) },
-        { id: 2, start: at(10, 8, 7), end: at(10, 8, 9, 5) }
-      ])
-    } })
+    storing([
+      { id: 1, start: at(10, 8, 0), end: at(10, 8, 6) },
+      { id: 2, start: at(10, 8, 7), end: at(10, 8, 9, 5) }
+    ])
     await mountTimeline()
 
     expect(row('2026-11-07').get('.caption').text())
@@ -284,6 +275,21 @@ describe('SleepTimeline', () => {
     expect(calls.mock.calls.flat().map(r => r.to))
       .not.toContain('2026-12-31')
     expect(store.day).toEqual(new Date(2026, 9, 15))
+  })
+
+  it('adds the new month at midnight', async () => {
+    const { store } = await mountTimeline()
+    store.setDay(new Date(2026, 10, 5))
+    await settle()
+
+    // To 3:30 PM on December 1st, past 22 midnights.
+    await vi.advanceTimersByTimeAsync(22 * 86_400_000)
+    await settle()
+
+    expect(keys().at(-1)).toBe('2026-12-31')
+    expect(row('2026-12-01').classes())
+      .not.toContain('-future')
+    expect(store.day).toEqual(new Date(2026, 10, 5))
   })
 
   it('says so when storage fails', async () => {

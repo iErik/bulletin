@@ -109,6 +109,14 @@ const follow = async (day: Date): Promise<void> => {
 
 onMounted(() => follow(store.day))
 watch(() => store.day, follow)
+
+// A new month at midnight: a past Selected Date stays
+// put, so today's month is added here instead.
+watch(() => store.today, today => {
+  if (store.isToday || months.contains(today)) return
+  if (months.contains(addDays(today, -1)))
+    void months.loadLater()
+})
 </script>
 
 <template>
@@ -211,11 +219,16 @@ $dot: rem(7px);
     min-height: 0;
     overflow-y: auto;
     overflow-anchor: none; // We keep the position
+    scrollbar-gutter: stable;
   }
 
+  // The same gutter as the rows' scrollbar, so the
+  // ticks line up where scrollbars take up space.
   > .axis {
     @include columns;
 
+    overflow-y: hidden;
+    scrollbar-gutter: stable;
     padding-top: space(2);
     font-size: rem(11px);
     color: var(--color-text-muted);
