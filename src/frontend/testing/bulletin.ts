@@ -1,5 +1,6 @@
 import { vi, type Mock } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
+import type { Habit, HabitsApi } from '@shared/habits'
 import type { MoodApi } from '@shared/mood'
 import type {
   NewSleepPeriod,
@@ -49,6 +50,28 @@ const fakeMood = (): MoodApi => ({
 })
 
 /**
+ * No Habits yet: created and changed Habits are
+ * Habit 1, created 2026-01-01, with the payload's
+ * fields.
+ */
+const fakeHabits = (): HabitsApi => {
+  const habit: Habit = {
+    id: 1,
+    name: 'Habit',
+    icon: 'meditation',
+    created: '2026-01-01',
+    archived: false
+  }
+  return {
+    list: resolves([]),
+    create: echoes(changes => ({ ...habit, ...changes })),
+    update: echoes(changes => ({ ...habit, ...changes })),
+    archive: resolves({ ...habit, archived: true }),
+    unarchive: resolves(habit)
+  }
+}
+
+/**
  * A fake preload API for renderer tests. Typed against
  * `BulletinApi`, so it stops compiling when the bridge
  * changes: add new members here with test defaults.
@@ -61,6 +84,7 @@ export const fakeBulletin = (
   weight: fakeWeight(),
   sleep: fakeSleep(),
   mood: fakeMood(),
+  habits: fakeHabits(),
   ...overrides
 })
 

@@ -4,7 +4,8 @@ import {
   index,
   integer,
   sqliteTable,
-  text
+  text,
+  uniqueIndex
 } from 'drizzle-orm/sqlite-core'
 
 /** A Period's longest length: 24 hours, in ms. */
@@ -72,6 +73,33 @@ export const mood = sqliteTable(
     check(
       'mood_date_not_null',
       sql`${table.date} IS NOT NULL`
+    )
+  ]
+)
+
+/**
+ * Habits, archived rather than deleted. `created` is
+ * the local date it was created. Main checks that
+ * names are unique ignoring case; the index backs it
+ * up for ASCII letters.
+ */
+export const habits = sqliteTable(
+  'habits',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    name: text().notNull(),
+    icon: text().notNull(),
+    created: text().notNull(),
+    archived: integer({ mode: 'boolean' })
+      .notNull()
+      .default(false)
+  },
+  table => [
+    uniqueIndex('habits_name')
+      .on(sql`lower(${table.name})`),
+    check(
+      'habits_name_not_blank',
+      sql`trim(${table.name}) <> ''`
     )
   ]
 )

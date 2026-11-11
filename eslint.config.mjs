@@ -10,6 +10,8 @@ import vue from 'eslint-plugin-vue'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
+import iconButtonLabel from
+  './eslint-rules/icon-button-label.mjs'
 import importLength from './eslint-rules/import-length.mjs'
 
 // list-style checks these lists too, but it's only wanted
@@ -63,7 +65,12 @@ export default defineConfig(
     files: ['**/*.{ts,mts,js,mjs,vue}'],
     plugins: {
       '@stylistic': stylistic,
-      local: { rules: { 'import-length': importLength } }
+      local: {
+        rules: {
+          'icon-button-label': iconButtonLabel,
+          'import-length': importLength
+        }
+      }
     },
     rules: {
       ...stylistic.configs.customize({
@@ -163,7 +170,10 @@ export default defineConfig(
       }],
       'vue/html-closing-bracket-newline': ['error', {
         multiline: 'always'
-      }]
+      }],
+      // Icons are aria-hidden, so an icon-only button or
+      // link needs an aria-label
+      'local/icon-button-label': 'error'
     }
   },
 
