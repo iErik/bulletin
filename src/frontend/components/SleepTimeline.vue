@@ -71,8 +71,11 @@ const preview = computed(() =>
     : null
 )
 
+// A preview that hasn't left its Head yet breaks no
+// rule. Only a second click there is refused.
 const broken = computed(() =>
   preview.value
+  && preview.value.end > preview.value.start
   && breaks(preview.value, months.periods.value,
     Date.now()))
 

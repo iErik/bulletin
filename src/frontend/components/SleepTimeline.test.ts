@@ -403,6 +403,18 @@ describe('SleepTimeline, creating', () => {
       .toMatch(/^11:00\sPM to 1:00\sPM$/)
   })
 
+  it('keeps a new Head out of the red', async () => {
+    await mountTimeline()
+
+    await click('2026-11-07', x(23))
+    expect(row('2026-11-07').get('.-preview').classes())
+      .not.toContain('-broken')
+
+    await click('2026-11-07', x(23))
+    expect(hover('2026-11-07'))
+      .toBe('It ends where it starts')
+  })
+
   it('swaps clicks in reverse order', async () => {
     const api = stubBulletin()
     await mountTimeline()

@@ -15,18 +15,15 @@ const MINUTE = 60_000
 /** The longest Period, as storage allows. */
 const MAX_PERIOD = 24 * 60 * MINUTE
 
+const STEP = 5 * MINUTE
+
 /**
- * `time` to the nearest `minutes`. Epoch time and local
+ * `time` to the nearest 5 minutes. Epoch time and local
  * time differ by whole hours (or 30 or 45 minutes), so
  * this snaps on the local clock too.
  */
-export const snap = (
-  time: EpochMs,
-  minutes = 5
-): EpochMs => {
-  const step = minutes * MINUTE
-  return Math.round(time / step) * step
-}
+export const snap = (time: EpochMs): EpochMs =>
+  Math.round(time / STEP) * STEP
 
 /** The Period between two clicks, in either order. */
 export const ordered = (

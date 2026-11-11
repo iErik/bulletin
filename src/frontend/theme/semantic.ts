@@ -66,8 +66,8 @@ export const moodColour = (mood: Mood): string =>
 
 /**
  * Writes the semantic custom properties, the danger
- * colour and the Mood colours for a Palette onto `el` (the root element by
- * default).
+ * colour and the Mood colours for a Palette onto
+ * `el` (the root element by default).
  */
 export const applyPalette = (
   palette: Palette,
