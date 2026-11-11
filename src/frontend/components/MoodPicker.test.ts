@@ -157,10 +157,29 @@ describe('MoodPicker', () => {
     await button(wrapper, 'Clear mood').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[role="alert"]').exists())
-      .toBe(true)
+    expect(wrapper.get('[role="alert"]').text())
+      .toBe('Couldn’t clear the Mood. Try again.')
     expect(wrapper.emitted('saved')).toBeUndefined()
+    expect(wrapper.emitted('close')).toBeUndefined()
   })
+
+  it('keeps ✓ and the eraser enabled while writing',
+    async () => {
+      const api = stubBulletin()
+      vi.mocked(api.mood.create)
+        .mockReturnValue(new Promise(() => {}))
+      const wrapper = mountPicker()
+
+      await mood(wrapper, 'Angry').trigger('click')
+      await button(wrapper, 'Save mood').trigger('click')
+      await button(wrapper, 'Save mood').trigger('click')
+
+      expect(button(wrapper, 'Save mood')
+        .element.disabled).toBe(false)
+      expect(button(wrapper, 'Clear mood')
+        .element.disabled).toBe(false)
+      expect(api.mood.create).toHaveBeenCalledTimes(1)
+    })
 
   describe('keyboard', () => {
     it('closes on Escape without saving', async () => {

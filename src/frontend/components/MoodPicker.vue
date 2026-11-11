@@ -10,13 +10,13 @@ import {
   MOODS,
   type MoodKey
 } from '@shared/mood'
+import { localDate } from '@shared/dates'
 import type {
   StorageError,
   StorageResult
 } from '@shared/storage'
 import Icon from '@/components/Icon.vue'
 import Widget from '@/components/Widget.vue'
-import { toLocalDate } from '@/calendar/local-date'
 import { formatDate } from '@/locale/format'
 import { moodColour } from '@/theme/semantic'
 
@@ -47,43 +47,53 @@ const MESSAGES: Partial<
   'future-date': 'A future day can’t have a Mood.'
 }
 
-const run = async (
-  write: () => Promise<StorageResult<unknown>>,
-  mood: MoodKey | null
-): Promise<void> => {
-  if (busy.value) return
+/**
+ * Runs one storage call at a time. Resolves true on
+ * success; on failure shows the error, or `fallback`.
+ */
+const write = async (
+  call: () => Promise<StorageResult<unknown>>,
+  fallback: string
+): Promise<boolean> => {
+  if (busy.value) return false
   busy.value = true
   error.value = null
-  const result = await write()
+  const result = await call()
   busy.value = false
-  if (result.ok) {
-    emit('saved', mood)
-    return
-  }
-  error.value = MESSAGES[result.error.code]
-    ?? 'Couldn’t save the Mood. Try again.'
+  if (result.ok) return true
+  error.value = MESSAGES[result.error.code] ?? fallback
+  return false
 }
 
 /** ✓: saves a changed choice, else just closes. */
-const confirm = (): void => {
+const confirm = async (): Promise<void> => {
   const mood = selected.value
   if (mood === null || mood === props.current) {
     emit('close')
     return
   }
-  void run(() => window.bulletin.mood.create({
-    date: toLocalDate(props.date),
-    mood
-  }), mood)
+  const saved = await write(
+    () => window.bulletin.mood.create({
+      date: localDate(props.date),
+      mood
+    }),
+    'Couldn’t save the Mood. Try again.'
+  )
+  if (saved) emit('saved', mood)
 }
 
-const clear = (): void => {
-  void run(() => window.bulletin.mood.delete(
-    toLocalDate(props.date)
-  ), null)
+const clear = async (): Promise<void> => {
+  const cleared = await write(
+    () => window.bulletin.mood.delete(
+      localDate(props.date)
+    ),
+    'Couldn’t clear the Mood. Try again.'
+  )
+  if (cleared) emit('saved', null)
 }
 
-// Roving tabindex over the 2×3 Moods.
+// Roving tabindex over the Moods, COLUMNS per row.
+const COLUMNS = 2
 const options = ref<HTMLButtonElement[]>([])
 const focused = ref(Math.max(
   0,
@@ -93,8 +103,8 @@ const focused = ref(Math.max(
 const STEPS: Readonly<Record<string, number>> = {
   ArrowLeft: -1,
   ArrowRight: 1,
-  ArrowUp: -2,
-  ArrowDown: 2
+  ArrowUp: -COLUMNS,
+  ArrowDown: COLUMNS
 }
 
 const onOptionKeydown = (
@@ -123,7 +133,7 @@ const onKeydown = (event: KeyboardEvent): void => {
     event.key === 'Enter'
     && (event.metaKey || event.ctrlKey)
   )
-    confirm()
+    void confirm()
   else return
   event.preventDefault()
   event.stopPropagation()
@@ -145,7 +155,7 @@ onMounted(() => {
         class="action"
         type="button"
         aria-label="Clear mood"
-        :disabled="current === null || busy"
+        :disabled="current === null"
         @click="clear"
       >
         <Icon name="broom" />
@@ -154,7 +164,6 @@ onMounted(() => {
         class="action"
         type="button"
         aria-label="Save mood"
-        :disabled="busy"
         @click="confirm"
       >
         <Icon name="check" />
@@ -166,6 +175,7 @@ onMounted(() => {
     <div
       class="moods"
       role="radiogroup"
+      :style="{ '--columns': COLUMNS }"
       aria-labelledby="mood-picker-label"
     >
       <button
@@ -239,7 +249,8 @@ onMounted(() => {
 
   .moods {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+      repeat(var(--columns), minmax(0, 1fr));
     grid-auto-rows: minmax(rem(32px), rem(40px));
     gap: space(1);
   }

@@ -1,17 +1,7 @@
 import { z } from 'zod'
+import { localDate } from '@shared/dates'
 import type { DateRange } from '@shared/storage'
 import { StorageFailure } from './errors'
-
-const pad = (n: number): string =>
-  String(n).padStart(2, '0')
-
-/** `date`'s local calendar date, as `YYYY-MM-DD`. */
-export const localDate = (date: Date): string =>
-  [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate())
-  ].join('-')
 
 /** A real calendar date written as `YYYY-MM-DD`. */
 export const localDateSchema = z
