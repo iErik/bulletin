@@ -1,10 +1,18 @@
 import type { IpcMain } from 'electron'
 import type { StorageResult } from '@shared/storage'
+import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import type { Database } from './database'
 import { StorageFailure } from './errors'
+import {
+  archiveHabit,
+  createHabit,
+  listHabits,
+  unarchiveHabit,
+  updateHabit
+} from './habits'
 import {
   createMood,
   deleteMood,
@@ -62,7 +70,12 @@ const OPERATIONS: Record<string, Operation> = {
   [MOOD_CHANNELS.list]: listMood,
   [MOOD_CHANNELS.create]: (db, p) => createMood(db, p),
   [MOOD_CHANNELS.update]: (db, p) => updateMood(db, p),
-  [MOOD_CHANNELS.delete]: deleteMood
+  [MOOD_CHANNELS.delete]: deleteMood,
+  [HABITS_CHANNELS.list]: listHabits,
+  [HABITS_CHANNELS.create]: (db, p) => createHabit(db, p),
+  [HABITS_CHANNELS.update]: updateHabit,
+  [HABITS_CHANNELS.archive]: archiveHabit,
+  [HABITS_CHANNELS.unarchive]: unarchiveHabit
 }
 
 /** Registers one `ipc.handle` per storage operation. */
