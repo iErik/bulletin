@@ -141,6 +141,9 @@ const onKeydown = (event: KeyboardEvent): void => {
   event.stopPropagation()
 }
 
+// Lets the Mood Widget keep it open while writing.
+defineExpose({ busy })
+
 onMounted(() => {
   options.value[focused.value]?.focus()
 })
