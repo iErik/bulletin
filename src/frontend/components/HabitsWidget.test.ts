@@ -82,6 +82,14 @@ const openList = async (
   return wrapper.findAll<HTMLLIElement>('.row')
 }
 
+const archiveRow = async (
+  row: DOMWrapper<HTMLLIElement>
+): Promise<void> => {
+  await row.get('.controls > .control').trigger('click')
+  await row.get('.-confirm').trigger('click')
+  await flushPromises()
+}
+
 const failWith = {
   ok: false,
   error: { code: 'internal' }
@@ -346,6 +354,32 @@ describe('HabitsWidget', () => {
     expect(document.activeElement)
       .toBe(nameButton(wrapper).element)
   })
+
+  it('switches to the oldest when the current one goes',
+    async () => {
+      localStorage.setItem(CURRENT_HABIT_KEY, '2')
+      const { wrapper, api } = await mountWidget()
+      const rows = await openList(wrapper)
+
+      await archiveRow(rows[1])
+
+      expect(api.habits.archive).toHaveBeenCalledWith(2)
+      expect(wrapper.findAll('.row')).toHaveLength(1)
+      expect(name(wrapper)).toBe('Reading')
+      expect(localStorage.getItem(CURRENT_HABIT_KEY))
+        .toBe('1')
+    })
+
+  it('shows the empty state when the last one goes',
+    async () => {
+      const { wrapper } = await mountWidget([HABITS[0]])
+      const rows = await openList(wrapper)
+
+      await archiveRow(rows[0])
+
+      expect(wrapper.text()).toContain('No habits yet')
+      expect(wrapper.find('.actions').exists()).toBe(false)
+    })
 
   it('says when the Habits can’t load', async () => {
     const api = stubBulletin()

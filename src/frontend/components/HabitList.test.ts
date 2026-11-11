@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  flushPromises,
   mount,
   type DOMWrapper,
   type VueWrapper
 } from '@vue/test-utils'
+import type { BulletinApi } from '@shared/bridge'
 import type { Habit } from '@shared/habits'
 import { stubBulletin } from '@/testing/bulletin'
 import HabitList from './HabitList.vue'
@@ -25,18 +27,20 @@ const HABITS = [
   habit(3, 'Water')
 ]
 
-const mountList = (): VueWrapper => {
-  stubBulletin()
+const mountList = (
+  habits: Habit[] = HABITS
+): { wrapper: VueWrapper; api: BulletinApi } => {
+  const api = stubBulletin()
   list = mount(HabitList, {
     attachTo: document.body,
     props: {
-      habits: HABITS,
+      habits,
       current: 2,
       done: (one: Habit) => one.id * 4,
       days: 30
     }
   })
-  return list
+  return { wrapper: list, api }
 }
 
 const row = (
@@ -52,6 +56,14 @@ const choose = (
 ): DOMWrapper<HTMLButtonElement> =>
   row(wrapper, name).find<HTMLButtonElement>('.choose')
 
+const button = (
+  wrapper: VueWrapper,
+  label: string
+): DOMWrapper<HTMLButtonElement> =>
+  wrapper.find<HTMLButtonElement>(
+    `button[aria-label="${label}"]`
+  )
+
 const focusedName = (): string | undefined =>
   document.activeElement?.closest('.row')
     ?.querySelector('.name')?.textContent ?? undefined
@@ -64,7 +76,7 @@ describe('HabitList', () => {
   })
 
   it('shows each Habit with its icon and count', () => {
-    const wrapper = mountList()
+    const { wrapper } = mountList()
 
     const rows = wrapper.findAll('.row')
     expect(rows.map(item => item.get('.name').text()))
@@ -75,7 +87,7 @@ describe('HabitList', () => {
   })
 
   it('marks and focuses the current Habit', () => {
-    const wrapper = mountList()
+    const { wrapper } = mountList()
 
     expect(choose(wrapper, 'Running')
       .attributes('aria-current')).toBe('true')
@@ -87,7 +99,7 @@ describe('HabitList', () => {
   })
 
   it('chooses a Habit on click', async () => {
-    const wrapper = mountList()
+    const { wrapper } = mountList()
 
     await choose(wrapper, 'Water').trigger('click')
 
@@ -96,7 +108,7 @@ describe('HabitList', () => {
 
   it('moves between rows with the arrow keys',
     async () => {
-      const wrapper = mountList()
+      const { wrapper } = mountList()
       const press = (key: string): Promise<void> =>
         wrapper.get('.choose:focus').trigger('keydown', {
           key
@@ -114,7 +126,96 @@ describe('HabitList', () => {
       expect(focusedName()).toBe('Water')
       expect(choose(wrapper, 'Water')
         .attributes('tabindex')).toBe('0')
+      expect(button(wrapper, 'Delete Water')
+        .attributes('tabindex')).toBe('0')
       expect(choose(wrapper, 'Running')
         .attributes('tabindex')).toBe('-1')
     })
+
+  it('asks before deleting', async () => {
+    const { wrapper, api } = mountList()
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await flushPromises()
+
+    expect(row(wrapper, 'Reading').text())
+      .toContain('Delete?')
+    expect(document.activeElement)
+      .toBe(button(wrapper, 'Delete').element)
+    expect(api.habits.archive).not.toHaveBeenCalled()
+  })
+
+  it('archives on ✓', async () => {
+    const { wrapper, api } = mountList()
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await button(wrapper, 'Delete').trigger('click')
+    await flushPromises()
+
+    expect(api.habits.archive).toHaveBeenCalledWith(1)
+    expect(wrapper.emitted('archived'))
+      .toEqual([[HABITS[0]]])
+  })
+
+  it('keeps asking when archiving fails', async () => {
+    const { wrapper, api } = mountList()
+    vi.mocked(api.habits.archive).mockResolvedValue({
+      ok: false,
+      error: { code: 'internal' }
+    })
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await button(wrapper, 'Delete').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text())
+      .toBe('Couldn’t delete the Habit. Try again.')
+    expect(wrapper.text()).toContain('Delete?')
+    expect(document.activeElement)
+      .toBe(button(wrapper, 'Delete').element)
+    expect(wrapper.emitted('archived')).toBeUndefined()
+  })
+
+  it.each([
+    ['×', async (wrapper: VueWrapper) => {
+      await button(wrapper, 'Don’t delete')
+        .trigger('click')
+    }],
+    ['Escape', async (wrapper: VueWrapper) => {
+      await button(wrapper, 'Delete')
+        .trigger('keydown', { key: 'Escape' })
+    }],
+    ['focus elsewhere', async (wrapper: VueWrapper) => {
+      choose(wrapper, 'Water').element.focus()
+      await flushPromises()
+    }],
+    ['a click elsewhere', async () => {
+      document.body.dispatchEvent(
+        new Event('pointerdown', { bubbles: true }))
+      await flushPromises()
+    }]
+  ])('cancels on %s', async (_, cancel) => {
+    const { wrapper, api } = mountList()
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await flushPromises()
+    await cancel(wrapper)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Delete?')
+    expect(api.habits.archive).not.toHaveBeenCalled()
+  })
+
+  it('asks for one row at a time', async () => {
+    const { wrapper } = mountList()
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await flushPromises()
+    await button(wrapper, 'Delete Water').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.question')).toHaveLength(1)
+    expect(row(wrapper, 'Water').text())
+      .toContain('Delete?')
+  })
 })

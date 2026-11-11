@@ -2,9 +2,19 @@
 // The Habits Widget's Habit list: a row per active
 // Habit with its icon, name and "N / D days", and ✓ on
 // the current one. Clicking a row, or Enter on it,
-// emits `choose`. ↑ ↓ Home End move between rows.
-import { onMounted, ref, useTemplateRef } from 'vue'
-import { Check } from '@lucide/vue'
+// emits `choose`. "−" asks "Delete?"; ✓ archives the
+// Habit through storage and emits `archived`, while ×,
+// Escape, a click or focus elsewhere cancels. ↑ ↓ Home
+// End move between rows; Tab reaches a row's buttons.
+import {
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  useTemplateRef,
+  watch
+} from 'vue'
+import { Check, Minus, X } from '@lucide/vue'
 import type { Habit } from '@shared/habits'
 import { HABIT_ICON_COMPONENTS } from '@/habits/icons'
 import { formatNumber } from '@/locale/format'
@@ -22,6 +32,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   choose: [habit: Habit]
+  /** Storage has archived it. */
+  archived: [habit: Habit]
 }>()
 
 const count = (habit: Habit): string =>
@@ -66,19 +78,97 @@ const onRowKeydown = (
   focusRow(target(index, props.habits.length - 1))
 }
 
+/** The Habit asking "Delete?", if any. */
+const confirming = ref<number | null>(null)
+const busy = ref(false)
+const error = ref<string | null>(null)
+
+const askDelete = async (index: number): Promise<void> => {
+  if (busy.value) return
+  focused.value = index
+  confirming.value = props.habits[index].id
+  error.value = null
+  await nextTick()
+  find('.controls > .-confirm')?.focus()
+}
+
+const cancel = async (refocus: boolean): Promise<void> => {
+  if (busy.value || confirming.value === null) return
+  confirming.value = null
+  error.value = null
+  if (!refocus) return
+  await nextTick()
+  focusRow(focused.value)
+}
+
+const archive = async (index: number): Promise<void> => {
+  if (busy.value) return
+  const habit = props.habits[index]
+  busy.value = true
+  const result = await window.bulletin.habits
+    .archive(habit.id)
+  busy.value = false
+  if (!result.ok) {
+    error.value = 'Couldn’t delete the Habit. Try again.'
+    // Disabling ✓ dropped focus; give it back to retry.
+    await nextTick()
+    if (document.activeElement === document.body)
+      find('.controls > .-confirm')?.focus()
+    return
+  }
+  confirming.value = null
+  emit('archived', habit)
+  await nextTick()
+  focusRow(Math.min(index, props.habits.length - 1))
+}
+
+const onKeydown = (event: KeyboardEvent): void => {
+  if (event.key !== 'Escape' || confirming.value === null)
+    return
+  event.preventDefault()
+  event.stopPropagation()
+  void cancel(true)
+}
+
+// A click or focus outside the asking row cancels.
+const onOutside = (event: Event): void => {
+  const row = find(`[data-id="${confirming.value}"]`)
+  if (row && event.composedPath().includes(row)) return
+  void cancel(false)
+}
+
+const EVENTS = ['pointerdown', 'focusin'] as const
+
+watch(confirming, id => {
+  const method = id === null
+    ? 'removeEventListener'
+    : 'addEventListener'
+  for (const name of EVENTS)
+    document[method](name, onOutside)
+})
+
+onBeforeUnmount(() => {
+  for (const name of EVENTS)
+    document.removeEventListener(name, onOutside)
+})
+
+// Lets the Habits Widget keep it open while writing.
+defineExpose({ busy })
+
 onMounted(() => {
   focusRow(focused.value)
 })
 </script>
 
 <template>
-  <div ref="root" class="habit-list">
+  <div ref="root" class="habit-list" @keydown="onKeydown">
     <ul class="rows" aria-label="Habits">
       <li
         v-for="(habit, i) in habits"
         :key="habit.id"
         class="row"
         :class="{ '-current': habit.id === current }"
+        :data-id="habit.id"
         @keydown="onRowKeydown($event, i)"
       >
         <button
@@ -97,13 +187,53 @@ onMounted(() => {
           <span class="name">{{ habit.name }}</span>
           <span class="count">{{ count(habit) }}</span>
         </button>
-        <Check
-          v-if="habit.id === current"
-          class="icon -check"
-          aria-hidden="true"
-        />
+        <div
+          v-if="confirming === habit.id"
+          class="controls"
+          role="group"
+          :aria-label="`Delete ${habit.name}?`"
+        >
+          <span class="question">Delete?</span>
+          <button
+            class="control -confirm"
+            type="button"
+            aria-label="Delete"
+            :disabled="busy"
+            @click="archive(i)"
+          >
+            <Check class="icon" aria-hidden="true" />
+          </button>
+          <button
+            class="control"
+            type="button"
+            aria-label="Don’t delete"
+            :disabled="busy"
+            @click="cancel(true)"
+          >
+            <X class="icon" aria-hidden="true" />
+          </button>
+        </div>
+        <div v-else class="controls">
+          <button
+            class="control"
+            type="button"
+            :tabindex="i === focused ? 0 : -1"
+            :aria-label="`Delete ${habit.name}`"
+            @click="askDelete(i)"
+          >
+            <Minus class="icon" aria-hidden="true" />
+          </button>
+          <Check
+            v-if="habit.id === current"
+            class="icon -check"
+            aria-hidden="true"
+          />
+        </div>
       </li>
     </ul>
+    <p v-if="error" class="error" role="alert">
+      {{ error }}
+    </p>
   </div>
 </template>
 
@@ -111,7 +241,7 @@ onMounted(() => {
 @use '@/styles/utils' as *;
 
 // Figma's "Habit Selection": tinted rows, the current
-// one fainter with ✓ on the right.
+// one fainter, each with "−" and ✓ on the right.
 .habit-list {
   $tint: color-mix(
     in sRGB,
@@ -185,9 +315,45 @@ onMounted(() => {
     opacity: 0.6;
   }
 
+  .controls {
+    display: flex;
+    gap: rem(6px);
+    align-items: center;
+  }
+
+  .question {
+    font-size: rem(11px);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .control {
+    display: grid;
+    place-items: center;
+    width: rem(22px);
+    height: rem(22px);
+    border-radius: rem(6px);
+    @include focus-ring;
+
+    &:hover { background: $tint; }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+    }
+  }
+
   .icon {
     width: rem(16px);
     height: rem(16px);
+  }
+
+  .icon.-check { margin: 0 rem(3px); }
+
+  > .error {
+    margin-top: space(1);
+    font-size: rem(11px);
+    color: var(--color-text);
   }
 }
 </style>
