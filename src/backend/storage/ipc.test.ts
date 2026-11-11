@@ -113,6 +113,7 @@ describe('handleStorage', () => {
   it('handles every Habits channel', async () => {
     const call = serve()
     const habit = { name: 'Read', icon: 'reading' }
+    const entry = { habitId: 1, date: '2026-01-01' }
     const ok = (value: unknown): object =>
       ({ ok: true, value })
 
@@ -122,6 +123,14 @@ describe('handleStorage', () => {
       id: 1,
       icon: 'study'
     })).toMatchObject(ok({ icon: 'study' }))
+    expect(await call(HABITS_CHANNELS.createEntry, entry))
+      .toEqual(ok(entry))
+    expect(await call(HABITS_CHANNELS.listEntries, {
+      from: '2026-01-01',
+      to: '2026-01-01'
+    })).toEqual(ok([entry]))
+    expect(await call(HABITS_CHANNELS.deleteEntry, entry))
+      .toEqual(ok(null))
     expect(await call(HABITS_CHANNELS.archive, 1))
       .toMatchObject(ok({ archived: true }))
     expect(await call(HABITS_CHANNELS.unarchive, 1))

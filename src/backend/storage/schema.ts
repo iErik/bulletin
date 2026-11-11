@@ -3,6 +3,7 @@ import {
   check,
   index,
   integer,
+  primaryKey,
   sqliteTable,
   text,
   uniqueIndex
@@ -101,5 +102,25 @@ export const habits = sqliteTable(
       'habits_name_not_blank',
       sql`trim(${table.name}) <> ''`
     )
+  ]
+)
+
+/**
+ * Habit Entries: a row means the Habit was done that
+ * day (a local date), and no row means it wasn't.
+ * Foreign keys are off, so main checks the Habit
+ * exists. Unlike a single text primary key, these
+ * `notNull` columns keep `NOT NULL` in SQL, so no
+ * check is needed.
+ */
+export const habitEntries = sqliteTable(
+  'habit_entries',
+  {
+    habitId: integer('habit_id').notNull(),
+    date: text().notNull()
+  },
+  table => [
+    primaryKey({ columns: [table.habitId, table.date] }),
+    index('habit_entries_date').on(table.date)
   ]
 )
