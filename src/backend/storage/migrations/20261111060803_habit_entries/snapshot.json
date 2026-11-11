@@ -1,0 +1,289 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "a21ac65d-cfdf-46cc-8374-1456510ab63c",
+  "prevIds": [
+    "eaf54910-3ec9-46ae-8636-81dd47d69c31"
+  ],
+  "ddl": [
+    {
+      "name": "habit_entries",
+      "entityType": "tables"
+    },
+    {
+      "name": "habits",
+      "entityType": "tables"
+    },
+    {
+      "name": "mood",
+      "entityType": "tables"
+    },
+    {
+      "name": "sleep",
+      "entityType": "tables"
+    },
+    {
+      "name": "weight",
+      "entityType": "tables"
+    },
+    {
+      "table": "habit_entries",
+      "name": "habit_id",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_entries",
+      "name": "date",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "icon",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "created",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "archived",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "mood",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "mood",
+      "name": "mood",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "start",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "end",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "grams",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_entries",
+      "name": "habit_entries_date",
+      "columns": [
+        {
+          "value": "date",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "habits",
+      "name": "habits_name",
+      "columns": [
+        {
+          "value": "lower(\"name\")",
+          "isExpression": true
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_start",
+      "columns": [
+        {
+          "value": "start",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "habit_entries",
+      "name": "habit_entries_pk",
+      "columns": [
+        "habit_id",
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "habits",
+      "name": "habits_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "mood",
+      "name": "mood_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "habits",
+      "name": "habits_name_not_blank",
+      "value": "trim(\"name\") <> ''",
+      "entityType": "checks"
+    },
+    {
+      "table": "mood",
+      "name": "mood_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_end_after_start",
+      "value": "\"end\" > \"start\"",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_at_most_24_hours",
+      "value": "\"end\" - \"start\" <= 86400000",
+      "entityType": "checks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    }
+  ],
+  "renames": []
+}
