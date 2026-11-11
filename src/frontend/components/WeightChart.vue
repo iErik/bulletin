@@ -56,9 +56,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => observer?.disconnect())
 
-const frame = computed(() => chartWindow(props.day))
+const span = computed(() => chartWindow(props.day))
 const points = computed(() =>
-  chartPoints(frame.value, props.entries)
+  chartPoints(span.value, props.entries)
 )
 const visible = computed(() => points.value.visible)
 const domain = computed(() =>
@@ -74,7 +74,7 @@ const plot = computed(() => ({
 
 const x = computed(() =>
   scaleLinear()
-    .domain([0, windowDays(frame.value)])
+    .domain([0, windowDays(span.value)])
     .range([plot.value.left, plot.value.right])
 )
 const y = computed(() =>
@@ -94,8 +94,16 @@ const curve = computed(() => {
   }
 })
 
+// A lone Entry has no curve to draw, so it gets a dot.
+const dot = computed(() => {
+  const only = points.value.curve
+  return only.length === 1
+    ? { cx: x.value(only[0].x), cy: y.value(only[0].y) }
+    : undefined
+})
+
 const glow = computed(() => {
-  const at = dayX(frame.value, props.day)
+  const at = dayX(span.value, props.day)
   const kg = curveAt(points.value.curve, at)
   return kg === undefined
     ? undefined
@@ -103,14 +111,14 @@ const glow = computed(() => {
 })
 
 const months = computed(() =>
-  frame.value.months.map((month, i) => ({
+  span.value.months.map((month, i) => ({
     key: month.getTime(),
     label: i % 2 === 0
       ? formatDate(month, 'monthShort')
       : '',
     // Under the month's middle
     x: x.value(
-      dayX(frame.value, month) - 0.5
+      dayX(span.value, month) - 0.5
         + getDaysInMonth(month) / 2
     )
   }))
@@ -125,7 +133,7 @@ const ticks = computed(() =>
 )
 
 const label = computed(() => {
-  const { months } = frame.value
+  const { months } = span.value
   const from = formatDate(months[0], 'monthYear')
   const to = formatDate(
     months[months.length - 1],
@@ -141,10 +149,16 @@ const ids = {
   under: useId()
 }
 const url = (id: string): string => `url(#${id})`
+
+// Keeps the notices clear of the axis labels.
+const insets = {
+  '--pad-bottom': `${PAD.bottom}px`,
+  '--pad-left': `${PAD.left}px`
+}
 </script>
 
 <template>
-  <div ref="root" class="weight-chart">
+  <div ref="root" class="weight-chart" :style="insets">
     <svg
       class="plot"
       :width="size.width"
@@ -212,9 +226,16 @@ const url = (id: string): string => `url(#${id})`
           :cy="glow.cy"
           :r="GLOW_RADIUS"
           :fill="url(ids.glow)"
-          :clip-path="url(ids.under)"
+          :clip-path="dot ? undefined : url(ids.under)"
         />
         <path class="line" :d="curve.line" />
+        <circle
+          v-if="dot"
+          class="dot"
+          :cx="dot.cx"
+          :cy="dot.cy"
+          r="3"
+        />
       </g>
     </svg>
 
@@ -271,6 +292,10 @@ const url = (id: string): string => `url(#${id})`
     stop-opacity: 0;
   }
 
+  .dot {
+    fill: var(--color-text-muted);
+  }
+
   .line {
     fill: none;
     stroke: var(--color-text-muted);
@@ -279,7 +304,7 @@ const url = (id: string): string => `url(#${id})`
 
   > .notice {
     position: absolute;
-    inset: 0 0 rem(22px) rem(44px);
+    inset: 0 0 var(--pad-bottom) var(--pad-left);
     display: grid;
     place-items: center;
     font-size: rem(12px);

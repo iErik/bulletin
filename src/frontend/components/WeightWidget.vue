@@ -19,12 +19,12 @@ const failed = ref(false)
 const month = computed(() => format(store.day, 'yyyy-MM'))
 
 const load = async (): Promise<void> => {
-  const loading = month.value
+  const requestedMonth = month.value
   const result = await window.bulletin.weight.list(
     loadRange(chartWindow(store.day))
   )
   // A newer month's load has taken over.
-  if (loading !== month.value) return
+  if (requestedMonth !== month.value) return
   failed.value = !result.ok
   entries.value = result.ok ? result.value : []
 }

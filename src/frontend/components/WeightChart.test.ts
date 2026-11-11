@@ -83,6 +83,34 @@ describe('WeightChart', () => {
     })
   })
 
+  describe('a lone Entry', () => {
+    const LONE = [{ date: '2026-07-02', grams: 63_400 }]
+
+    it('is drawn as a dot', () => {
+      const chart = mountChart({ entries: LONE })
+
+      expect(chart.find('.notice').exists()).toBe(false)
+      // 63.4 kg on a 50 to 70 kg axis from y 128 to 8
+      expect(Number(chart.get('.dot').attributes('cy')))
+        .toBeCloseTo(47.6)
+    })
+
+    it('glows unclipped on its own day', () => {
+      const glow = mountChart({
+        entries: LONE,
+        day: new Date(2026, 6, 2)
+      }).get('.glow')
+
+      expect(Number(glow.attributes('cy')))
+        .toBeCloseTo(47.6)
+      expect(glow.attributes('clip-path')).toBeUndefined()
+    })
+  })
+
+  it('has no dot with a curve', () => {
+    expect(mountChart().find('.dot').exists()).toBe(false)
+  })
+
   it('shows the empty state with no Entries', () => {
     const chart = mountChart({ entries: [] })
 

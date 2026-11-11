@@ -6,7 +6,10 @@ import {
   type VueWrapper
 } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { stubBulletin } from '@/testing/bulletin'
+import {
+  fakeBulletin,
+  stubBulletin
+} from '@/testing/bulletin'
 import { useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
@@ -56,7 +59,7 @@ describe('WeightWidget', () => {
   it('draws the loaded Entries', async () => {
     stubBulletin({
       weight: {
-        ...stubBulletin().weight,
+        ...fakeBulletin().weight,
         list: async () => ({
           ok: true,
           value: [{ date: '2026-11-02', grams: 63_400 }]
@@ -66,15 +69,15 @@ describe('WeightWidget', () => {
     const widget = mountWidget()
     await flushPromises()
 
+    // A lone Entry has no curve, so it's drawn as a dot.
     expect(widget.find('.notice').exists()).toBe(false)
-    expect(widget.get('.line').attributes('d'))
-      .not.toBe('')
+    expect(widget.find('.dot').exists()).toBe(true)
   })
 
   it('says when loading fails', async () => {
     stubBulletin({
       weight: {
-        ...stubBulletin().weight,
+        ...fakeBulletin().weight,
         list: async () => ({
           ok: false,
           error: { code: 'internal' }
