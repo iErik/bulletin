@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { EXPENSES_CHANNELS } from '@shared/expenses'
 import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
@@ -137,6 +138,44 @@ describe('handleStorage', () => {
       .toMatchObject(ok({ archived: false }))
     expect(await call(HABITS_CHANNELS.list, 'active'))
       .toMatchObject(ok([{ id: 1 }]))
+  })
+
+  it('handles every Expenses channel', async () => {
+    const call = serve()
+    const transaction = {
+      date: '2026-01-01',
+      description: 'Salary',
+      categoryId: 1,
+      amount: 2_500_000
+    }
+    const ok = (value: unknown): object =>
+      ({ ok: true, value })
+
+    expect(await call(
+      EXPENSES_CHANNELS.create,
+      transaction
+    )).toEqual(ok({ id: 1, ...transaction }))
+    expect(await call(EXPENSES_CHANNELS.update, {
+      ...transaction,
+      id: 1,
+      amount: -3000
+    })).toMatchObject(ok({ amount: -3000 }))
+    expect(await call(EXPENSES_CHANNELS.list, {
+      from: '2026-01-01',
+      to: '2026-01-01'
+    })).toMatchObject(ok([{ id: 1 }]))
+    expect(await call(EXPENSES_CHANNELS.delete, 1))
+      .toEqual(ok(null))
+    expect(await call(
+      EXPENSES_CHANNELS.createCategory,
+      'Books'
+    )).toEqual(ok({ id: 10, name: 'Books' }))
+    expect(await call(
+      EXPENSES_CHANNELS.listCategories,
+      undefined
+    )).toMatchObject(ok(
+      expect.arrayContaining([{ id: 10, name: 'Books' }])
+    ))
   })
 
   it('rejects invalid payloads', async () => {

@@ -124,3 +124,45 @@ export const habitEntries = sqliteTable(
     index('habit_entries_date').on(table.date)
   ]
 )
+
+/**
+ * Categories, which group Transactions. They can't be
+ * renamed or deleted. Like Habits, main checks that
+ * names are unique ignoring case, and the index backs
+ * it up for ASCII letters.
+ */
+export const categories = sqliteTable(
+  'categories',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    name: text().notNull()
+  },
+  table => [
+    uniqueIndex('categories_name')
+      .on(sql`lower(${table.name})`),
+    check(
+      'categories_name_not_blank',
+      sql`trim(${table.name}) <> ''`
+    )
+  ]
+)
+
+/**
+ * Transactions: a local date, a description, a
+ * Category and a signed amount in centavos (positive
+ * is Income, negative an Expense). Foreign keys are
+ * off, so main checks the Category exists.
+ */
+export const transactions = sqliteTable(
+  'transactions',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    date: text().notNull(),
+    description: text().notNull(),
+    categoryId: integer('category_id').notNull(),
+    amount: integer().notNull()
+  },
+  table => [
+    index('transactions_date').on(table.date)
+  ]
+)
