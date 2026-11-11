@@ -51,6 +51,22 @@ describe('format', () => {
   )
 
   it.each([
+    ['en-US', '2:05 AM', '2:30 PM'],
+    ['pt-BR', '2:05', '14:30']
+  ])(
+    "writes times on %s's clock",
+    async (tag, night, afternoon) => {
+      const { formatTime } = await loadIn(tag)
+      const at = (h: number, m: number): Date =>
+        new Date(2026, 8, 1, h, m)
+
+      expect(plain(formatTime(at(2, 5)))).toBe(night)
+      expect(plain(formatTime(at(14, 30))))
+        .toBe(afternoon)
+    }
+  )
+
+  it.each([
     ['en-US', '24,000.5', 'R$24,000.00'],
     ['pt-BR', '24.000,5', 'R$ 24.000,00']
   ])(
