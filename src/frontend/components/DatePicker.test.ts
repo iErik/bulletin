@@ -18,8 +18,16 @@ const mountOn = (day?: Date): Mounted => {
   setActivePinia(pinia)
   const store = useSelectedDateStore()
   if (day) store.setDay(day)
-  const picker = mount(DatePicker, {
-    global: { plugins: [pinia] }
+  // Bound to the store, as the date header does.
+  const picker: VueWrapper = mount(DatePicker, {
+    props: {
+      modelValue: store.day,
+      max: store.today,
+      'onUpdate:modelValue': async (next: Date) => {
+        store.setDay(next)
+        await picker.setProps({ modelValue: store.day })
+      }
+    }
   })
   return { picker, store }
 }
@@ -129,6 +137,9 @@ describe('DatePicker', () => {
     await picker.get('[aria-label="Year"]')
       .setValue('2026')
 
+    // It clamps the day itself, not just the store.
+    expect(picker.emitted('update:modelValue'))
+      .toEqual([[today]])
     expect(store.day).toEqual(today)
   })
 })

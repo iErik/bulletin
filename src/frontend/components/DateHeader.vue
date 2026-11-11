@@ -99,7 +99,15 @@ onBeforeUnmount(() => {
       class="backdrop no-drag"
       @pointerdown="isOpen = false"
     />
-    <DatePicker v-if="isOpen" class="popover" />
+    <DatePicker
+      v-if="isOpen"
+      class="popover no-drag"
+      role="dialog"
+      aria-label="Choose a date"
+      :model-value="store.day"
+      :max="store.today"
+      @update:model-value="store.setDay"
+    />
   </div>
 </template>
 
@@ -154,13 +162,19 @@ onBeforeUnmount(() => {
     z-index: 9;
   }
 
-  // Below the header, over the page and the backdrop.
+  // A raised strip below the header, over the page
+  // and the backdrop.
   > .popover {
     position: absolute;
     top: calc(100% + #{space(1)});
     left: 50%;
     z-index: 10;
+    padding: space(1);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: $radius-medium;
     transform: translateX(-50%);
+    @include colour-transition;
   }
 }
 </style>
