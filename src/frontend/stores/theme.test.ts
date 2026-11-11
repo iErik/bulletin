@@ -24,6 +24,7 @@ vi.mock('@/theme/themes', async original => {
       background: shades,
       foreground: shades,
       accent: shades,
+      danger: colour,
       mood: Object.fromEntries(
         MOODS.map(mood => [mood.key, colour])
       ) as Palette['mood']

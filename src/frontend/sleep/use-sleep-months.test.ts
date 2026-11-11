@@ -152,4 +152,20 @@ describe('useSleepMonths', () => {
     expect(range(sleep))
       .toEqual(['2026-09-01', '2026-11-30'])
   })
+
+  it('adds a saved Period in order', async () => {
+    const api = stubBulletin()
+    const early = period(1, day(10, 2).getTime())
+    const late = period(2, day(10, 6).getTime())
+    vi.mocked(api.sleep.list)
+      .mockResolvedValueOnce(listing(early, late))
+    const sleep = months()
+    await sleep.reset(day(10, 9))
+
+    const added = period(3, day(10, 4).getTime())
+    sleep.add(added)
+
+    expect(sleep.periods.value)
+      .toEqual([early, added, late])
+  })
 })

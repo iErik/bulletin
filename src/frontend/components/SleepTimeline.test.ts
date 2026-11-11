@@ -307,3 +307,210 @@ describe('SleepTimeline', () => {
     expect(keys()).toHaveLength(61)
   })
 })
+
+// A track 288px wide: one pixel per 5 minutes, from
+// noon at 0 to noon the next day at 288.
+const fakeTrack = (): void => {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect')
+    .mockReturnValue(
+      { left: 0, width: 288 } as DOMRect
+    )
+}
+
+/** The x of `h:m` on a row, `h` counted from noon. */
+const x = (h: number, m = 0): number =>
+  ((h - 12) * 60 + m) / 5
+
+const track = (key: string): DOMWrapper<Element> =>
+  row(key).get('.track') as DOMWrapper<Element>
+
+const move = (
+  key: string,
+  clientX: number
+): Promise<void> =>
+  track(key).trigger('pointermove', { clientX })
+
+const click = async (
+  key: string,
+  clientX: number
+): Promise<void> => {
+  await move(key, clientX)
+  await track(key).trigger('click', { clientX })
+  await settle()
+}
+
+const hover = (key: string): string =>
+  row(key).get('.hover').text()
+
+describe('SleepTimeline, creating', () => {
+  useFixedToday()
+  beforeEach(() => {
+    fakeLayout()
+    fakeTrack()
+  })
+
+  afterEach(() => {
+    timeline?.unmount()
+    timeline = undefined
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  it('shows the snapped time on hover', async () => {
+    await mountTimeline()
+
+    await move('2026-11-07', x(23, 2))
+    expect(hover('2026-11-07')).toMatch(/^11:00\sPM$/)
+
+    await move('2026-11-07', x(24 + 6, 3))
+    expect(hover('2026-11-07')).toMatch(/^6:05\sAM$/)
+
+    await track('2026-11-07').trigger('pointerleave')
+    expect(row('2026-11-07').find('.hover').exists())
+      .toBe(false)
+  })
+
+  it('shows no time over a Period', async () => {
+    storing([
+      { id: 1, start: at(10, 8, 1), end: at(10, 8, 9) }
+    ])
+    await mountTimeline()
+
+    await move('2026-11-07', x(24 + 4))
+    expect(row('2026-11-07').find('.hover').exists())
+      .toBe(false)
+  })
+
+  it('creates a Period with two clicks', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+
+    await click('2026-11-07', x(23))
+    await move('2026-11-08', x(13))
+    expect(row('2026-11-07').get('.-preview').classes())
+      .toContain('-head')
+    expect(row('2026-11-08').get('.-preview').classes())
+      .toContain('-tail')
+
+    await click('2026-11-08', x(13))
+    expect(api.sleep.create).toHaveBeenCalledWith({
+      start: at(10, 7, 23),
+      end: at(10, 8, 13)
+    })
+    expect(timeline!.find('.-preview').exists())
+      .toBe(false)
+    expect(row('2026-11-07').get('.caption').text())
+      .toMatch(/^11:00\sPM to 1:00\sPM$/)
+  })
+
+  it('swaps clicks in reverse order', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+
+    await click('2026-11-08', x(13))
+    await click('2026-11-07', x(23))
+
+    expect(api.sleep.create).toHaveBeenCalledWith({
+      start: at(10, 7, 23),
+      end: at(10, 8, 13)
+    })
+  })
+
+  // Each from a Head on `from`'s row to `key`'s row.
+  it.each([
+    ['overlapping', '2026-11-06', '2026-11-06',
+      x(24 + 4), 'It overlaps another period'],
+    ['over 24 hours', '2026-11-05', '2026-11-06',
+      x(24 + 1), "It's over 24 hours"],
+    ['in the future', '2026-11-08', '2026-11-09',
+      x(16), 'It ends in the future']
+  ])('refuses a Period %s', async (
+    _,
+    from,
+    key,
+    end,
+    text
+  ) => {
+    // 1 AM to 9 AM on the 7th, in row "6th".
+    storing([
+      { id: 1, start: at(10, 7, 1), end: at(10, 7, 9) }
+    ])
+    await mountTimeline()
+    const api = window.bulletin
+
+    await click(from, x(23, 30))
+    await move(key, end)
+    expect(row(key).get('.-preview').classes())
+      .toContain('-broken')
+
+    await click(key, end)
+    expect(hover(key)).toBe(text)
+    expect(api.sleep.create).not.toHaveBeenCalled()
+    expect(timeline!.find('.-preview').exists())
+      .toBe(true)
+  })
+
+  it('refuses a Head in the future', async () => {
+    await mountTimeline()
+
+    await click('2026-11-09', x(16))
+
+    expect(hover('2026-11-09'))
+      .toBe('It ends in the future')
+    await move('2026-11-08', x(23))
+    expect(timeline!.find('.-preview').exists())
+      .toBe(false)
+  })
+
+  it('cancels on Escape', async () => {
+    await mountTimeline()
+    await click('2026-11-07', x(23))
+    await move('2026-11-07', x(24 + 2))
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape' })
+    )
+    await settle()
+
+    expect(timeline!.find('.-preview').exists())
+      .toBe(false)
+  })
+
+  it('cancels on a click outside', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+    await click('2026-11-07', x(23))
+    await move('2026-11-07', x(24 + 2))
+
+    document.body.click()
+    await settle()
+    await click('2026-11-07', x(24 + 3))
+
+    expect(timeline!.find('.-preview').exists())
+      .toBe(true)
+    expect(api.sleep.create).not.toHaveBeenCalled()
+  })
+
+  it('shows a storage error inline', async () => {
+    stubBulletin({ sleep: {
+      ...stubBulletin().sleep,
+      create: vi.fn().mockResolvedValue({
+        ok: false,
+        error: { code: 'overlapping-period' }
+      })
+    } })
+    await mountTimeline()
+
+    await click('2026-11-07', x(23))
+    await click('2026-11-07', x(24 + 6))
+
+    expect(timeline!.get('[role="alert"]').text()).toBe(
+      "Couldn't save the period. "
+      + 'It overlaps another period.'
+    )
+    expect(timeline!.find('.-preview').exists())
+      .toBe(false)
+    expect(row('2026-11-07').find('.period').exists())
+      .toBe(false)
+  })
+})

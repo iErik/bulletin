@@ -15,7 +15,7 @@ export type SemanticToken =
   | 'text-on-accent'
 
 type ScaleRef = readonly [
-  Exclude<keyof Palette, 'mood'>,
+  Exclude<keyof Palette, 'mood' | 'danger'>,
   Shade
 ]
 
@@ -65,8 +65,8 @@ export const moodColour = (mood: Mood): string =>
   `var(--color-${mood.colour})`
 
 /**
- * Writes the semantic custom properties and the Mood
- * colours for a Palette onto `el` (the root element by
+ * Writes the semantic custom properties, the danger
+ * colour and the Mood colours for a Palette onto `el` (the root element by
  * default).
  */
 export const applyPalette = (
@@ -81,6 +81,7 @@ export const applyPalette = (
       colour
     )
   }
+  el.style.setProperty('--color-danger', palette.danger)
   for (const mood of MOODS) {
     el.style.setProperty(
       `--color-${mood.colour}`,

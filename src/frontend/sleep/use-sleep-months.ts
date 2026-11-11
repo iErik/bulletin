@@ -43,6 +43,8 @@ export interface SleepMonths {
   loadEarlier(): Promise<boolean>
   /** Adds the month after, unless it's the future. */
   loadLater(): Promise<boolean>
+  /** Adds a Period just saved, in order. */
+  add(period: SleepPeriod): void
 }
 
 export const useSleepMonths = (
@@ -75,13 +77,18 @@ export const useSleepMonths = (
     if (asked !== generation) return false
     failed.value = !result.ok
     if (!result.ok) return false
+    merge(result.value)
+    return true
+  }
+
+  /** Adds or replaces `added`, by id, oldest first. */
+  const merge = (added: readonly SleepPeriod[]): void => {
     const byId = new Map(
       periods.value.map(p => [p.id, p])
     )
-    for (const p of result.value) byId.set(p.id, p)
+    for (const p of added) byId.set(p.id, p)
     periods.value = [...byId.values()]
       .sort((a, b) => a.start - b.start)
-    return true
   }
 
   const contains = (day: Date): boolean =>
@@ -133,6 +140,7 @@ export const useSleepMonths = (
     contains,
     reset,
     loadEarlier,
-    loadLater
+    loadLater,
+    add: period => merge([period])
   }
 }

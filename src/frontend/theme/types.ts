@@ -25,6 +25,8 @@ export interface Palette {
   readonly background: Scale
   readonly foreground: Scale
   readonly accent: Scale
+  /** Rule breaks and errors, as `--color-danger`. */
+  readonly danger: string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
 }

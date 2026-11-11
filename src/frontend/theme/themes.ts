@@ -33,6 +33,7 @@ export const defaultTheme: Theme = {
         '#6680ee', '#4f69dc', '#3f55bb', '#324497',
         '#263372'
       ]),
+      danger: '#f07a7c',
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -59,6 +60,7 @@ export const defaultTheme: Theme = {
         '#5876e9', '#3f5cd6', '#3249b2', '#283a8c',
         '#1e2c67'
       ]),
+      danger: '#c4373b',
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
       mood: {

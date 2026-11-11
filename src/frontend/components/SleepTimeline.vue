@@ -5,22 +5,43 @@
 // list nears either edge, and the Selected Date's row
 // scrolls to the centre whenever it changes. Scrolling
 // never changes the Selected Date.
+//
+// Creating a Period takes two clicks on empty parts of
+// the Timeline: the first sets the Head, then a preview
+// follows the pointer, and the second sets the Tail.
+// Escape or a click outside the Widget cancels.
 import {
   computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
+  ref,
+  shallowRef,
   useTemplateRef,
   watch
 } from 'vue'
 import { addDays, isAfter, isSameDay } from 'date-fns'
-import type { SleepPeriod } from '@shared/sleep'
+import type {
+  EpochMs,
+  NewSleepPeriod,
+  SleepPeriod
+} from '@shared/sleep'
 import { localDate } from '@shared/dates'
 import { formatDate, formatTime } from '@/locale/format'
 import { caption } from '@/sleep/caption'
 import {
+  breaks,
+  ordered,
+  periodAt,
+  reason,
+  snap
+} from '@/sleep/selection'
+import {
   axisTicks,
   rowOf,
-  segmentsOf
+  segmentsOf,
+  toFraction,
+  toTime
 } from '@/sleep/timeline'
 import { useSleepMonths } from '@/sleep/use-sleep-months'
 import { useSelectedDateStore }
@@ -29,6 +50,31 @@ import { useSelectedDateStore }
 const store = useSelectedDateStore()
 const months = useSleepMonths(() => store.today)
 const scroller = useTemplateRef<HTMLElement>('scroller')
+const root = useTemplateRef<HTMLElement>('root')
+
+/** The snapped time under the pointer, and its row. */
+const pointer = shallowRef<{
+  key: string
+  time: EpochMs
+} | null>(null)
+/** The first click's time, while selecting. */
+const head = ref<EpochMs | null>(null)
+/** Why the last click was refused, until it moves. */
+const refusal = ref<string | null>(null)
+const saveError = ref<string | null>(null)
+const saving = ref(false)
+
+/** The Period the selection would create. */
+const preview = computed(() =>
+  head.value !== null && pointer.value
+    ? ordered(head.value, pointer.value.time)
+    : null
+)
+
+const broken = computed(() =>
+  preview.value
+  && breaks(preview.value, months.periods.value,
+    Date.now()))
 
 // Each row's own Periods, by the row of their Head.
 const byRow = computed(() => {
@@ -48,14 +94,127 @@ const rows = computed(() =>
       .get(localDate(addDays(day, -1))) ?? []
     return {
       key,
+      day,
       label: formatDate(day, 'short'),
       caption: caption(own),
       segments: segmentsOf([...before, ...own], day),
+      preview: preview.value
+        ? segmentsOf([{ id: 0, ...preview.value }], day)
+        : [],
+      hover: hoverOn(key, day),
       future: isAfter(day, store.today),
       selected: isSameDay(day, store.day)
     }
   })
 )
+
+/**
+ * The time tooltip on `key`'s row: the pointer's time,
+ * or why its click was refused. None over a Period
+ * unless selecting, as that's not an empty part.
+ */
+function hoverOn(
+  key: string,
+  day: Date
+): { fraction: number; text: string } | null {
+  const at = pointer.value
+  if (at?.key !== key) return null
+  if (head.value === null
+    && periodAt(months.periods.value, at.time))
+    return null
+  return {
+    fraction: toFraction(at.time, day),
+    text: refusal.value ?? formatTime(new Date(at.time))
+  }
+}
+
+/** The snapped time under the pointer on `day`'s row. */
+const timeAt = (event: MouseEvent, day: Date): EpochMs => {
+  const track = event.currentTarget as HTMLElement
+  const box = track.getBoundingClientRect()
+  const x = (event.clientX - box.left) / box.width
+  return snap(toTime(Math.min(1, Math.max(0, x)), day))
+}
+
+const onMove = (
+  event: MouseEvent,
+  day: Date,
+  key: string
+): void => {
+  const time = timeAt(event, day)
+  if (pointer.value?.time !== time) refusal.value = null
+  pointer.value = { key, time }
+}
+
+// While selecting, the preview stays where the pointer
+// left it, so moving between rows doesn't flicker.
+const onLeave = (): void => {
+  if (head.value === null) pointer.value = null
+  refusal.value = null
+}
+
+const onClick = (event: MouseEvent, day: Date): void => {
+  if (saving.value) return
+  const time = timeAt(event, day)
+  if (head.value === null) {
+    if (periodAt(months.periods.value, time)) return
+    if (time > Date.now()) {
+      refusal.value = reason('future-date')
+      return
+    }
+    saveError.value = null
+    head.value = time
+    return
+  }
+  const period = ordered(head.value, time)
+  const rule = breaks(period, months.periods.value,
+    Date.now())
+  if (rule) refusal.value = reason(rule)
+  else void save(period)
+}
+
+const save = async (
+  period: NewSleepPeriod
+): Promise<void> => {
+  cancel()
+  saving.value = true
+  const result = await window.bulletin.sleep.create(period)
+  saving.value = false
+  if (result.ok) months.add(result.value)
+  else {
+    saveError.value = "Couldn't save the period. "
+      + `${reason(result.error.code)}.`
+  }
+}
+
+const cancel = (): void => {
+  head.value = null
+  pointer.value = null
+  refusal.value = null
+}
+
+const onKeydown = (event: Event): void => {
+  if ((event as KeyboardEvent).key === 'Escape') cancel()
+}
+
+// The Head's own click is inside, so it never cancels.
+const onDocumentClick = (event: Event): void => {
+  const widget = root.value?.closest('.widget-frame')
+    ?? root.value
+  if (widget && !event.composedPath().includes(widget))
+    cancel()
+}
+
+const listen = (on: boolean): void => {
+  const method = on
+    ? 'addEventListener'
+    : 'removeEventListener'
+  window[method]('keydown', onKeydown)
+  document[method]('click', onDocumentClick)
+}
+
+watch(() => head.value !== null, listen)
+onBeforeUnmount(() => listen(false))
 
 const ticks = axisTicks().map(tick => ({
   ...tick,
@@ -120,9 +279,12 @@ watch(() => store.today, today => {
 </script>
 
 <template>
-  <div class="sleep-timeline">
+  <div ref="root" class="sleep-timeline">
     <p v-if="months.failed.value" class="error" role="alert">
       Couldn't load sleep.
+    </p>
+    <p v-if="saveError" class="error" role="alert">
+      {{ saveError }}
     </p>
     <ol
       ref="scroller"
@@ -146,7 +308,12 @@ watch(() => store.today, today => {
             {{ row.caption }}
           </span>
         </div>
-        <div class="track">
+        <div
+          class="track"
+          @pointermove="onMove($event, row.day, row.key)"
+          @pointerleave="onLeave"
+          @click="onClick($event, row.day)"
+        >
           <div
             v-for="segment in row.segments"
             :key="segment.period.id"
@@ -160,6 +327,28 @@ watch(() => store.today, today => {
               width: percent(segment.to - segment.from)
             }"
           />
+          <div
+            v-for="(segment, i) in row.preview"
+            :key="`preview-${i}`"
+            class="period -preview"
+            :class="{
+              '-head': segment.head,
+              '-tail': segment.tail,
+              '-broken': broken
+            }"
+            :style="{
+              left: percent(segment.from),
+              width: percent(segment.to - segment.from)
+            }"
+          />
+          <span
+            v-if="row.hover"
+            class="hover"
+            aria-hidden="true"
+            :style="{ left: percent(row.hover.fraction) }"
+          >
+            {{ row.hover.text }}
+          </span>
         </div>
       </li>
     </ol>
@@ -266,7 +455,33 @@ $dot: rem(7px);
 
   > .track {
     height: 0;
+    cursor: crosshair;
     border-top: 1px dotted var(--color-border);
+  }
+
+  // The track is a line: this widens where it takes
+  // the pointer, and its events land on the track.
+  > .track::before {
+    position: absolute;
+    inset: rem(-12px) 0 auto;
+    height: rem(24px);
+    content: '';
+  }
+
+  // The time under the pointer, above the line, in
+  // inverted colours like the app's tooltips.
+  > .track > .hover {
+    position: absolute;
+    bottom: space(2);
+    z-index: 1;
+    padding: space(1) space(2);
+    font-size: rem(12px);
+    white-space: nowrap;
+    color: var(--color-surface);
+    background: var(--color-text);
+    border-radius: $radius-small;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
 
   // Centred on the dotted line above the track's box.
@@ -299,6 +514,16 @@ $dot: rem(7px);
   > .track > .period.-tail::after {
     right: 0;
     transform: translate(50%, -50%);
+  }
+
+  > .track > .period.-preview {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  // The glow, Head and Tail all take it from here.
+  > .track > .period.-broken {
+    --color-text: var(--color-danger);
   }
 
   &.-selected > .label {
