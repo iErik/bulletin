@@ -118,13 +118,30 @@ describe('MonthGrid', () => {
       await pill(wrapper, 10).trigger('click')
 
       expect(pill(wrapper, 9).classes())
-        .not.toContain('-future')
+        .not.toContain('-disabled')
       expect(pill(wrapper, 10).classes())
-        .toContain('-future')
+        .toContain('-disabled')
       expect(pill(wrapper, 10).attributes('aria-disabled'))
         .toBe('true')
       expect(wrapper.emitted('activate')).toBeUndefined()
     })
+
+    it('dims and ignores the days it’s told to',
+      async () => {
+        const wrapper = mountGrid({
+          disabled: (day: Date) => day.getDate() < 3
+        })
+
+        await pill(wrapper, 2).trigger('click')
+
+        expect(pill(wrapper, 2).classes())
+          .toContain('-disabled')
+        expect(pill(wrapper, 2).attributes('aria-disabled'))
+          .toBe('true')
+        expect(pill(wrapper, 3).classes())
+          .not.toContain('-disabled')
+        expect(wrapper.emitted('activate')).toBeUndefined()
+      })
 
     it('outlines only the Selected Date', async () => {
       const wrapper = mountGrid()
@@ -233,6 +250,30 @@ describe('MonthGrid', () => {
       await press(pill(wrapper, 9), 'ArrowDown')
 
       expect(focusedDay()).toBe(9)
+    })
+
+    it('skips the days it’s told to', async () => {
+      const wrapper = mountGrid({
+        disabled: (day: Date) => day.getDate() < 8
+      })
+      pill(wrapper, 9).element.focus()
+
+      await press(pill(wrapper, 9), 'ArrowUp')
+      expect(focusedDay()).toBe(9)
+
+      await press(pill(wrapper, 9), 'ArrowLeft')
+      await press(pill(wrapper, 8), 'ArrowLeft')
+      expect(focusedDay()).toBe(8)
+    })
+
+    it('keeps the Tab stop off disabled days', () => {
+      const wrapper = mountGrid({
+        month: new Date(2026, 9, 1),
+        disabled: (day: Date) => day.getDate() < 5
+      })
+
+      expect(pill(wrapper, 5).attributes('tabindex'))
+        .toBe('0')
     })
 
     it('stays inside the month', async () => {

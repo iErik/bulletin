@@ -4,8 +4,9 @@
 // The using Widget decides each Day Pill's colour and
 // label, and what activating it does; the grid owns
 // the layout, the states, the tooltip and the
-// keyboard. Days after today are dimmed and inert, and
-// the Selected Date's Day Pill is outlined.
+// keyboard. Days after today, and any the Widget
+// disables, are dimmed and inert; the Selected Date's
+// Day Pill is outlined.
 import { computed, nextTick, ref, watch } from 'vue'
 import { isAfter, isSameDay, isSameMonth } from 'date-fns'
 import { monthWeeks, weekdays } from '@/month-grid/layout'
@@ -20,6 +21,8 @@ const props = defineProps<{
   label: (day: Date) => string
   /** A CSS colour, or none for the placeholder. */
   colour?: (day: Date) => string | undefined
+  /** Days to dim and ignore, besides future ones. */
+  disabled?: (day: Date) => boolean
 }>()
 
 const emit = defineEmits<{ activate: [day: Date] }>()
@@ -38,28 +41,31 @@ const headers = computed(() =>
 const isFuture = (day: Date): boolean =>
   isAfter(day, store.today)
 
-/** Last non-future day's day of month, or 0. */
-const lastActiveDay = computed(() => {
-  const days = weeks.value.flat()
+const isDisabled = (day: Date): boolean =>
+  isFuture(day) || (props.disabled?.(day) ?? false)
+
+/** The enabled days' days of the month, in order. */
+const activeDays = computed(() =>
+  weeks.value.flat()
     .filter((day): day is Date =>
-      day !== null && !isFuture(day))
-  return days.at(-1)?.getDate() ?? 0
-})
+      day !== null && !isDisabled(day))
+    .map(day => day.getDate()))
 
 // Roving tabindex: the one Day Pill in the Tab order,
 // by day of the month.
 const focused = ref(1)
 
 watch(
-  [() => store.day, () => props.month],
+  [() => store.day, () => props.month, activeDays],
   () => {
     const start = isSameMonth(store.day, props.month)
       ? store.day.getDate()
       : 1
-    focused.value = Math.max(
-      1,
-      Math.min(start, lastActiveDay.value)
-    )
+    // The enabled day at or before it, else the first.
+    const days = activeDays.value
+    focused.value = days.findLast(d => d <= start)
+      ?? days[0]
+      ?? 1
   },
   { immediate: true }
 )
@@ -89,7 +95,7 @@ const STEPS: Readonly<Record<string, number>> = {
 }
 
 const activate = (day: Date): void => {
-  if (isFuture(day)) return
+  if (isDisabled(day)) return
   focused.value = day.getDate()
   emit('activate', day)
 }
@@ -101,7 +107,7 @@ const onKeydown = (
   const step = STEPS[event.key]
   if (step !== undefined) {
     const target = day.getDate() + step
-    if (target >= 1 && target <= lastActiveDay.value) {
+    if (activeDays.value.includes(target)) {
       focused.value = target
       pills.get(target)?.focus()
     }
@@ -166,12 +172,12 @@ const pillStyle = (
           :class="{
             '-filled': colour?.(day) !== undefined,
             '-selected': isSameDay(day, store.day),
-            '-future': isFuture(day)
+            '-disabled': isDisabled(day)
           }"
           type="button"
           :style="pillStyle(day)"
           :aria-label="describe(day)"
-          :aria-disabled="isFuture(day) || undefined"
+          :aria-disabled="isDisabled(day) || undefined"
           :tabindex="day.getDate() === focused ? 0 : -1"
           @click="activate(day)"
           @keydown="onKeydown($event, day)"
@@ -240,7 +246,7 @@ const pillStyle = (
     outline-offset: 2px;
   }
 
-  > .pill.-future {
+  > .pill.-disabled {
     cursor: default;
     opacity: 0.35;
   }
