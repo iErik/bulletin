@@ -1,4 +1,8 @@
-import type { LocalDate, StorageResult } from './storage'
+import type {
+  DateRange,
+  LocalDate,
+  StorageResult
+} from './storage'
 
 /**
  * The stable keys of the Habit icons. Storage keeps
@@ -41,7 +45,7 @@ export interface Habit {
   readonly icon: HabitIcon
   /** The day it was created. */
   readonly created: LocalDate
-  /** Archived Habits leave the list. */
+  /** Archived Habits leave the list, keeping Entries. */
   readonly archived: boolean
 }
 
@@ -60,6 +64,12 @@ export interface HabitChanges {
 
 /** Which Habits to list. */
 export type HabitStatus = 'active' | 'archived'
+
+/** A Habit Entry: the Habit was done on that day. */
+export interface HabitEntry {
+  readonly habitId: number
+  readonly date: LocalDate
+}
 
 /** `window.bulletin.habits`. */
 export interface HabitsApi {
@@ -80,6 +90,24 @@ export interface HabitsApi {
   archive(id: number): Promise<StorageResult<Habit>>
   /** Unarchives a Habit by its `id`. */
   unarchive(id: number): Promise<StorageResult<Habit>>
+  /**
+   * Every Habit's Entries in the range, archived ones
+   * included, by day then Habit.
+   */
+  listEntries(range: DateRange): Promise<
+    StorageResult<HabitEntry[]>
+  >
+  /**
+   * Marks an active Habit done on a day. If it already
+   * is, returns the existing Entry.
+   */
+  createEntry(entry: HabitEntry): Promise<
+    StorageResult<HabitEntry>
+  >
+  /** Marks a Habit not done on a day. */
+  deleteEntry(entry: HabitEntry): Promise<
+    StorageResult<null>
+  >
 }
 
 /** IPC channel per `HabitsApi` method. */
@@ -88,5 +116,8 @@ export const HABITS_CHANNELS = {
   create: 'habits:create',
   update: 'habits:update',
   archive: 'habits:archive',
-  unarchive: 'habits:unarchive'
+  unarchive: 'habits:unarchive',
+  listEntries: 'habits:list-entries',
+  createEntry: 'habits:create-entry',
+  deleteEntry: 'habits:delete-entry'
 } as const satisfies Record<keyof HabitsApi, string>
