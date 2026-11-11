@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SleepPeriod } from '@shared/sleep'
 import {
   breaks,
+  drag,
   ordered,
   periodAt,
   reason,
@@ -62,6 +63,61 @@ describe('selection', () => {
   ])('checks %s', (_, start, end, rule) => {
     expect(breaks({ start, end }, periods, now))
       .toBe(rule)
+  })
+
+  describe('dragging', () => {
+    // Between the Period on the 8th and one at noon.
+    const own = { id: 2, start: at(8, 10), end: at(8, 11) }
+    const all = [
+      ...periods,
+      own,
+      { id: 3, start: at(8, 12), end: at(8, 13) }
+    ]
+    const moved = (
+      end: 'start' | 'end',
+      time: number
+    ): SleepPeriod => drag(own, end, time, all, now)
+
+    it('snaps the moved end', () => {
+      expect(moved('start', at(8, 9, 32)))
+        .toEqual({ ...own, start: at(8, 9, 30) })
+      expect(moved('end', at(8, 11, 58)))
+        .toEqual({ ...own, end: at(8, 12) })
+    })
+
+    it('stops at the neighbours', () => {
+      expect(moved('start', at(8, 3)).start)
+        .toBe(at(8, 9))
+      expect(moved('end', at(8, 14)).end)
+        .toBe(at(8, 12))
+    })
+
+    it("doesn't cross the other end", () => {
+      expect(moved('start', at(8, 12)).start)
+        .toBe(at(8, 10, 55))
+      expect(moved('end', at(8, 9)).end)
+        .toBe(at(8, 10, 5))
+    })
+
+    it('stays within 24 hours and the past', () => {
+      const alone = {
+        id: 4,
+        start: at(9, 10),
+        end: at(9, 11)
+      }
+      const earlier = {
+        ...alone,
+        start: at(8, 10),
+        end: at(8, 11)
+      }
+
+      expect(drag(alone, 'start', at(7, 1), [], now).start)
+        .toBe(at(8, 11))
+      expect(drag(alone, 'end', at(9, 20), [], now).end)
+        .toBe(at(9, 15, 30))
+      expect(drag(earlier, 'end', at(9, 14), [], now).end)
+        .toBe(at(9, 10))
+    })
   })
 
   it('says why in a few words', () => {

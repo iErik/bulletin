@@ -10,6 +10,10 @@
 // the Timeline: the first sets the Head, then a preview
 // follows the pointer, and the second sets the Tail.
 // Escape or a click outside the Widget cancels.
+//
+// Dragging a Period's Head or Tail moves that end,
+// snapped and clamped by the rules, and saves it on
+// release. A storage error puts it back.
 import {
   computed,
   nextTick,
@@ -31,10 +35,12 @@ import { formatDate, formatTime } from '@/locale/format'
 import { caption } from '@/sleep/caption'
 import {
   breaks,
+  drag,
   ordered,
   periodAt,
   reason,
-  snap
+  snap,
+  type End
 } from '@/sleep/selection'
 import {
   axisTicks,
@@ -63,6 +69,39 @@ const head = ref<EpochMs | null>(null)
 const refusal = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saving = ref(false)
+/**
+ * The Period being dragged, which end, and the time
+ * under the pointer when it was pressed.
+ */
+const grabbed = shallowRef<{
+  saved: SleepPeriod
+  end: End
+  from: EpochMs | null
+} | null>(null)
+
+// The end moves by as much as the pointer has since
+// the press, so pressing off its centre doesn't jump
+// it, and a press without moving changes nothing.
+const moved = computed(() => {
+  const at = pointer.value
+  if (!grabbed.value || !at) return null
+  const { saved, end, from } = grabbed.value
+  if (at.time === from) return null
+  const to = from === null
+    ? at.time
+    : saved[end] + at.time - from
+  return drag(saved, end, to,
+    months.periods.value, Date.now())
+})
+
+/** The Periods drawn, with the dragged one moved. */
+const periods = computed(() => {
+  const changed = moved.value
+  const all = months.periods.value
+  return changed
+    ? all.map(p => p.id === changed.id ? changed : p)
+    : all
+})
 
 /** The Period the selection would create. */
 const preview = computed(() =>
@@ -82,7 +121,7 @@ const broken = computed(() =>
 // Each row's own Periods, by the row of their Head.
 const byRow = computed(() => {
   const rows = new Map<string, SleepPeriod[]>()
-  for (const period of months.periods.value) {
+  for (const period of periods.value) {
     const key = localDate(rowOf(period.start))
     rows.set(key, [...rows.get(key) ?? [], period])
   }
@@ -113,16 +152,20 @@ const rows = computed(() =>
 
 /**
  * The time tooltip on `key`'s row: the pointer's time,
- * or why its click was refused. None over a Period
- * unless selecting, as that's not an empty part.
+ * the dragged end's, or why a click was refused. None
+ * over a Period unless selecting, as that's not an
+ * empty part.
  */
 function hoverOn(
   key: string,
   day: Date
 ): { fraction: number; text: string } | null {
-  const at = pointer.value
+  const at = moved.value && grabbed.value
+    ? dragged(moved.value[grabbed.value.end],
+        grabbed.value.end)
+    : pointer.value
   if (at?.key !== key) return null
-  if (head.value === null
+  if (head.value === null && !moved.value
     && periodAt(months.periods.value, at.time))
     return null
   return {
@@ -130,6 +173,16 @@ function hoverOn(
     text: refusal.value ?? formatTime(new Date(at.time))
   }
 }
+
+// A dragged end's time, on the row it's drawn on. A
+// Tail on noon ends the row before.
+const dragged = (time: EpochMs, end: End): {
+  key: string
+  time: EpochMs
+} => ({
+  key: localDate(rowOf(end === 'end' ? time - 1 : time)),
+  time
+})
 
 /** The snapped time under the pointer on `day`'s row. */
 const timeAt = (event: MouseEvent, day: Date): EpochMs => {
@@ -149,15 +202,20 @@ const onMove = (
   pointer.value = { key, time }
 }
 
-// While selecting, the preview stays where the pointer
-// left it, so moving between rows doesn't flicker.
+// While selecting or dragging, the Period stays where
+// the pointer left it, so moving between rows doesn't
+// flicker.
 const onLeave = (): void => {
-  if (head.value === null) pointer.value = null
+  if (head.value === null && !grabbed.value)
+    pointer.value = null
   refusal.value = null
 }
 
+// The click ending a drag isn't a click on the track.
+let released = false
+
 const onClick = (event: MouseEvent, day: Date): void => {
-  if (saving.value) return
+  if (saving.value || released) return
   const time = timeAt(event, day)
   if (head.value === null) {
     if (periodAt(months.periods.value, time)) return
@@ -190,6 +248,55 @@ const save = async (
   }
 }
 
+const grab = (period: SleepPeriod, end: End): void => {
+  if (saving.value || head.value !== null) return
+  saveError.value = null
+  grabbed.value = {
+    saved: period,
+    end,
+    from: pointer.value?.time ?? null
+  }
+  window.addEventListener('pointerup', release)
+  window.addEventListener('pointercancel', drop)
+}
+
+const drop = (): void => {
+  grabbed.value = null
+  pointer.value = null
+  window.removeEventListener('pointerup', release)
+  window.removeEventListener('pointercancel', drop)
+}
+
+const release = (): void => {
+  const saved = grabbed.value?.saved
+  const period = moved.value
+  drop()
+  released = true
+  setTimeout(() => {
+    released = false
+  })
+  if (saved && period) void move(saved, period)
+}
+
+/** Saves the moved Period, or puts it back. */
+const move = async (
+  saved: SleepPeriod,
+  period: SleepPeriod
+): Promise<void> => {
+  if (period.start === saved.start
+    && period.end === saved.end) return
+  months.add(period)
+  saving.value = true
+  const result = await window.bulletin.sleep.update(period)
+  saving.value = false
+  if (result.ok) months.add(result.value)
+  else {
+    months.add(saved)
+    saveError.value = "Couldn't move the period. "
+      + `${reason(result.error.code)}.`
+  }
+}
+
 const cancel = (): void => {
   head.value = null
   pointer.value = null
@@ -217,7 +324,10 @@ const listen = (on: boolean): void => {
 }
 
 watch(() => head.value !== null, listen)
-onBeforeUnmount(() => listen(false))
+onBeforeUnmount(() => {
+  listen(false)
+  drop()
+})
 
 const ticks = axisTicks().map(tick => ({
   ...tick,
@@ -329,7 +439,20 @@ watch(() => store.today, today => {
               left: percent(segment.from),
               width: percent(segment.to - segment.from)
             }"
-          />
+          >
+            <span
+              v-if="segment.head"
+              class="handle -start"
+              @pointerdown.stop="
+                grab(segment.period, 'start')"
+            />
+            <span
+              v-if="segment.tail"
+              class="handle -end"
+              @pointerdown.stop="
+                grab(segment.period, 'end')"
+            />
+          </div>
           <div
             v-for="(segment, i) in row.preview"
             :key="`preview-${i}`"
@@ -517,6 +640,25 @@ $dot: rem(7px);
   > .track > .period.-tail::after {
     right: 0;
     transform: translate(50%, -50%);
+  }
+
+  // A wider target for dragging the Head or Tail.
+  > .track > .period > .handle {
+    position: absolute;
+    top: 50%;
+    width: rem(14px);
+    height: rem(14px);
+    cursor: ew-resize;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  > .track > .period > .handle.-start {
+    left: 0;
+  }
+
+  > .track > .period > .handle.-end {
+    left: 100%;
   }
 
   > .track > .period.-preview {

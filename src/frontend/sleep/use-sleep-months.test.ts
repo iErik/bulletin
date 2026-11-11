@@ -168,4 +168,18 @@ describe('useSleepMonths', () => {
     expect(sleep.periods.value)
       .toEqual([early, added, late])
   })
+
+  it('replaces a moved Period by its id', async () => {
+    const api = stubBulletin()
+    const first = period(1, day(10, 2).getTime())
+    vi.mocked(api.sleep.list)
+      .mockResolvedValueOnce(listing(first))
+    const sleep = months()
+    await sleep.reset(day(10, 9))
+
+    const moved = { ...first, end: first.end + 60_000 }
+    sleep.add(moved)
+
+    expect(sleep.periods.value).toEqual([moved])
+  })
 })
