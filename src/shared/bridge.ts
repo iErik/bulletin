@@ -38,7 +38,10 @@ export interface BulletinApi {
   readonly mood: MoodApi
   /** The Habits Tracker's Habits and Entries. */
   readonly habits: HabitsApi
-  /** The Expenses Tracker's Transactions and Categories. */
+  /**
+   * The Expenses Tracker's Transactions, Categories
+   * and Budgets.
+   */
   readonly expenses: ExpensesApi
 }
 

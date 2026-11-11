@@ -166,3 +166,26 @@ export const transactions = sqliteTable(
     index('transactions_date').on(table.date)
   ]
 )
+
+/**
+ * Budgets: at most one per month (`YYYY-MM`), in
+ * centavos, never negative. Like Weight's, the text
+ * primary key needs a check to rule out NULL.
+ */
+export const budget = sqliteTable(
+  'budget',
+  {
+    month: text().primaryKey(),
+    amount: integer().notNull()
+  },
+  table => [
+    check(
+      'budget_month_not_null',
+      sql`${table.month} IS NOT NULL`
+    ),
+    check(
+      'budget_amount_not_negative',
+      sql`${table.amount} >= 0`
+    )
+  ]
+)

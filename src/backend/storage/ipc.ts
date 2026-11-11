@@ -5,6 +5,7 @@ import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
+import { getBudget, setBudget } from './budget'
 import type { Database } from './database'
 import { StorageFailure } from './errors'
 import {
@@ -99,7 +100,9 @@ const OPERATIONS: Record<string, Operation> = {
     updateTransaction(db, p),
   [EXPENSES_CHANNELS.delete]: deleteTransaction,
   [EXPENSES_CHANNELS.listCategories]: listCategories,
-  [EXPENSES_CHANNELS.createCategory]: createCategory
+  [EXPENSES_CHANNELS.createCategory]: createCategory,
+  [EXPENSES_CHANNELS.getBudget]: getBudget,
+  [EXPENSES_CHANNELS.setBudget]: setBudget
 }
 
 /** Registers one `ipc.handle` per storage operation. */

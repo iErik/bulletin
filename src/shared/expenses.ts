@@ -28,6 +28,17 @@ export interface Transaction extends NewTransaction {
   readonly id: number
 }
 
+/** A calendar month, as `YYYY-MM`. */
+export type LocalMonth = string
+
+/** How much the user plans to spend in a month. */
+export interface Budget {
+  /** The month it was set for. */
+  readonly month: LocalMonth
+  /** In centavos, never negative. */
+  readonly amount: number
+}
+
 /** `window.bulletin.expenses`. */
 export interface ExpensesApi {
   /** Transactions in the range, by day then id. */
@@ -53,6 +64,18 @@ export interface ExpensesApi {
   createCategory(name: string): Promise<
     StorageResult<Category>
   >
+  /**
+   * The month's Budget or, without one, the most
+   * recent earlier month's; `null` if neither exists.
+   * Its `month` says which month it was set for.
+   */
+  getBudget(month: LocalMonth): Promise<
+    StorageResult<Budget | null>
+  >
+  /** Sets a month's Budget, replacing any it had. */
+  setBudget(budget: Budget): Promise<
+    StorageResult<Budget>
+  >
 }
 
 /** IPC channel per `ExpensesApi` method. */
@@ -62,5 +85,7 @@ export const EXPENSES_CHANNELS = {
   update: 'expenses:update',
   delete: 'expenses:delete',
   listCategories: 'expenses:list-categories',
-  createCategory: 'expenses:create-category'
+  createCategory: 'expenses:create-category',
+  getBudget: 'expenses:get-budget',
+  setBudget: 'expenses:set-budget'
 } as const satisfies Record<keyof ExpensesApi, string>
