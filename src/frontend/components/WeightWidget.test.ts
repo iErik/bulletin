@@ -19,6 +19,7 @@ const mountWidget = (): VueWrapper => {
   const pinia = createPinia()
   setActivePinia(pinia)
   return mount(WeightWidget, {
+    attachTo: document.body,
     global: { plugins: [pinia] }
   })
 }
@@ -89,5 +90,44 @@ describe('WeightWidget', () => {
 
     expect(widget.get('[role="alert"]').text())
       .toBe('Couldn\'t load your weight')
+  })
+
+  it('opens the form on "+" and closes it', async () => {
+    const { weight } = stubBulletin()
+    const widget = mountWidget()
+    const add = 'button[aria-label="Add weight"]'
+
+    await widget.get(add).trigger('click')
+    expect(widget.get('.title').text())
+      .toBe('Add new entry')
+
+    await widget.get('button[aria-label="Cancel"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(widget.get('.title').text()).toBe('Weight')
+    expect(document.activeElement)
+      .toBe(widget.get(add).element)
+    expect(weight.create).not.toHaveBeenCalled()
+  })
+
+  it('reloads the chart after a save', async () => {
+    const { weight } = stubBulletin()
+    const widget = mountWidget()
+
+    await widget.get('button[aria-label="Add weight"]')
+      .trigger('click')
+    await widget.get('input').setValue('63,4')
+    await widget.get('button[aria-label="Save weight"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(weight.create).toHaveBeenCalledExactlyOnceWith({
+      date: '2026-11-09',
+      grams: 63_400
+    })
+    expect(widget.get('.title').text()).toBe('Weight')
+    // The window's load, the form's day, and the reload.
+    expect(weight.list).toHaveBeenCalledTimes(3)
   })
 })
