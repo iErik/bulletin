@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@lucide/vue':
+        specifier: ^1.62.0
+        version: 1.62.0(vue@3.5.45(typescript@6.0.3))
       d3-scale:
         specifier: ^4.0.3
         version: 4.0.3
@@ -385,6 +388,11 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
+
+  '@lucide/vue@1.62.0':
+    resolution: {integrity: sha512-uuVefuSb79HC/XBRIL4AFlIOx4nezJ/DmyeiHQTejQ9odF265SksOKjXbBW6kyDDIJimBh+3LYR4wz/da0aqRA==}
+    peerDependencies:
+      vue: '>=3.0.1'
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -3437,6 +3445,10 @@ snapshots:
       keyv: 5.6.0
 
   '@keyv/serialize@1.1.1': {}
+
+  '@lucide/vue@1.62.0(vue@3.5.45(typescript@6.0.3))':
+    dependencies:
+      vue: 3.5.45(typescript@6.0.3)
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
