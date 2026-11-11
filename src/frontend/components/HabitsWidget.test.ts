@@ -68,6 +68,20 @@ const label = (
 const name = (wrapper: VueWrapper): string =>
   wrapper.get('.actions > .name').text()
 
+const nameButton = (
+  wrapper: VueWrapper
+): DOMWrapper<HTMLButtonElement> =>
+  wrapper.find<HTMLButtonElement>('.actions > .name')
+
+/** Opens the Habit list and returns its rows. */
+const openList = async (
+  wrapper: VueWrapper
+): Promise<DOMWrapper<HTMLLIElement>[]> => {
+  await nameButton(wrapper).trigger('click')
+  await flushPromises()
+  return wrapper.findAll<HTMLLIElement>('.row')
+}
+
 const failWith = {
   ok: false,
   error: { code: 'internal' }
@@ -278,6 +292,59 @@ describe('HabitsWidget', () => {
     expect(wrapper.text()).toContain('No habits yet')
     expect(wrapper.find('.actions').exists()).toBe(false)
     expect(wrapper.find('.month-grid').exists()).toBe(false)
+  })
+
+  it('opens the list from the name', async () => {
+    const { wrapper } = await mountWidget()
+
+    const rows = await openList(wrapper)
+
+    expect(nameButton(wrapper).attributes('aria-expanded'))
+      .toBe('true')
+    expect(wrapper.find('.month-grid').exists()).toBe(false)
+    expect(rows.map(row => row.get('.count').text()))
+      .toEqual(['1 / 30 days', '1 / 30 days'])
+  })
+
+  it('switches Habit and closes the list', async () => {
+    const { wrapper } = await mountWidget()
+    const rows = await openList(wrapper)
+
+    await rows[1].get('.choose').trigger('click')
+    await flushPromises()
+
+    expect(name(wrapper)).toBe('Running')
+    expect(localStorage.getItem(CURRENT_HABIT_KEY))
+      .toBe('2')
+    expect(label(wrapper, 5)).toBe('Nov 5 · Done')
+    expect(document.activeElement)
+      .toBe(nameButton(wrapper).element)
+  })
+
+  it.each([
+    ['the name', async (wrapper: VueWrapper) => {
+      await nameButton(wrapper).trigger('click')
+    }],
+    ['Escape', async (wrapper: VueWrapper) => {
+      await wrapper.get('.choose')
+        .trigger('keydown', { key: 'Escape' })
+    }],
+    ['a click outside', async () => {
+      document.body.click()
+    }]
+  ])('closes the list on %s', async (_, close) => {
+    const { wrapper } = await mountWidget()
+    await openList(wrapper)
+
+    await close(wrapper)
+    await flushPromises()
+
+    expect(wrapper.find('.habit-list').exists())
+      .toBe(false)
+    expect(nameButton(wrapper).attributes('aria-expanded'))
+      .toBe('false')
+    expect(document.activeElement)
+      .toBe(nameButton(wrapper).element)
   })
 
   it('says when the Habits can’t load', async () => {

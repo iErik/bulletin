@@ -6,10 +6,26 @@
 // at once; if storage fails, it reverts and an inline
 // error shows. The current Habit is remembered per
 // device, falling back to the oldest active Habit.
-import { computed, ref, shallowRef, watch } from 'vue'
-import { endOfMonth, startOfMonth } from 'date-fns'
+// The header's Habit name opens the Habit list in
+// place of the grid; the name, Escape or a click
+// outside the Widget closes it.
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  useTemplateRef,
+  watch
+} from 'vue'
+import {
+  endOfMonth,
+  getDaysInMonth,
+  startOfMonth
+} from 'date-fns'
 import type { Habit, HabitEntry } from '@shared/habits'
 import { localDate } from '@shared/dates'
+import HabitList from '@/components/HabitList.vue'
 import MonthGrid from '@/components/MonthGrid.vue'
 import Widget from '@/components/Widget.vue'
 import {
@@ -27,12 +43,14 @@ const month = computed(() => startOfMonth(store.day))
 
 /** The active Habits, oldest first; null till loaded. */
 const habits = shallowRef<Habit[] | null>(null)
-const remembered = readCurrentHabitId()
+const chosen = ref(readCurrentHabitId())
 const current = computed(() =>
-  pickCurrentHabit(habits.value ?? [], remembered))
+  pickCurrentHabit(habits.value ?? [], chosen.value))
 
 watch(current, habit => {
-  if (habit) writeCurrentHabitId(habit.id)
+  if (!habit) return
+  chosen.value = habit.id
+  writeCurrentHabitId(habit.id)
 })
 
 const entryKey = (entry: HabitEntry): string =>
@@ -139,6 +157,80 @@ const toggle = async (day: Date): Promise<void> => {
   error.value = 'Couldn’t save that day. Try again.'
 }
 
+/** Each Habit's done days in the loaded month. */
+const doneCounts = computed(() => {
+  const counts = new Map<number, number>()
+  for (const key of done.value) {
+    const id = Number(key.split(' ')[0])
+    counts.set(id, (counts.get(id) ?? 0) + 1)
+  }
+  return counts
+})
+
+const doneIn = (habit: Habit): number =>
+  doneCounts.value.get(habit.id) ?? 0
+
+const listing = ref(false)
+const frame = useTemplateRef<
+  InstanceType<typeof Widget>
+>('frame')
+const nameButton = useTemplateRef<HTMLButtonElement>(
+  'nameButton'
+)
+
+const frameElement = (): HTMLElement | undefined =>
+  frame.value?.$el as HTMLElement | undefined
+
+/**
+ * Closes the list. Focus returns to the name button,
+ * unless a click outside has already moved it away.
+ */
+const closeList = async (): Promise<void> => {
+  listing.value = false
+  const active = document.activeElement
+  const el = frameElement()
+  const away = active && active !== document.body
+    && !el?.contains(active)
+  await nextTick()
+  if (!away) nameButton.value?.focus()
+}
+
+const toggleList = (): void => {
+  if (!listing.value) listing.value = true
+  else void closeList()
+}
+
+const choose = (habit: Habit): void => {
+  chosen.value = habit.id
+  void closeList()
+}
+
+const onKeydown = (event: KeyboardEvent): void => {
+  if (event.key !== 'Escape' || !listing.value) return
+  event.preventDefault()
+  event.stopPropagation()
+  void closeList()
+}
+
+const onDocumentClick = (event: Event): void => {
+  if (!listing.value) return
+  const el = frameElement()
+  if (el && event.composedPath().includes(el)) return
+  void closeList()
+}
+
+// Adding the same listener twice is a no-op.
+watch(listing, open => {
+  const method = open
+    ? 'addEventListener'
+    : 'removeEventListener'
+  document[method]('click', onDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocumentClick)
+})
+
 void loadHabits()
 
 watch(
@@ -152,9 +244,23 @@ watch(
 </script>
 
 <template>
-  <Widget class="habits-widget" title="Habits">
+  <Widget
+    ref="frame"
+    class="habits-widget"
+    title="Habits"
+    @keydown="onKeydown"
+  >
     <template v-if="current" #actions>
-      <span class="name">{{ current.name }}</span>
+      <button
+        ref="nameButton"
+        class="name"
+        :class="{ '-open': listing }"
+        type="button"
+        :aria-expanded="listing"
+        @click="toggleList"
+      >
+        {{ current.name }}
+      </button>
     </template>
     <p v-if="loadError" class="message" role="alert">
       {{ loadError }}
@@ -162,6 +268,14 @@ watch(
     <p v-else-if="habits && !current" class="message">
       No habits yet
     </p>
+    <HabitList
+      v-else-if="current && listing"
+      :habits="habits ?? []"
+      :current="current.id"
+      :done="doneIn"
+      :days="getDaysInMonth(month)"
+      @choose="choose"
+    />
     <div v-else-if="current" class="content">
       <MonthGrid
         :month="month"
@@ -187,6 +301,20 @@ watch(
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-text-muted);
+    border-radius: rem(7px);
+    @include colour-transition;
+    @include focus-ring;
+  }
+
+  // Figma's open list puts the name on a pill.
+  > .header > .actions > .name.-open {
+    padding: rem(6px) space(2);
+    margin: rem(-6px) 0;
+    background: color-mix(
+      in sRGB,
+      var(--color-text) 8%,
+      transparent
+    );
   }
 
   .content {
