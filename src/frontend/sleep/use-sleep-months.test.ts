@@ -182,4 +182,17 @@ describe('useSleepMonths', () => {
 
     expect(sleep.periods.value).toEqual([moved])
   })
+  it('drops a deleted Period', async () => {
+    const api = stubBulletin()
+    const first = period(1, day(10, 2).getTime())
+    const second = period(2, day(10, 6).getTime())
+    vi.mocked(api.sleep.list)
+      .mockResolvedValueOnce(listing(first, second))
+    const sleep = months()
+    await sleep.reset(day(10, 9))
+
+    sleep.remove(1)
+
+    expect(sleep.periods.value).toEqual([second])
+  })
 })

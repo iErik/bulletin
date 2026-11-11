@@ -14,6 +14,11 @@
 // Dragging a Period's Head or Tail moves that end,
 // snapped and clamped by the rules, and saves it on
 // release. A storage error puts it back.
+//
+// Clicking a Period, or Enter on it, opens its edit
+// tooltip; Enter on a day row opens "Add period".
+// Clicking away saves it, and Escape closes it and
+// gives focus back to the Period or row.
 import {
   computed,
   nextTick,
@@ -31,6 +36,8 @@ import type {
   SleepPeriod
 } from '@shared/sleep'
 import { localDate } from '@shared/dates'
+import SleepPeriodEditor
+  from '@/components/SleepPeriodEditor.vue'
 import { formatDate, formatTime } from '@/locale/format'
 import { caption } from '@/sleep/caption'
 import {
@@ -69,6 +76,21 @@ const head = ref<EpochMs | null>(null)
 const refusal = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saving = ref(false)
+/**
+ * Whose tooltip is open: a Period, or a day to add one
+ * on, drawn on `key`'s row at `at`.
+ */
+const editing = shallowRef<{
+  key: string
+  day: Date
+  period?: SleepPeriod
+  at: number
+} | null>(null)
+// One in the rows' v-for, so an array.
+const editor = useTemplateRef<{
+  commit(): boolean
+  $el: Node
+}[]>('editor')
 /**
  * The Period being dragged, which end, and the time
  * under the pointer when it was pressed.
@@ -160,6 +182,7 @@ function hoverOn(
   key: string,
   day: Date
 ): { fraction: number; text: string } | null {
+  if (editing.value) return null
   const at = moved.value && grabbed.value
     ? dragged(moved.value[grabbed.value.end],
         grabbed.value.end)
@@ -184,13 +207,16 @@ const dragged = (time: EpochMs, end: End): {
   time
 })
 
-/** The snapped time under the pointer on `day`'s row. */
-const timeAt = (event: MouseEvent, day: Date): EpochMs => {
+/** The time under the pointer on `day`'s row. */
+const exactAt = (event: MouseEvent, day: Date): EpochMs => {
   const track = event.currentTarget as HTMLElement
   const box = track.getBoundingClientRect()
   const x = (event.clientX - box.left) / box.width
-  return snap(toTime(Math.min(1, Math.max(0, x)), day))
+  return toTime(Math.min(1, Math.max(0, x)), day)
 }
+
+const timeAt = (event: MouseEvent, day: Date): EpochMs =>
+  snap(exactAt(event, day))
 
 const onMove = (
   event: MouseEvent,
@@ -215,9 +241,15 @@ const onLeave = (): void => {
 let released = false
 
 const onClick = (event: MouseEvent, day: Date): void => {
-  if (saving.value || released) return
+  if (saving.value || released || editing.value) return
   const time = timeAt(event, day)
   if (head.value === null) {
+    const over = periodAt(months.periods.value,
+      exactAt(event, day))
+    if (over) {
+      edit(over, event)
+      return
+    }
     if (periodAt(months.periods.value, time)) return
     if (time > Date.now()) {
       refusal.value = reason('future-date')
@@ -297,6 +329,82 @@ const move = async (
   }
 }
 
+// The click that opened the tooltip isn't a click
+// away from it, and neither is a click inside it.
+let opening: Event | null = null
+// Whether the tooltip is closing on a click away, which
+// leaves focus where it went.
+let away = false
+
+const open = (
+  target: NonNullable<typeof editing.value>,
+  event?: Event
+): void => {
+  if (saving.value) return
+  if (editing.value && !commitAway()) return
+  cancel()
+  saveError.value = null
+  opening = event ?? null
+  const at = Math.min(0.85, Math.max(0.15, target.at))
+  editing.value = { ...target, at }
+}
+
+/** Opens `period`'s tooltip over its Head's row. */
+const edit = (period: SleepPeriod, event?: Event): void => {
+  const day = rowOf(period.start)
+  const to = Math.min(1, toFraction(period.end, day))
+  open({
+    key: localDate(day),
+    day,
+    period,
+    at: (toFraction(period.start, day) + to) / 2
+  }, event)
+}
+
+/** Saves the open tooltip; false if it can't. */
+const commitAway = (): boolean => {
+  away = true
+  const done = editor.value?.[0]?.commit() ?? true
+  away = false
+  return done
+}
+
+/** Closes the tooltip, focusing what opened it. */
+const close = async (): Promise<void> => {
+  const was = editing.value
+  editing.value = null
+  if (!was || away) return
+  await nextTick()
+  const find = (selector: string): HTMLElement | null
+    | undefined =>
+    root.value?.querySelector<HTMLElement>(selector)
+  const period = was.period
+    && find(`[data-period="${was.period.id}"]`)
+  ;(period || find(`[data-day="${was.key}"]`))?.focus()
+}
+
+const onSave = (period: NewSleepPeriod): void => {
+  const saved = editing.value?.period
+  void close()
+  if (saved) void move(saved, { ...saved, ...period })
+  else void save(period)
+}
+
+/** Deletes `period`, or puts it back. */
+const remove = async (period: SleepPeriod): Promise<void> => {
+  months.remove(period.id)
+  void close()
+  saving.value = true
+  const result = await window.bulletin.sleep.delete(
+    period.id)
+  saving.value = false
+  if (!result.ok) {
+    months.add(period)
+    saveError.value = "Couldn't delete the period. "
+      + `${reason(result.error.code)}.`
+  }
+}
+
 const cancel = (): void => {
   head.value = null
   pointer.value = null
@@ -309,10 +417,14 @@ const onKeydown = (event: Event): void => {
 
 // The Head's own click is inside, so it never cancels.
 const onDocumentClick = (event: Event): void => {
+  const path = event.composedPath()
+  const tooltip = editor.value?.[0]?.$el
+  if (editing.value && event !== opening
+    && !(tooltip && path.includes(tooltip)))
+    commitAway()
   const widget = root.value?.closest('.widget-frame')
     ?? root.value
-  if (widget && !event.composedPath().includes(widget))
-    cancel()
+  if (widget && !path.includes(widget)) cancel()
 }
 
 const listen = (on: boolean): void => {
@@ -323,7 +435,10 @@ const listen = (on: boolean): void => {
   document[method]('click', onDocumentClick)
 }
 
-watch(() => head.value !== null, listen)
+watch(
+  () => head.value !== null || editing.value !== null,
+  listen
+)
 onBeforeUnmount(() => {
   listen(false)
   drop()
@@ -333,6 +448,10 @@ const ticks = axisTicks().map(tick => ({
   ...tick,
   label: formatTime(new Date(tick.time))
 }))
+
+const label = (period: SleepPeriod): string =>
+  `Period, ${formatTime(new Date(period.start))} `
+  + `to ${formatTime(new Date(period.end))}`
 
 const percent = (fraction: number): string =>
   `${fraction * 100}%`
@@ -414,6 +533,9 @@ watch(() => store.today, today => {
         }"
         :data-day="row.key"
         :aria-disabled="row.future || undefined"
+        :tabindex="row.future ? undefined : 0"
+        @keydown.enter.self="
+          open({ key: row.key, day: row.day, at: 0.5 })"
       >
         <div class="label">
           <span class="date">{{ row.label }}</span>
@@ -433,12 +555,21 @@ watch(() => store.today, today => {
             class="period"
             :class="{
               '-head': segment.head,
-              '-tail': segment.tail
+              '-tail': segment.tail,
+              '-editing':
+                editing?.period?.id === segment.period.id
             }"
             :style="{
               left: percent(segment.from),
               width: percent(segment.to - segment.from)
             }"
+            v-bind="segment.head ? {
+              tabindex: 0,
+              role: 'button',
+              'aria-label': label(segment.period),
+              'data-period': segment.period.id
+            } : {}"
+            @keydown.enter.stop="edit(segment.period)"
           >
             <span
               v-if="segment.head"
@@ -466,6 +597,18 @@ watch(() => store.today, today => {
               left: percent(segment.from),
               width: percent(segment.to - segment.from)
             }"
+          />
+          <SleepPeriodEditor
+            v-if="editing?.key === row.key"
+            ref="editor"
+            :key="editing.period?.id ?? 'add'"
+            :style="{ left: percent(editing.at) }"
+            :period="editing.period"
+            :day="editing.day"
+            :periods="months.periods.value"
+            @save="onSave"
+            @remove="editing.period && remove(editing.period)"
+            @close="close"
           />
           <span
             v-if="row.hover"
@@ -661,6 +804,16 @@ $dot: rem(7px);
     left: 100%;
   }
 
+  > .track > .period[tabindex] {
+    @include focus-ring;
+  }
+
+  // Highlighted while its tooltip is open.
+  > .track > .period.-editing {
+    height: 3px;
+    box-shadow: 0 0 rem(10px) var(--color-text);
+  }
+
   > .track > .period.-preview {
     opacity: 0.7;
     pointer-events: none;
@@ -669,6 +822,11 @@ $dot: rem(7px);
   // The glow, Head and Tail all take it from here.
   > .track > .period.-broken {
     --color-text: var(--color-danger);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
   }
 
   &.-selected > .label {
