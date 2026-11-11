@@ -11,11 +11,11 @@ import {
   addYears,
   differenceInCalendarDays,
   endOfMonth,
-  format,
   parseISO,
   startOfDay,
   startOfMonth
 } from 'date-fns'
+import { localDate } from '@shared/dates'
 import type { DateRange } from '@shared/storage'
 import type { WeightEntry } from '@shared/weight'
 import { GRAMS_PER_KG } from './format'
@@ -57,9 +57,6 @@ export interface ChartPoints {
   readonly curve: readonly EntryPoint[]
 }
 
-const toLocalDate = (date: Date): string =>
-  format(date, 'yyyy-MM-dd')
-
 /** The 11 months centred on `day`'s month. */
 export const chartWindow = (day: Date): ChartWindow => {
   const months = Array.from(
@@ -79,10 +76,10 @@ export const chartWindow = (day: Date): ChartWindow => {
 export const loadRange = (
   window: ChartWindow
 ): DateRange => ({
-  from: toLocalDate(
+  from: localDate(
     addYears(window.start, -EDGE_REACH_YEARS)
   ),
-  to: toLocalDate(addYears(window.end, EDGE_REACH_YEARS))
+  to: localDate(addYears(window.end, EDGE_REACH_YEARS))
 })
 
 /** The window's length in days, so its x extent. */

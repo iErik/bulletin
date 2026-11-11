@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The frame every Tracker's Widget shares: a titled
-// panel whose body is the default slot. The Dashboard
+// panel whose body is the default slot, with optional
+// header buttons in the `actions` slot. The Dashboard
 // places Widgets by class, so a Widget sets no outer
 // size or position of its own.
 defineProps<{ title: string }>()
@@ -12,6 +13,9 @@ defineProps<{ title: string }>()
       <h2 class="title">
         {{ title }}
       </h2>
+      <div v-if="$slots.actions" class="actions">
+        <slot name="actions" />
+      </div>
     </header>
     <div class="body">
       <slot />
@@ -45,6 +49,12 @@ defineProps<{ title: string }>()
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-text-muted);
+  }
+
+  > .header > .actions {
+    display: flex;
+    gap: rem(10px);
+    margin-left: auto;
   }
 
   > .body {

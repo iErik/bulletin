@@ -10,8 +10,8 @@ export const scale = (colours: readonly string[]): Scale =>
   ) as Record<Shade, string>
 
 /**
- * The built-in Theme. Its Palettes are placeholders
- * until the real colours land.
+ * The built-in Theme. Its scales are placeholders until
+ * the real colours land; the Mood colours are final.
  */
 export const defaultTheme: Theme = {
   id: 'default',
@@ -32,7 +32,16 @@ export const defaultTheme: Theme = {
         '#e0e7ff', '#c3cffd', '#a1b2fa', '#8197f5',
         '#6680ee', '#4f69dc', '#3f55bb', '#324497',
         '#263372'
-      ])
+      ]),
+      // The Figma mood picker's swatches.
+      mood: {
+        happy: '#77ca6e',
+        okay: '#8e95ee',
+        stressed: '#fab18b',
+        neutral: '#c8c9ca',
+        angry: '#a45f61',
+        anxious: '#f8f5ab'
+      }
     },
     light: {
       background: scale([
@@ -49,7 +58,17 @@ export const defaultTheme: Theme = {
         '#e3ebff', '#c2d2fe', '#9db4fb', '#7894f4',
         '#5876e9', '#3f5cd6', '#3249b2', '#283a8c',
         '#1e2c67'
-      ])
+      ]),
+      // Deeper than the dark ones, to stay distinct and
+      // visible on light surfaces.
+      mood: {
+        happy: '#3f9a36',
+        okay: '#5a62d8',
+        stressed: '#e0763f',
+        neutral: '#8b8e93',
+        angry: '#a23a3f',
+        anxious: '#c6ae1c'
+      }
     }
   }
 }

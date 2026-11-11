@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
@@ -107,6 +108,26 @@ describe('handleStorage', () => {
     })).toEqual({ ok: true, value: [entry] })
     expect(await call(MOOD_CHANNELS.delete, entry.date))
       .toEqual({ ok: true, value: null })
+  })
+
+  it('handles every Habits channel', async () => {
+    const call = serve()
+    const habit = { name: 'Read', icon: 'reading' }
+    const ok = (value: unknown): object =>
+      ({ ok: true, value })
+
+    expect(await call(HABITS_CHANNELS.create, habit))
+      .toMatchObject(ok({ id: 1, ...habit }))
+    expect(await call(HABITS_CHANNELS.update, {
+      id: 1,
+      icon: 'study'
+    })).toMatchObject(ok({ icon: 'study' }))
+    expect(await call(HABITS_CHANNELS.archive, 1))
+      .toMatchObject(ok({ archived: true }))
+    expect(await call(HABITS_CHANNELS.unarchive, 1))
+      .toMatchObject(ok({ archived: false }))
+    expect(await call(HABITS_CHANNELS.list, 'active'))
+      .toMatchObject(ok([{ id: 1 }]))
   })
 
   it('rejects invalid payloads', async () => {
