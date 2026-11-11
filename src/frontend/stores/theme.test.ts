@@ -8,6 +8,7 @@ import {
   type Mock
 } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { MOODS } from '@shared/mood'
 import { defaultTheme } from '@/theme/themes'
 import type { Palette, Theme } from '@/theme/types'
 import { STORAGE_KEYS, useThemeStore } from './theme'
@@ -22,7 +23,10 @@ vi.mock('@/theme/themes', async original => {
     return {
       background: shades,
       foreground: shades,
-      accent: shades
+      accent: shades,
+      mood: Object.fromEntries(
+        MOODS.map(mood => [mood.key, colour])
+      ) as Palette['mood']
     }
   }
   const other: Theme = {
@@ -103,6 +107,24 @@ describe('theme store', () => {
     expect(surface()).toBe(light.background[100])
     expect(document.documentElement.style.colorScheme)
       .toBe('light')
+  })
+
+  it('writes every Mood colour for the Scheme', () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const moods = (): string[] => MOODS.map(mood =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${mood.colour}`))
+
+    expect(moods()).toEqual(
+      MOODS.map(mood => dark.mood[mood.key])
+    )
+
+    store.setPreference('light')
+
+    expect(moods()).toEqual(
+      MOODS.map(mood => light.mood[mood.key])
+    )
   })
 
   it('rewrites the CSS variables on Theme change', () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
+import { localDate } from '@shared/dates'
 import type { SleepPeriod } from '@shared/sleep'
 import type { StorageResult } from '@shared/storage'
 import { stubBulletin } from '@/testing/bulletin'
 import { useFixedToday } from '@/testing/clock'
-import { dayKey } from './timeline'
 import { useSleepMonths } from './use-sleep-months'
 
 type Listed = StorageResult<SleepPeriod[]>
@@ -26,7 +26,7 @@ const range = (
   sleep: ReturnType<typeof useSleepMonths>
 ): string[] => {
   const days = sleep.days.value
-  return [dayKey(days[0]), dayKey(days.at(-1)!)]
+  return [localDate(days[0]), localDate(days.at(-1)!)]
 }
 
 describe('useSleepMonths', () => {

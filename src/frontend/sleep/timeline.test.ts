@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { localDate } from '@shared/dates'
 import type { SleepPeriod } from '@shared/sleep'
 import {
   axisTicks,
-  dayKey,
   rowEnd,
   rowOf,
   rowStart,
@@ -35,7 +35,7 @@ describe('timeline', () => {
     [at(8, 12), '2026-11-08'],
     [at(7, 23), '2026-11-07']
   ])('puts %i in row %s', (time, key) => {
-    expect(dayKey(rowOf(time))).toBe(key)
+    expect(localDate(rowOf(time))).toBe(key)
   })
 
   it('maps times to fractions of a row and back', () => {

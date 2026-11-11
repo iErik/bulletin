@@ -5,15 +5,10 @@
  * its start and 1 at its end. Falling back to Figma's
  * snake layout means replacing this module.
  */
-import { addDays, format, startOfDay } from 'date-fns'
+import { addDays, startOfDay } from 'date-fns'
 import type { EpochMs, SleepPeriod } from '@shared/sleep'
-import type { LocalDate } from '@shared/storage'
 
 const HOUR = 3_600_000
-
-/** A day's key, as `YYYY-MM-DD`. */
-export const dayKey = (day: Date): LocalDate =>
-  format(day, 'yyyy-MM-dd')
 
 /** Noon on `day`, where its row starts. */
 export const rowStart = (day: Date): EpochMs =>

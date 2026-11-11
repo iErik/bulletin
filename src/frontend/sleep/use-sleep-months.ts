@@ -22,8 +22,8 @@ import {
   min,
   startOfMonth
 } from 'date-fns'
+import { localDate } from '@shared/dates'
 import type { SleepPeriod } from '@shared/sleep'
-import { dayKey } from './timeline'
 
 export interface SleepMonths {
   /** Every day of the range, oldest first. */
@@ -69,8 +69,8 @@ export const useSleepMonths = (
   ): Promise<boolean> => {
     const asked = generation
     const result = await window.bulletin.sleep.list({
-      from: dayKey(addDays(from, -1)),
-      to: dayKey(endOfMonth(to))
+      from: localDate(addDays(from, -1)),
+      to: localDate(endOfMonth(to))
     })
     if (asked !== generation) return false
     failed.value = !result.ok
