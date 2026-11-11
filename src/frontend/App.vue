@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Sidebar from '@/components/Sidebar.vue'
 import TitleBar from '@/components/TitleBar.vue'
 </script>
 
@@ -6,8 +7,9 @@ import TitleBar from '@/components/TitleBar.vue'
   <div class="app-shell">
     <TitleBar />
     <div class="body">
-      <!-- The Sidebar's region; BLT-10 fills it. -->
-      <aside class="sidebar" />
+      <div class="sidebar">
+        <Sidebar />
+      </div>
       <div class="page">
         <RouterView />
       </div>
@@ -29,9 +31,12 @@ import TitleBar from '@/components/TitleBar.vue'
     min-height: 0;
   }
 
-  // As in the Figma "App Window" frame.
+  // As in the Figma "App Window" frame, with the
+  // Sidebar vertically centred.
   > .body > .sidebar {
+    display: flex;
     flex: none;
+    align-items: center;
     width: rem(48px);
     margin-inline: rem(15px);
   }
