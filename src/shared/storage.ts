@@ -24,6 +24,8 @@ export interface DateRange {
  *   starts;
  * - `period-too-long`: a Period is over 24 hours;
  * - `overlapping-period`: a Period overlaps another;
+ * - `name-taken`: another Habit, `active` or
+ *   `archived`, already has the name;
  * - `internal`: anything unexpected, logged in main.
  */
 export type StorageError =
@@ -36,6 +38,10 @@ export type StorageError =
   | { readonly code: 'reversed-period' }
   | { readonly code: 'period-too-long' }
   | { readonly code: 'overlapping-period' }
+  | {
+    readonly code: 'name-taken'
+    readonly habit: 'active' | 'archived'
+  }
   | { readonly code: 'internal' }
 
 export type StorageErrorCode = StorageError['code']
