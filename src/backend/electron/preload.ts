@@ -5,6 +5,10 @@ import {
   type BulletinApi
 } from '@shared/bridge'
 import {
+  EXPENSES_CHANNELS,
+  type ExpensesApi
+} from '@shared/expenses'
+import {
   HABITS_CHANNELS,
   type HabitsApi
 } from '@shared/habits'
@@ -42,7 +46,8 @@ const api: BulletinApi = {
   weight: invoker<WeightApi>(WEIGHT_CHANNELS),
   sleep: invoker<SleepApi>(SLEEP_CHANNELS),
   mood: invoker<MoodApi>(MOOD_CHANNELS),
-  habits: invoker<HabitsApi>(HABITS_CHANNELS)
+  habits: invoker<HabitsApi>(HABITS_CHANNELS),
+  expenses: invoker<ExpensesApi>(EXPENSES_CHANNELS)
 }
 
 contextBridge.exposeInMainWorld(BRIDGE_KEY, api)

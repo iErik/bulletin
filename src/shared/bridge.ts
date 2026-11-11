@@ -1,3 +1,4 @@
+import type { ExpensesApi } from './expenses'
 import type { HabitsApi } from './habits'
 import type { MoodApi } from './mood'
 import type { SleepApi } from './sleep'
@@ -37,6 +38,8 @@ export interface BulletinApi {
   readonly mood: MoodApi
   /** The Habits Tracker's Habits and Entries. */
   readonly habits: HabitsApi
+  /** The Expenses Tracker's Transactions and Categories. */
+  readonly expenses: ExpensesApi
 }
 
 export const BRIDGE_KEY = 'bulletin'

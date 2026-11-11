@@ -1,5 +1,9 @@
 import { vi, type Mock } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
+import type {
+  ExpensesApi,
+  NewTransaction
+} from '@shared/expenses'
 import type { Habit, HabitsApi } from '@shared/habits'
 import type { MoodApi } from '@shared/mood'
 import type {
@@ -75,6 +79,24 @@ const fakeHabits = (): HabitsApi => {
 }
 
 /**
+ * No Transactions and no Categories: created
+ * Transactions get id 1, and created Categories are
+ * Category 1 with the given name.
+ */
+const fakeExpenses = (): ExpensesApi => ({
+  list: resolves([]),
+  create: echoes((transaction: NewTransaction) =>
+    ({ id: 1, ...transaction })),
+  update: echoes(),
+  delete: resolves(null),
+  listCategories: resolves([]),
+  createCategory: vi.fn(async (name: string) => ({
+    ok: true as const,
+    value: { id: 1, name }
+  }))
+})
+
+/**
  * A fake preload API for renderer tests. Typed against
  * `BulletinApi`, so it stops compiling when the bridge
  * changes: add new members here with test defaults.
@@ -88,6 +110,7 @@ export const fakeBulletin = (
   sleep: fakeSleep(),
   mood: fakeMood(),
   habits: fakeHabits(),
+  expenses: fakeExpenses(),
   ...overrides
 })
 
