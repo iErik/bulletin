@@ -526,3 +526,125 @@ describe('SleepTimeline, creating', () => {
       .toBe(false)
   })
 })
+
+/** Presses `key`'s Head or Tail and moves to `to`. */
+const grab = async (
+  key: string,
+  end: 'start' | 'end',
+  to: [string, number]
+): Promise<void> => {
+  await row(key).get(`.handle.-${end}`)
+    .trigger('pointerdown')
+  await move(...to)
+}
+
+const release = async (): Promise<void> => {
+  window.dispatchEvent(new Event('pointerup'))
+  await settle()
+}
+
+describe('SleepTimeline, dragging', () => {
+  useFixedToday()
+  beforeEach(() => {
+    fakeLayout()
+    fakeTrack()
+  })
+
+  afterEach(() => {
+    timeline?.unmount()
+    timeline = undefined
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  // 1 AM to 9 AM on the 8th, in row "7th".
+  const night = {
+    id: 1,
+    start: at(10, 8, 1),
+    end: at(10, 8, 9)
+  }
+
+  it('moves the Tail and saves on release', async () => {
+    storing([night])
+    await mountTimeline()
+    const api = window.bulletin
+
+    await grab('2026-11-07', 'end',
+      ['2026-11-07', x(24 + 10, 2)])
+    expect(hover('2026-11-07')).toMatch(/^10:00\sAM$/)
+    expect(api.sleep.update).not.toHaveBeenCalled()
+
+    await release()
+    expect(api.sleep.update).toHaveBeenCalledWith(
+      { ...night, end: at(10, 8, 10) }
+    )
+    expect(row('2026-11-07').get('.caption').text())
+      .toMatch(/^1:00\sAM to 10:00\sAM$/)
+
+    // The release's click starts no selection.
+    await track('2026-11-07').trigger('click')
+    expect(timeline!.find('.-preview').exists())
+      .toBe(false)
+  })
+
+  it('stops at a neighbouring Period', async () => {
+    storing([
+      night,
+      { id: 2, start: at(10, 8, 11), end: at(10, 8, 12) }
+    ])
+    await mountTimeline()
+
+    await grab('2026-11-07', 'end',
+      ['2026-11-07', x(24 + 11, 30)])
+    await release()
+
+    expect(window.bulletin.sleep.update)
+      .toHaveBeenCalledWith(
+        { ...night, end: at(10, 8, 11) }
+      )
+  })
+
+  it('moves the Head onto another row', async () => {
+    const nap = {
+      id: 1,
+      start: at(10, 8, 13),
+      end: at(10, 8, 15)
+    }
+    storing([nap])
+    await mountTimeline()
+
+    await grab('2026-11-08', 'start',
+      ['2026-11-07', x(24 + 11)])
+    expect(row('2026-11-07').get('.period').classes())
+      .toContain('-head')
+    await release()
+
+    expect(window.bulletin.sleep.update)
+      .toHaveBeenCalledWith(
+        { ...nap, start: at(10, 8, 11) }
+      )
+    expect(row('2026-11-08').find('.caption').exists())
+      .toBe(false)
+  })
+
+  it('puts it back on a storage error', async () => {
+    storing([night])
+    window.bulletin.sleep.update = vi.fn()
+      .mockResolvedValue({
+        ok: false,
+        error: { code: 'overlapping-period' }
+      })
+    await mountTimeline()
+
+    await grab('2026-11-07', 'start',
+      ['2026-11-07', x(23)])
+    await release()
+
+    expect(timeline!.get('[role="alert"]').text()).toBe(
+      "Couldn't move the period. "
+      + 'It overlaps another period.'
+    )
+    expect(row('2026-11-07').get('.caption').text())
+      .toMatch(/^1:00\sAM to 9:00\sAM$/)
+  })
+})

@@ -43,7 +43,10 @@ export interface SleepMonths {
   loadEarlier(): Promise<boolean>
   /** Adds the month after, unless it's the future. */
   loadLater(): Promise<boolean>
-  /** Adds a Period just saved, in order. */
+  /**
+   * Adds a Period just saved, in order, or replaces
+   * the one with its `id`.
+   */
   add(period: SleepPeriod): void
 }
 

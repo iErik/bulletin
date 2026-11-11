@@ -1,8 +1,9 @@
 /**
- * The rules for creating a sleep Period on the
- * Timeline, free of rendering: snapping, ordering the
- * two clicks, and the checks storage also makes, so the
- * preview can refuse a Period before it's saved.
+ * The rules for creating and moving a sleep Period on
+ * the Timeline, free of rendering: snapping, ordering
+ * the two clicks, clamping a drag, and the checks
+ * storage also makes, so the preview can refuse a
+ * Period before it's saved.
  */
 import type {
   EpochMs,
@@ -40,6 +41,50 @@ export const periodAt = (
   time: EpochMs
 ): SleepPeriod | undefined =>
   periods.find(p => p.start < time && time < p.end)
+
+/** The end of a Period a drag moves. */
+export type End = 'start' | 'end'
+
+/**
+ * `period` with its `end` dragged to `time`: snapped,
+ * then held between the other end and the neighbouring
+ * Periods, within 24 hours, and never past `now`.
+ */
+export const drag = (
+  period: SleepPeriod,
+  end: End,
+  time: EpochMs,
+  periods: readonly SleepPeriod[],
+  now: EpochMs
+): SleepPeriod => {
+  const others = periods.filter(p => p.id !== period.id)
+  const to = snap(time)
+  if (end === 'start') {
+    const low = Math.max(
+      period.end - MAX_PERIOD,
+      ...others
+        .filter(p => p.end <= period.start)
+        .map(p => p.end)
+    )
+    const start = Math.min(
+      period.end - STEP,
+      Math.max(low, to)
+    )
+    return { ...period, start }
+  }
+  const high = Math.min(
+    period.start + MAX_PERIOD,
+    Math.floor(now / STEP) * STEP,
+    ...others
+      .filter(p => p.start >= period.end)
+      .map(p => p.start)
+  )
+  const stop = Math.max(
+    period.start + STEP,
+    Math.min(high, to)
+  )
+  return { ...period, end: stop }
+}
 
 /** A rule a new Period can break. */
 export type PeriodRule = Extract<
