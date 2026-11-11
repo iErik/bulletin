@@ -50,6 +50,13 @@ describe('DashboardView', () => {
     }
   )
 
+  it('fills the Sleep Widget with its Timeline', () => {
+    expect(
+      mountDashboard().find('.sleep > .body > .sleep-timeline')
+        .exists()
+    ).toBe(true)
+  })
+
   it('shows exactly five Widgets', () => {
     expect(
       mountDashboard().findAll('.widget-frame')
