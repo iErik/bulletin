@@ -88,6 +88,16 @@ export const formatDate = (
         INTL_STYLES[style]
       ).format(date)
 
+/**
+ * A time of day on the Locale's clock: "2:10 AM" in
+ * en-US, "02:10" in pt-BR.
+ */
+export const formatTime = (date: Date): string =>
+  new Intl.DateTimeFormat(locale(), {
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(date)
+
 export const formatNumber = (
   value: number,
   options?: Intl.NumberFormatOptions
