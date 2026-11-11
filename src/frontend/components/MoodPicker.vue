@@ -67,6 +67,7 @@ const write = async (
 
 /** ✓: saves a changed choice, else just closes. */
 const confirm = async (): Promise<void> => {
+  if (busy.value) return
   const mood = selected.value
   if (mood === null || mood === props.current) {
     emit('close')
@@ -128,8 +129,9 @@ const onOptionKeydown = (
 }
 
 const onKeydown = (event: KeyboardEvent): void => {
-  if (event.key === 'Escape') emit('close')
-  else if (
+  if (event.key === 'Escape') {
+    if (!busy.value) emit('close')
+  } else if (
     event.key === 'Enter'
     && (event.metaKey || event.ctrlKey)
   )
