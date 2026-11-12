@@ -690,3 +690,181 @@ describe('SleepTimeline, dragging', () => {
       .toMatch(/^1:00\sAM to 9:00\sAM$/)
   })
 })
+
+const tooltip = (): DOMWrapper<Element> =>
+  timeline!.find('.sleep-period-editor')
+
+/** Types into the tooltip's Start or End field. */
+const type = (
+  field: 'Start' | 'End',
+  text: string
+): Promise<void> =>
+  tooltip().get(`[aria-label="${field}"]`).setValue(text)
+
+const press = async (
+  wrapper: Omit<DOMWrapper<Element>, 'exists'>,
+  key: string
+): Promise<void> => {
+  await wrapper.trigger('keydown', { key })
+  await settle()
+}
+
+describe('SleepTimeline, editing', () => {
+  useFixedToday()
+  beforeEach(() => {
+    fakeLayout()
+    fakeTrack()
+  })
+
+  afterEach(() => {
+    timeline?.unmount()
+    timeline = undefined
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  // 1 AM to 9 AM on the 8th, in row "7th".
+  const period = {
+    id: 1,
+    start: at(10, 8, 1),
+    end: at(10, 8, 9)
+  }
+
+  it('opens on a click and saves on Enter', async () => {
+    storing([period])
+    await mountTimeline()
+    const api = window.bulletin
+
+    await click('2026-11-07', x(24 + 5))
+    expect(row('2026-11-07').get('.period').classes())
+      .toContain('-editing')
+    const start = tooltip().get('[aria-label="Start"]')
+    expect((start.element as HTMLInputElement).value)
+      .toMatch(/^1:00\sAM$/)
+    expect(document.activeElement).toBe(start.element)
+
+    await type('End', '9:47 AM')
+    await press(start, 'Enter')
+
+    expect(api.sleep.update).toHaveBeenCalledWith(
+      { ...period, end: at(10, 8, 9, 47) }
+    )
+    expect(tooltip().exists()).toBe(false)
+  })
+
+  it('keeps a Period of exactly 24 hours', async () => {
+    const day = {
+      id: 1,
+      start: at(10, 7, 22),
+      end: at(10, 8, 22)
+    }
+    storing([day])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    const start = tooltip().get('[aria-label="Start"]')
+    await press(start, 'Enter')
+    expect(window.bulletin.sleep.update)
+      .not.toHaveBeenCalled()
+    expect(tooltip().exists()).toBe(false)
+
+    await click('2026-11-07', x(24 + 5))
+    await type('Start', '23:00')
+    await type('End', '23:00')
+    await press(
+      tooltip().get('[aria-label="Start"]'), 'Enter')
+    expect(window.bulletin.sleep.update)
+      .toHaveBeenCalledWith({
+        ...day,
+        start: at(10, 7, 23),
+        end: at(10, 8, 23)
+      })
+  })
+
+  it('saves on a click away', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    await type('Start', '23:30')
+    document.body.click()
+    await settle()
+
+    expect(window.bulletin.sleep.update)
+      .toHaveBeenCalledWith(
+        { ...period, start: at(10, 7, 23, 30) }
+      )
+    expect(timeline!.find('.-preview').exists())
+      .toBe(false)
+  })
+
+  it.each([
+    ['an invalid time', '9:7x',
+      /^Enter times like 2:15\sAM\.$/],
+    ['a rule-breaking time', '11:30 AM',
+      /^It overlaps another period\.$/]
+  ])('refuses %s inline', async (_, end, error) => {
+    storing([
+      period,
+      { id: 2, start: at(10, 8, 11), end: at(10, 8, 12) }
+    ])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    await type('End', end)
+    await press(tooltip().get('input'), 'Enter')
+    document.body.click()
+    await settle()
+
+    expect(tooltip().get('[role="alert"]').text())
+      .toMatch(error)
+    expect(window.bulletin.sleep.update)
+      .not.toHaveBeenCalled()
+  })
+
+  it('opens nothing on a press on a Tail', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await move('2026-11-07', x(24 + 9))
+    await row('2026-11-07').get('.handle.-end')
+      .trigger('pointerdown')
+    await release()
+    await track('2026-11-07').trigger('click',
+      { clientX: x(24 + 9) })
+
+    expect(tooltip().exists()).toBe(false)
+  })
+
+  it('keeps it on a storage error', async () => {
+    storing([period])
+    window.bulletin.sleep.update = vi.fn()
+      .mockResolvedValue({
+        ok: false,
+        error: { code: 'internal' }
+      })
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    await type('End', '10:00')
+    await press(tooltip().get('input'), 'Enter')
+
+    expect(timeline!.get('[role="alert"]').text()).toBe(
+      "Couldn't move the period. Something went wrong."
+    )
+    expect(row('2026-11-07').get('.caption').text())
+      .toMatch(/^1:00\sAM to 9:00\sAM$/)
+  })
+  it('closes on Escape without saving', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    await type('End', '10:00')
+    await press(tooltip().get('input'), 'Escape')
+
+    expect(tooltip().exists()).toBe(false)
+    expect(window.bulletin.sleep.update)
+      .not.toHaveBeenCalled()
+  })
+})
