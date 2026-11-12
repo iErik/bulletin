@@ -76,36 +76,29 @@ const onRowKeydown = (
   index: number
 ): void => {
   const target = TARGETS[event.key]
-  const inEditor = (event.target as Element)
-    .closest('.habit-editor')
-  if (!target || inEditor) return
+  if (!target) return
   event.preventDefault()
   // Keeps the date header's shortcuts out of it.
   event.stopPropagation()
   focusRow(target(index, props.habits.length - 1))
 }
 
+type RowMode = 'edit' | 'delete'
+
 /** The Habit editing or asking "Delete?", if any. */
-const open = ref<{
-  kind: 'edit' | 'delete'
-  id: number
-} | null>(null)
+const active =
+  ref<{ mode: RowMode; id: number } | null>(null)
+/** Archiving, or the editor saving. */
 const busy = ref(false)
 const error = ref<string | null>(null)
 
-const isOpen = (
-  kind: 'edit' | 'delete',
-  id: number
-): boolean =>
-  open.value?.kind === kind && open.value.id === id
+const isActive = (mode: RowMode, id: number): boolean =>
+  active.value?.mode === mode && active.value.id === id
 
-const openRow = (
-  kind: 'edit' | 'delete',
-  index: number
-): boolean => {
+const openRow = (mode: RowMode, index: number): boolean => {
   if (busy.value) return false
   focused.value = index
-  open.value = { kind, id: props.habits[index].id }
+  active.value = { mode, id: props.habits[index].id }
   error.value = null
   return true
 }
@@ -117,9 +110,9 @@ const askDelete = async (index: number): Promise<void> => {
 }
 
 const cancel = async (refocus: boolean): Promise<void> => {
-  if (busy.value || open.value === null) return
-  const { id } = open.value
-  open.value = null
+  if (busy.value || active.value === null) return
+  const { id } = active.value
+  active.value = null
   error.value = null
   if (!refocus) return
   await nextTick()
@@ -142,7 +135,7 @@ const archive = async (index: number): Promise<void> => {
       find('.controls > .-confirm')?.focus()
     return
   }
-  open.value = null
+  active.value = null
   emit('archived', habit)
   await nextTick()
   focusRow(Math.min(index, props.habits.length - 1))
@@ -155,7 +148,7 @@ const onUpdated = async (habit: Habit): Promise<void> => {
 
 const onKeydown = (event: KeyboardEvent): void => {
   if (event.key !== 'Escape'
-    || open.value?.kind !== 'delete') return
+    || active.value?.mode !== 'delete') return
   event.preventDefault()
   event.stopPropagation()
   void cancel(true)
@@ -163,14 +156,14 @@ const onKeydown = (event: KeyboardEvent): void => {
 
 // A click or focus outside the asking row cancels.
 const onOutside = (event: Event): void => {
-  const row = find(`[data-id="${open.value?.id}"]`)
+  const row = find(`[data-id="${active.value?.id}"]`)
   if (row && event.composedPath().includes(row)) return
   void cancel(false)
 }
 
 const EVENTS = ['pointerdown', 'focusin'] as const
 
-watch(() => open.value?.kind === 'delete', asking => {
+watch(() => active.value?.mode === 'delete', asking => {
   const method = asking
     ? 'addEventListener'
     : 'removeEventListener'
@@ -203,7 +196,8 @@ onMounted(() => {
         @keydown="onRowKeydown($event, i)"
       >
         <HabitEditor
-          v-if="isOpen('edit', habit.id)"
+          v-if="isActive('edit', habit.id)"
+          v-model:busy="busy"
           :habit="habit"
           @saved="onUpdated"
           @cancel="cancel(true)"
@@ -226,7 +220,7 @@ onMounted(() => {
           <span class="count">{{ count(habit) }}</span>
         </button>
         <div
-          v-if="isOpen('delete', habit.id)"
+          v-if="isActive('delete', habit.id)"
           class="controls"
           role="group"
           :aria-label="`Delete ${habit.name}?`"
@@ -252,7 +246,7 @@ onMounted(() => {
           </button>
         </div>
         <div
-          v-else-if="!isOpen('edit', habit.id)"
+          v-else-if="!isActive('edit', habit.id)"
           class="controls"
         >
           <button

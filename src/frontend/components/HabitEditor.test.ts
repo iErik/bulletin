@@ -16,13 +16,14 @@ const READING: Habit = {
   archived: false
 }
 
-const mountEditor = (
-  habit?: Habit
-): { wrapper: VueWrapper; api: BulletinApi } => {
+const mountEditor = (): {
+  wrapper: VueWrapper
+  api: BulletinApi
+} => {
   const api = stubBulletin()
   editor = mount(HabitEditor, {
     attachTo: document.body,
-    props: { habit }
+    props: { habit: READING }
   })
   return { wrapper: editor, api }
 }
@@ -47,35 +48,6 @@ describe('HabitEditor', () => {
     editor = undefined
   })
 
-  it('creates a trimmed Habit and clears', async () => {
-    const { wrapper, api } = mountEditor()
-
-    expect(document.activeElement)
-      .toBe(wrapper.get('input').element)
-    await submit(wrapper, '  Stretch ')
-
-    expect(api.habits.create).toHaveBeenCalledWith({
-      name: 'Stretch',
-      icon: 'meditation'
-    })
-    expect(wrapper.emitted('saved')).toHaveLength(1)
-    expect(wrapper.get('input').element.value).toBe('')
-  })
-
-  it('creates with the chosen icon', async () => {
-    const { wrapper, api } = mountEditor()
-
-    await wrapper.get('.toggle').trigger('click')
-    await wrapper.get('[aria-label="water"]')
-      .trigger('click')
-    await submit(wrapper, 'Drink')
-
-    expect(api.habits.create).toHaveBeenCalledWith({
-      name: 'Drink',
-      icon: 'water'
-    })
-  })
-
   it('rejects an empty name', async () => {
     const { wrapper, api } = mountEditor()
 
@@ -83,20 +55,25 @@ describe('HabitEditor', () => {
 
     expect(wrapper.get('[role="alert"]').text())
       .toBe('Give the habit a name.')
-    expect(api.habits.create).not.toHaveBeenCalled()
+    expect(api.habits.update).not.toHaveBeenCalled()
   })
 
-  it('edits a Habit', async () => {
-    const { wrapper, api } = mountEditor(READING)
+  it('edits a trimmed name and the icon', async () => {
+    const { wrapper, api } = mountEditor()
 
     expect(wrapper.get('input').element.value)
       .toBe('Reading')
-    await submit(wrapper, 'Books')
+    expect(document.activeElement)
+      .toBe(wrapper.get('input').element)
+    await wrapper.get('.toggle').trigger('click')
+    await wrapper.get('[aria-label="water"]')
+      .trigger('click')
+    await submit(wrapper, '  Books ')
 
     expect(api.habits.update).toHaveBeenCalledWith({
       id: 4,
       name: 'Books',
-      icon: 'reading'
+      icon: 'water'
     })
     expect(wrapper.emitted('saved')).toHaveLength(1)
   })
@@ -107,7 +84,7 @@ describe('HabitEditor', () => {
       + 'Create it to restore it.']
   ] as const)('rejects an %s Habit’s name',
     async (habit, message) => {
-      const { wrapper, api } = mountEditor(READING)
+      const { wrapper, api } = mountEditor()
       vi.mocked(api.habits.update)
         .mockResolvedValue(takenBy(habit))
 
@@ -121,7 +98,7 @@ describe('HabitEditor', () => {
     })
 
   it('cancels on Escape', async () => {
-    const { wrapper, api } = mountEditor(READING)
+    const { wrapper, api } = mountEditor()
 
     await wrapper.get('input')
       .trigger('keydown', { key: 'Escape' })

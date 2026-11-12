@@ -91,6 +91,7 @@ const onKeydown = (event: KeyboardEvent): void => {
       class="grid"
       role="radiogroup"
       aria-label="Icon"
+      :style="{ '--columns': COLUMNS }"
       @keydown="onKeydown"
     >
       <button
@@ -120,6 +121,8 @@ const onKeydown = (event: KeyboardEvent): void => {
 @use '@/styles/utils' as *;
 
 // Its toggle and grid take part in the editor's grid.
+// The grid has row 2 to itself: items with a definite
+// row are placed first, and the rest then fill row 1.
 .habit-icon-picker {
   $tint: color-mix(
     in sRGB,
@@ -147,8 +150,9 @@ const onKeydown = (event: KeyboardEvent): void => {
 
   > .grid {
     display: grid;
+    grid-row: 2;
     grid-column: 1 / -1;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(var(--columns), 1fr);
     gap: rem(2px);
     justify-items: center;
   }

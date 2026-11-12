@@ -1,10 +1,10 @@
 <script setup lang="ts">
-// The Habit editor: an icon picker and a name field,
-// for creating a Habit or, given one, editing it. Enter
-// or ✓ saves through storage and emits `saved`; Escape
-// or × emits `cancel`. The name is trimmed and must not
-// be empty; storage rejects names other Habits use.
-// After creating, it clears for the next Habit.
+// The Habit editor: an icon picker and a name field
+// for editing a Habit. Enter or ✓ saves through
+// storage and emits `saved`; Escape or × emits
+// `cancel`. The name is trimmed and must not be empty;
+// storage rejects names other Habits use. `busy` is
+// true while saving.
 import {
   nextTick,
   onMounted,
@@ -12,14 +12,15 @@ import {
   useTemplateRef
 } from 'vue'
 import { Check, X } from '@lucide/vue'
-import type { Habit, HabitIcon } from '@shared/habits'
-import type { StorageError } from '@shared/storage'
+import type { Habit } from '@shared/habits'
+import type { StorageError, StorageResult }
+  from '@shared/storage'
 import HabitIconPicker
   from '@/components/HabitIconPicker.vue'
 
 const props = defineProps<{
-  /** The Habit to edit; creates one without it. */
-  habit?: Habit
+  /** The Habit to edit. */
+  habit: Habit
 }>()
 
 const emit = defineEmits<{
@@ -27,11 +28,10 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const DEFAULT_ICON: HabitIcon = 'meditation'
+const busy = defineModel<boolean>('busy')
 
-const name = ref(props.habit?.name ?? '')
-const icon = ref(props.habit?.icon ?? DEFAULT_ICON)
-const busy = ref(false)
+const name = ref(props.habit.name)
+const icon = ref(props.habit.icon)
 const error = ref<string | null>(null)
 const field = useTemplateRef<HTMLInputElement>('field')
 
@@ -44,41 +44,39 @@ const message = (failure: StorageError): string => {
     : 'Another habit uses this name.'
 }
 
+/** Writes the Habit through storage. */
+const write = (
+  trimmed: string
+): Promise<StorageResult<Habit>> =>
+  window.bulletin.habits.update({
+    id: props.habit.id,
+    name: trimmed,
+    icon: icon.value
+  })
+
 const save = async (): Promise<void> => {
   if (busy.value) return
   const trimmed = name.value.trim()
   error.value = trimmed ? null : 'Give the habit a name.'
   if (error.value) return
   busy.value = true
-  const { habits } = window.bulletin
-  const result = props.habit
-    ? await habits.update({
-        id: props.habit.id,
-        name: trimmed,
-        icon: icon.value
-      })
-    : await habits.create({
-        name: trimmed,
-        icon: icon.value
-      })
+  const result = await write(trimmed)
   busy.value = false
-  if (!result.ok) error.value = message(result.error)
-  else {
+  if (result.ok) {
     emit('saved', result.value)
-    if (props.habit) return
-    name.value = ''
-    icon.value = DEFAULT_ICON
+    return
   }
+  error.value = message(result.error)
   // Disabling ✓ may have dropped focus.
   await nextTick()
   field.value?.focus()
 }
 
 const onKeydown = (event: KeyboardEvent): void => {
+  // Keeps the keys from the row, list and date header.
+  event.stopPropagation()
   if (event.key !== 'Escape') return
   event.preventDefault()
-  // Keeps the list and the Widget open.
-  event.stopPropagation()
   if (!busy.value) emit('cancel')
 }
 
@@ -100,13 +98,13 @@ onMounted(() => {
       class="field"
       type="text"
       placeholder="Habit name"
-      :aria-label="habit ? 'Habit name' : 'New habit name'"
+      aria-label="Habit name"
       :aria-invalid="error !== null"
     >
     <button
       class="control"
       type="submit"
-      :aria-label="habit ? 'Save' : 'Create'"
+      aria-label="Save"
       :disabled="busy"
     >
       <Check class="icon" aria-hidden="true" />
