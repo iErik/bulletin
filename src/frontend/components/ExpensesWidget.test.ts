@@ -177,6 +177,28 @@ describe('ExpensesWidget', () => {
     expect(wrapper.get('tbody .chip').text()).toBe('Gym')
   })
 
+  it('drops a Transaction moved to another month',
+    async () => {
+      const api = stubBulletin()
+      vi.mocked(api.expenses.list).mockResolvedValue(
+        { ok: true, value: [SALARY] }
+      )
+      const wrapper = await mountWidget()
+
+      await wrapper.get('.date-cell > .value').trigger('click')
+      await wrapper.get('select[aria-label="Month"]')
+        .setValue('9')
+      await wrapper.get('select[aria-label="Month"]')
+        .trigger('keydown', { key: 'Enter' })
+      await flushPromises()
+
+      expect(api.expenses.update).toHaveBeenCalledWith(
+        { ...SALARY, date: '2026-10-03' }
+      )
+      expect(wrapper.findAll('tbody > tr')).toHaveLength(0)
+      expect(income(wrapper)).toBe('R$0.00')
+    })
+
   it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',
     async method => {

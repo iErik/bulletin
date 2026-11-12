@@ -26,13 +26,16 @@ const TRANSACTIONS = [
   row(2, '2026-11-12', 'Cigarettes', -3000)
 ]
 
+const TODAY = new Date(2026, 10, 12)
+
 const mountTable = (
   transactions = TRANSACTIONS
 ): VueWrapper => table = mount(ExpenseTable, {
   attachTo: document.body,
   props: {
     transactions,
-    categories: [{ id: 1, name: 'Food' }]
+    categories: [{ id: 1, name: 'Food' }],
+    today: TODAY
   }
 })
 
@@ -106,7 +109,7 @@ describe('ExpenseTable', () => {
 
     expect(first.findAll('button, [tabindex="0"]')
       .map(el => el.text()))
-      .toEqual(['', 'Salary', 'Food', 'R$25,000.00'])
+      .toEqual(['', 'Salary', 'Food', 'Nov 3', 'R$25,000.00'])
   })
 
   it('picks another Category for a row', async () => {
@@ -278,6 +281,24 @@ describe('ExpenseTable', () => {
       .toBe('Couldn’t save the change. Try again.')
   })
 
+  it('saves a new date from the popover', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable()
+
+    await wrapper.get('tbody .date-cell > .value')
+      .trigger('click')
+    await flushPromises()
+    await wrapper.get('select[aria-label="Day"]')
+      .setValue('5')
+    await wrapper.get('select[aria-label="Day"]')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(api.expenses.update).toHaveBeenCalledWith(
+      { ...TRANSACTIONS[1], date: '2026-11-05' }
+    )
+  })
+
   it('asks “Delete?”, focusing ✓', async () => {
     stubBulletin()
     const wrapper = mountTable()
@@ -423,6 +444,7 @@ describe('ExpenseTable', () => {
           props: {
             transactions: only,
             categories: [{ id: 1, name: 'Food' }],
+            today: TODAY,
             // Like the Widget, drop it once deleted.
             onDeleted: () =>
               void wrapper.setProps({ transactions: [] })
