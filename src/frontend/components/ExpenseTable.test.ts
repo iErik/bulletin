@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  type DOMWrapper,
   flushPromises,
   mount,
   type VueWrapper
@@ -34,6 +35,18 @@ const mountTable = (
     categories: [{ id: 1, name: 'Food' }]
   }
 })
+
+/** Opens the row's description or value input. */
+const edit = async (
+  wrapper: VueWrapper,
+  text: string
+): Promise<DOMWrapper<HTMLInputElement>> => {
+  const button = wrapper.findAll('tbody .cell-input > .value')
+    .find(el => el.text() === text)
+  await button?.trigger('click')
+  await flushPromises()
+  return wrapper.find<HTMLInputElement>('tbody input')
+}
 
 /** Each body row's cells' text. */
 const cells = (wrapper: VueWrapper): string[][] =>
@@ -87,13 +100,107 @@ describe('ExpenseTable', () => {
       .toEqual(['-income', '-expense', '-expense', '-zero'])
   })
 
-  it('lets the cut-off text be focused', () => {
+  it('lets each cell be reached from the keyboard', () => {
     const wrapper = mountTable()
     const first = wrapper.get('tbody > tr')
 
-    expect(first.findAll('[tabindex="0"]')
+    expect(first.findAll('button, [tabindex="0"]')
       .map(el => el.text()))
-      .toEqual(['Salary', 'Food'])
+      .toEqual(['', 'Salary', 'Food', 'R$25,000.00'])
+  })
+
+  it('saves an edited description', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable()
+
+    const input = await edit(wrapper, 'Salary')
+    await input.setValue('  Bonus ')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    const saved = { ...TRANSACTIONS[1], description: 'Bonus' }
+    expect(api.expenses.update).toHaveBeenCalledWith(saved)
+    expect(wrapper.emitted('updated')).toEqual([[saved]])
+  })
+
+  it('parses an edited value', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable()
+
+    const input = await edit(wrapper, '-R$30.00')
+    expect(input.element.value).toBe('-30.00')
+    await input.setValue('-1.234,56')
+    await input.trigger('blur')
+    await flushPromises()
+
+    expect(api.expenses.update).toHaveBeenCalledWith(
+      { ...TRANSACTIONS[3], amount: -123_456 }
+    )
+  })
+
+  it('doesn’t save an unchanged value', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable()
+
+    const input = await edit(wrapper, 'R$25,000.00')
+    await input.setValue('25,000.00')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(api.expenses.update).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['R$25,000.00', 'abc', 'Enter an amount like -1234.56.'],
+    ['Salary', ' ', 'Enter a description.']
+  ])(
+    'keeps %j open on invalid %j, with an error',
+    async (cell, text, reason) => {
+      const api = stubBulletin()
+      const wrapper = mountTable()
+
+      const input = await edit(wrapper, cell)
+      await input.setValue(text)
+      await input.trigger('keydown', { key: 'Enter' })
+      await flushPromises()
+
+      expect(api.expenses.update).not.toHaveBeenCalled()
+      expect(wrapper.get('[role="alert"]').text())
+        .toBe(reason)
+      expect(input.attributes('aria-invalid')).toBe('true')
+    }
+  )
+
+  it('shows an edit while saving it', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.update)
+      .mockReturnValueOnce(new Promise(() => {}))
+    const wrapper = mountTable()
+
+    const input = await edit(wrapper, 'Salary')
+    await input.setValue('Bonus')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(cells(wrapper)[0][1]).toBe('Bonus')
+  })
+
+  it('reverts and shows a storage error', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.update).mockResolvedValue(
+      { ok: false, error: { code: 'internal' } }
+    )
+    const wrapper = mountTable()
+
+    const input = await edit(wrapper, 'Salary')
+    await input.setValue('Bonus')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(cells(wrapper)[0][1]).toBe('Salary')
+    expect(wrapper.emitted('updated')).toBeUndefined()
+    expect(wrapper.get('[role="alert"]').text())
+      .toBe('Couldn’t save the change. Try again.')
   })
 
   it('asks “Delete?”, focusing ✓', async () => {

@@ -142,6 +142,22 @@ describe('ExpensesWidget', () => {
     expect(income(wrapper)).toBe('R$0.00')
   })
 
+  it('keeps an edit in the month', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.list).mockResolvedValue(
+      { ok: true, value: [SALARY] }
+    )
+    const wrapper = await mountWidget()
+
+    await wrapper.get('td.value .value').trigger('click')
+    await wrapper.get('td.value input').setValue('300')
+    await wrapper.get('td.value input')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(income(wrapper)).toBe('R$300.00')
+  })
+
   it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',
     async method => {
