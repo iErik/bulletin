@@ -6,9 +6,10 @@
 // with empty fields. Enter, or `commit()` when the
 // Timeline is clicked away from, emits `save` with
 // valid times; invalid or rule-breaking ones show an
-// inline error instead. Escape cancels "Delete?", then
-// closes. It sits above its point, or below when
-// there's no room.
+// inline error instead. A blank "Add period" closes
+// on a click away, but not on Enter. Escape cancels
+// "Delete?", then closes. It sits above its point, or
+// below when there's no room.
 import {
   nextTick,
   onMounted,
@@ -63,12 +64,8 @@ const fromFields = (): NewSleepPeriod | string => {
 }
 
 /** Saves valid times; false, with an error, if not. */
-const commit = (): boolean => {
+const save = (): boolean => {
   const { period } = props
-  if (!period && !start.value.trim() && !end.value.trim()) {
-    emit('close')
-    return true
-  }
   const result = fromFields()
   if (typeof result === 'string') {
     error.value = `${result}.`
@@ -80,18 +77,29 @@ const commit = (): boolean => {
   return true
 }
 
+const blank = (): boolean => !props.period
+  && !start.value.trim() && !end.value.trim()
+
+/** Like `save`, but a blank "Add period" just closes. */
+const commit = (): boolean => {
+  if (!blank()) return save()
+  emit('close')
+  return true
+}
+
 defineExpose({ commit })
 
 const root = useTemplateRef<HTMLElement>('root')
 const first = useTemplateRef<HTMLInputElement>('first')
 const trash = useTemplateRef<HTMLButtonElement>('trash')
-const no = useTemplateRef<HTMLButtonElement>('no')
+const keepButton =
+  useTemplateRef<HTMLButtonElement>('keepButton')
 const confirm = useTemplateRef<HTMLElement>('confirm')
 
 const ask = async (): Promise<void> => {
   confirming.value = true
   await nextTick()
-  no.value?.focus()
+  keepButton.value?.focus()
 }
 
 const keep = async (): Promise<void> => {
@@ -100,11 +108,24 @@ const keep = async (): Promise<void> => {
   trash.value?.focus()
 }
 
-// Focus leaving ✓ and × cancels "Delete?".
+// Focus leaving ✓ and × cancels "Delete?". Only from
+// them: Chrome sends one from the trash button as
+// "Delete?" replaces it.
 const onFocusout = (event: FocusEvent): void => {
+  const from = event.target as Node
   const to = event.relatedTarget as Node | null
-  if (confirming.value && !confirm.value?.contains(to))
-    confirming.value = false
+  const box = confirm.value
+  if (confirming.value && box?.contains(from)
+    && !box.contains(to)) confirming.value = false
+}
+
+// The pointer leaving cancels "Delete?", giving focus
+// back to the trash button if it was on ✓ or ×.
+const onPointerleave = (): void => {
+  if (!confirming.value) return
+  if (confirm.value?.contains(document.activeElement))
+    void keep()
+  else confirming.value = false
 }
 
 const onKeydown = (event: KeyboardEvent): void => {
@@ -114,7 +135,7 @@ const onKeydown = (event: KeyboardEvent): void => {
   } else if (event.key === 'Enter') {
     // A focused button handles Enter itself.
     if (event.target instanceof HTMLButtonElement) return
-    commit()
+    save()
   } else return
   event.preventDefault()
   // Keeps the row and the Timeline out of it.
@@ -140,7 +161,7 @@ onMounted(() => {
     :aria-label="period ? 'Edit period' : 'Add period'"
     @keydown="onKeydown"
     @focusout="onFocusout"
-    @pointerleave="confirming = false"
+    @pointerleave="onPointerleave"
   >
     <span v-if="!period" class="part -title">
       Add period
@@ -177,7 +198,7 @@ onMounted(() => {
         <Icon name="check" />
       </button>
       <button
-        ref="no"
+        ref="keepButton"
         class="action"
         type="button"
         aria-label="Keep period"

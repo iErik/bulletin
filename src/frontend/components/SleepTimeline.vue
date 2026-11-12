@@ -335,7 +335,7 @@ const move = async (
 let opening: Event | null = null
 // Whether the tooltip is closing on a click away, which
 // leaves focus where it went.
-let away = false
+let closingAway = false
 
 const open = (
   target: NonNullable<typeof editing.value>,
@@ -366,9 +366,9 @@ const edit = (period: SleepPeriod, event?: Event): void => {
 
 /** Saves the open tooltip; false if it can't. */
 const commitAway = (): boolean => {
-  away = true
+  closingAway = true
   const done = editor.value?.[0]?.commit() ?? true
-  away = false
+  closingAway = false
   return done
 }
 
@@ -376,7 +376,7 @@ const commitAway = (): boolean => {
 const close = async (): Promise<void> => {
   const was = editing.value
   editing.value = null
-  if (!was || away) return
+  if (!was || closingAway) return
   await nextTick()
   const find = (selector: string): HTMLElement | null
     | undefined =>
@@ -394,7 +394,9 @@ const onSave = (period: NewSleepPeriod): void => {
 }
 
 /** Deletes `period`, or puts it back. */
-const remove = async (period: SleepPeriod): Promise<void> => {
+const remove = async (
+  period: SleepPeriod
+): Promise<void> => {
   months.remove(period.id)
   void close()
   saving.value = true
@@ -537,8 +539,11 @@ watch(() => store.today, today => {
         :data-day="row.key"
         :aria-disabled="row.future || undefined"
         :tabindex="row.future ? undefined : 0"
-        @keydown.enter.self="
-          open({ key: row.key, day: row.day, fraction: 0.5 })"
+        @keydown.enter.self="open({
+          key: row.key,
+          day: row.day,
+          fraction: 0.5
+        })"
       >
         <div class="label">
           <span class="date">{{ row.label }}</span>
@@ -610,7 +615,8 @@ watch(() => store.today, today => {
             :day="editing.day"
             :periods="months.periods.value"
             @save="onSave"
-            @remove="editing.period && remove(editing.period)"
+            @remove="
+              editing.period && remove(editing.period)"
             @close="close"
           />
           <span
