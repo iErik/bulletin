@@ -78,13 +78,14 @@ const saveError = ref<string | null>(null)
 const saving = ref(false)
 /**
  * Whose tooltip is open: a Period, or a day to add one
- * on, drawn on `key`'s row at `at`.
+ * on, drawn on `key`'s row at `fraction`.
  */
 const editing = shallowRef<{
   key: string
   day: Date
   period?: SleepPeriod
-  at: number
+  /** Where on the row it points, from 0 to 1. */
+  fraction: number
 } | null>(null)
 // One in the rows' v-for, so an array.
 const editor = useTemplateRef<{
@@ -345,8 +346,10 @@ const open = (
   cancel()
   saveError.value = null
   opening = event ?? null
-  const at = Math.min(0.85, Math.max(0.15, target.at))
-  editing.value = { ...target, at }
+  // Off the row's ends, so it isn't cut off.
+  const fraction = Math.min(0.85,
+    Math.max(0.15, target.fraction))
+  editing.value = { ...target, fraction }
 }
 
 /** Opens `period`'s tooltip over its Head's row. */
@@ -357,7 +360,7 @@ const edit = (period: SleepPeriod, event?: Event): void => {
     key: localDate(day),
     day,
     period,
-    at: (toFraction(period.start, day) + to) / 2
+    fraction: (toFraction(period.start, day) + to) / 2
   }, event)
 }
 
@@ -535,7 +538,7 @@ watch(() => store.today, today => {
         :aria-disabled="row.future || undefined"
         :tabindex="row.future ? undefined : 0"
         @keydown.enter.self="
-          open({ key: row.key, day: row.day, at: 0.5 })"
+          open({ key: row.key, day: row.day, fraction: 0.5 })"
       >
         <div class="label">
           <span class="date">{{ row.label }}</span>
@@ -602,7 +605,7 @@ watch(() => store.today, today => {
             v-if="editing?.key === row.key"
             ref="editor"
             :key="editing.period?.id ?? 'add'"
-            :style="{ left: percent(editing.at) }"
+            :style="{ left: percent(editing.fraction) }"
             :period="editing.period"
             :day="editing.day"
             :periods="months.periods.value"

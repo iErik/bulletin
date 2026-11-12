@@ -56,8 +56,8 @@ describe('endFrom', () => {
       .toBe(at(8, 7))
   })
 
-  it('keeps an equal time', () => {
+  it('takes the next day when equal', () => {
     expect(endFrom(at(8, 2), { hours: 2, minutes: 0 }))
-      .toBe(at(8, 2))
+      .toBe(at(9, 2))
   })
 })

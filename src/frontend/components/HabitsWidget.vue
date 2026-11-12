@@ -177,6 +177,9 @@ const frame = useTemplateRef<
 const nameButton = useTemplateRef<HTMLButtonElement>(
   'nameButton'
 )
+const list = useTemplateRef<
+  InstanceType<typeof HabitList>
+>('list')
 
 const frameElement = (): HTMLElement | undefined =>
   frame.value?.$el as HTMLElement | undefined
@@ -197,7 +200,7 @@ const closeList = async (): Promise<void> => {
 
 const toggleList = (): void => {
   if (!listing.value) listing.value = true
-  else void closeList()
+  else if (!list.value?.busy) void closeList()
 }
 
 const choose = (habit: Habit): void => {
@@ -205,15 +208,22 @@ const choose = (habit: Habit): void => {
   void closeList()
 }
 
+const onArchived = (habit: Habit): void => {
+  habits.value = (habits.value ?? [])
+    .filter(other => other.id !== habit.id)
+  // With no Habits left there's no list to show.
+  if (!habits.value.length) listing.value = false
+}
+
 const onKeydown = (event: KeyboardEvent): void => {
   if (event.key !== 'Escape' || !listing.value) return
   event.preventDefault()
   event.stopPropagation()
-  void closeList()
+  if (!list.value?.busy) void closeList()
 }
 
 const onDocumentClick = (event: Event): void => {
-  if (!listing.value) return
+  if (!listing.value || list.value?.busy) return
   const el = frameElement()
   if (el && event.composedPath().includes(el)) return
   void closeList()
@@ -270,11 +280,13 @@ watch(
     </p>
     <HabitList
       v-else-if="current && listing"
+      ref="list"
       :habits="habits ?? []"
       :current="current.id"
       :done="doneIn"
       :days="getDaysInMonth(month)"
       @choose="choose"
+      @archived="onArchived"
     />
     <div v-else-if="current" class="content">
       <MonthGrid

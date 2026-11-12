@@ -3,8 +3,9 @@
  * on a 12- or 24-hour clock, and placed on the
  * Timeline, free of rendering.
  */
-import { addDays } from 'date-fns'
+import { addDays, isSameDay } from 'date-fns'
 import type { EpochMs } from '@shared/sleep'
+import { rowOf } from './timeline'
 
 /** A time of day. */
 export interface Clock {
@@ -34,7 +35,8 @@ export const parseClock = (text: string): Clock | null => {
   return { hours, minutes }
 }
 
-const on = (day: Date, clock: Clock): EpochMs =>
+/** `clock` on the calendar day `day`. */
+const clockOn = (day: Date, clock: Clock): EpochMs =>
   new Date(
     day.getFullYear(),
     day.getMonth(),
@@ -47,18 +49,24 @@ const on = (day: Date, clock: Clock): EpochMs =>
  * `clock` in `day`'s row, from noon on `day` to noon
  * the next: 2:15 AM is on the next day.
  */
-export const startIn = (day: Date, clock: Clock): EpochMs =>
-  on(clock.hours < 12 ? addDays(day, 1) : day, clock)
+export const startIn = (day: Date, clock: Clock): EpochMs => {
+  const same = clockOn(day, clock)
+  return isSameDay(rowOf(same), day)
+    ? same
+    : clockOn(addDays(day, 1), clock)
+}
 
 /**
- * The first `clock` from `start` on: `start` itself
- * when they're equal, as a Period can't be empty.
+ * The first `clock` after `start`: a day on when
+ * they're equal, as a Period can't be empty.
  */
 export const endFrom = (
   start: EpochMs,
   clock: Clock
 ): EpochMs => {
   const day = new Date(start)
-  const end = on(day, clock)
-  return end >= start ? end : on(addDays(day, 1), clock)
+  const end = clockOn(day, clock)
+  return end > start
+    ? end
+    : clockOn(addDays(day, 1), clock)
 }

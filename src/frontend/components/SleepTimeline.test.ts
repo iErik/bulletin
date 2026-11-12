@@ -754,6 +754,35 @@ describe('SleepTimeline, editing', () => {
     expect(document.activeElement).toBe(tabStop().element)
   })
 
+  it('keeps a Period of exactly 24 hours', async () => {
+    const day = {
+      id: 1,
+      start: at(10, 7, 22),
+      end: at(10, 8, 22)
+    }
+    storing([day])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    const start = tooltip().get('[aria-label="Start"]')
+    await press(start, 'Enter')
+    expect(window.bulletin.sleep.update)
+      .not.toHaveBeenCalled()
+    expect(tooltip().exists()).toBe(false)
+
+    await click('2026-11-07', x(24 + 5))
+    await type('Start', '23:00')
+    await type('End', '23:00')
+    await press(
+      tooltip().get('[aria-label="Start"]'), 'Enter')
+    expect(window.bulletin.sleep.update)
+      .toHaveBeenCalledWith({
+        ...day,
+        start: at(10, 7, 23),
+        end: at(10, 8, 23)
+      })
+  })
+
   it('saves on a click away', async () => {
     storing([period])
     await mountTimeline()
