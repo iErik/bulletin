@@ -6,6 +6,8 @@
 // the Title Bar.
 import { defineAsyncComponent } from 'vue'
 import DateHeader from '@/components/DateHeader.vue'
+import ExpensesWidget
+  from '@/components/ExpensesWidget.vue'
 import HabitsWidget from '@/components/HabitsWidget.vue'
 import MoodWidget from '@/components/MoodWidget.vue'
 import SleepTimeline
@@ -29,7 +31,7 @@ const DevThemeToggle = import.meta.env.DEV
     <Widget class="sleep" title="Sleep">
       <SleepTimeline />
     </Widget>
-    <Widget class="expenses" title="Expenses" />
+    <ExpensesWidget class="expenses" />
     <MoodWidget class="mood" />
     <HabitsWidget class="habits" />
     <WeightWidget class="weight" />
