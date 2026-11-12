@@ -64,6 +64,11 @@ const onBudgetSaved = (saved: Budget): void => {
     budget.value = saved
 }
 
+const onDeleted = ({ id }: Transaction): void => {
+  transactions.value = transactions.value
+    .filter(transaction => transaction.id !== id)
+}
+
 watch(
   () => month.value.getTime(),
   () => void load(month.value),
@@ -86,6 +91,7 @@ watch(
       <ExpenseTable
         :transactions="transactions"
         :categories="categories"
+        @deleted="onDeleted"
       />
     </template>
   </Widget>

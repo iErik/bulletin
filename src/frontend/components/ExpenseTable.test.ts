@@ -1,6 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  flushPromises,
+  mount,
+  type VueWrapper
+} from '@vue/test-utils'
 import type { Transaction } from '@shared/expenses'
+import { stubBulletin } from '@/testing/bulletin'
 import ExpenseTable from './ExpenseTable.vue'
 
 let table: VueWrapper | undefined
@@ -20,18 +25,34 @@ const TRANSACTIONS = [
   row(2, '2026-11-12', 'Cigarettes', -3000)
 ]
 
-const mountTable = (): VueWrapper =>
-  table = mount(ExpenseTable, {
-    props: {
-      transactions: TRANSACTIONS,
-      categories: [{ id: 1, name: 'Food' }]
-    }
-  })
+const mountTable = (
+  transactions = TRANSACTIONS
+): VueWrapper => table = mount(ExpenseTable, {
+  attachTo: document.body,
+  props: {
+    transactions,
+    categories: [{ id: 1, name: 'Food' }]
+  }
+})
 
 /** Each body row's cells' text. */
 const cells = (wrapper: VueWrapper): string[][] =>
   wrapper.findAll('tbody > tr').map(tr =>
     tr.findAll('td').map(td => td.text()))
+
+/** Clicks "−" on the row for `description`. */
+const ask = async (
+  wrapper: VueWrapper,
+  description: string
+): Promise<void> => {
+  await wrapper
+    .get(`[aria-label="Delete ${description}"]`)
+    .trigger('click')
+}
+
+const asking = (wrapper: VueWrapper): string[] =>
+  wrapper.findAll('.controls').map(controls =>
+    controls.attributes('aria-label') ?? '')
 
 describe('ExpenseTable', () => {
   afterEach(() => {
@@ -47,6 +68,7 @@ describe('ExpenseTable', () => {
   })
 
   it('orders rows by date, then as added', () => {
+    stubBulletin()
     const wrapper = mountTable()
 
     expect(cells(wrapper)).toEqual([
@@ -72,5 +94,116 @@ describe('ExpenseTable', () => {
     expect(first.findAll('[tabindex="0"]')
       .map(el => el.text()))
       .toEqual(['Salary', 'Food'])
+  })
+
+  it('asks “Delete?”, focusing ✓', async () => {
+    stubBulletin()
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await flushPromises()
+
+    expect(asking(wrapper)).toEqual(['Delete Salary?'])
+    expect(document.activeElement)
+      .toBe(wrapper.get('.-confirm').element)
+  })
+
+  it('deletes on ✓ and emits it', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await wrapper.get('.-confirm').trigger('click')
+    await flushPromises()
+
+    expect(api.expenses.delete).toHaveBeenCalledWith(1)
+    expect(wrapper.emitted('deleted'))
+      .toEqual([[TRANSACTIONS[1]]])
+    expect(asking(wrapper)).toEqual([])
+  })
+
+  it('cancels on ×, refocusing “−”', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await wrapper.get('[aria-label="Don’t delete"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(asking(wrapper)).toEqual([])
+    expect(api.expenses.delete).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(wrapper
+      .get('[aria-label="Delete Salary"]').element)
+  })
+
+  it('cancels on Escape', async () => {
+    stubBulletin()
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await wrapper.get('.-confirm')
+      .trigger('keydown', { key: 'Escape' })
+
+    expect(asking(wrapper)).toEqual([])
+  })
+
+  it.each(['pointerdown', 'focusin'])(
+    'cancels on %s elsewhere',
+    async event => {
+      stubBulletin()
+      const wrapper = mountTable()
+
+      await ask(wrapper, 'Salary')
+      document.body.dispatchEvent(
+        new Event(event, { bubbles: true })
+      )
+      await flushPromises()
+
+      expect(asking(wrapper)).toEqual([])
+    }
+  )
+
+  it('asks for one row at a time', async () => {
+    stubBulletin()
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await ask(wrapper, 'Refund')
+
+    expect(asking(wrapper)).toEqual(['Delete Refund?'])
+  })
+
+  it('keeps asking, with an error, if it fails', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.delete).mockResolvedValue(
+      { ok: false, error: { code: 'internal' } }
+    )
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await wrapper.get('.-confirm').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text())
+      .toBe('Couldn’t delete the Transaction. Try again.')
+    expect(asking(wrapper)).toEqual(['Delete Salary?'])
+    expect(wrapper.emitted('deleted')).toBeUndefined()
+  })
+
+  it('holds ✓ and × while deleting', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.delete)
+      .mockReturnValue(new Promise(() => {}))
+    const wrapper = mountTable()
+
+    await ask(wrapper, 'Salary')
+    await wrapper.get('.-confirm').trigger('click')
+    await wrapper.get('[aria-label="Don’t delete"]')
+      .trigger('click')
+
+    expect(wrapper.get('.-confirm').attributes())
+      .toHaveProperty('disabled')
+    expect(asking(wrapper)).toEqual(['Delete Salary?'])
   })
 })
