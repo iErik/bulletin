@@ -440,7 +440,7 @@ onBeforeUnmount(() => {
   > .error {
     margin-top: space(1);
     font-size: rem(11px);
-    color: var(--color-text);
+    color: var(--color-danger);
   }
 }
 </style>
