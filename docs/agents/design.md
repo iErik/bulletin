@@ -70,11 +70,13 @@ plugin (MCP):
 
 1. Load the `figma-design-to-code` skill. The plugin
    requires it before `get_design_context`.
-2. Call `create_session` with the file key and a
-   short description of the task, as the Figma
-   server's instructions require before any file
-   tool, reads included. Pass its session ID to each
-   later call that accepts one.
+2. If the Figma server offers `create_session`, call
+   it first, with the file key and a short
+   description of the task: when it's offered, the
+   server's instructions ask for it before any file
+   tool, reads included. Pass its session ID only to
+   later calls that accept one. Without it, go
+   straight to step 3.
 3. Call `get_design_context` for each linked node,
    with the file key, the node ID and its
    screenshot. If no screenshot comes back, call
@@ -131,5 +133,6 @@ wasn't done.
 
 Review UI changes against the frames, not only the
 ticket text. A PR whose UI doesn't match its frames,
-with no departure a ticket or ADR allows, isn't
+with no departure a ticket or an accepted ADR
+allows, isn't
 ready.

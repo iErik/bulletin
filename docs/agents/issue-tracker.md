@@ -48,7 +48,8 @@ Work in this repo is organized as Linear tickets (team prefix: `BLT`). Use the L
 - [ ] Every acceptance criterion is met, and you can say how you verified each one
 - [ ] For UI work, the app matches its Figma
       frames, checked in the running app, apart from
-      departures a ticket or ADR allows
+      departures a ticket or an accepted ADR
+      allows
       ([Design check][design-check])
 - [ ] Tests added or updated for the change
 - [ ] `pnpm lint` passes
