@@ -28,7 +28,8 @@ const HABITS = [
 ]
 
 const mountList = (
-  habits: Habit[] = HABITS
+  habits: Habit[] = HABITS,
+  creating = false
 ): { wrapper: VueWrapper; api: BulletinApi } => {
   const api = stubBulletin()
   list = mount(HabitList, {
@@ -37,7 +38,8 @@ const mountList = (
       habits,
       current: 2,
       done: (one: Habit) => one.id * 4,
-      days: 30
+      days: 30,
+      creating
     }
   })
   return { wrapper: list, api }
@@ -78,7 +80,7 @@ describe('HabitList', () => {
   it('shows each Habit with its icon and count', () => {
     const { wrapper } = mountList()
 
-    const rows = wrapper.findAll('.row')
+    const rows = wrapper.findAll('.row:not(.-new)')
     expect(rows.map(item => item.get('.name').text()))
       .toEqual(['Reading', 'Running', 'Water'])
     expect(rows[0].get('.count').text())
@@ -117,12 +119,15 @@ describe('HabitList', () => {
       await press('ArrowDown')
       expect(focusedName()).toBe('Water')
       await press('ArrowDown')
-      expect(focusedName()).toBe('Water')
+      expect(focusedName()).toBe('Track a new habit…')
+      await press('ArrowDown')
+      expect(focusedName()).toBe('Track a new habit…')
       await press('Home')
       expect(focusedName()).toBe('Reading')
       await press('ArrowUp')
       expect(focusedName()).toBe('Reading')
       await press('End')
+      await press('ArrowUp')
       expect(focusedName()).toBe('Water')
       expect(choose(wrapper, 'Water')
         .attributes('tabindex')).toBe('0')
@@ -253,6 +258,75 @@ describe('HabitList', () => {
 
     await button(wrapper, 'Delete Reading').trigger('click')
     await flushPromises()
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.findAll('.question')).toHaveLength(1)
+  })
+
+  it('creates from the last row', async () => {
+    const { wrapper, api } = mountList()
+
+    await wrapper.get('.choose:focus')
+      .trigger('keydown', { key: 'End' })
+    expect(focusedName()).toBe('Track a new habit…')
+    await wrapper.get('.-new > .choose').trigger('click')
+    await flushPromises()
+    await wrapper.get('input').setValue('Yoga')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(api.habits.create).toHaveBeenCalledWith({
+      name: 'Yoga',
+      icon: 'meditation'
+    })
+    expect(wrapper.emitted('created')).toHaveLength(1)
+    expect(wrapper.emitted('choose')).toBeUndefined()
+    // The field stays open for the next Habit.
+    expect(document.activeElement)
+      .toBe(wrapper.get('input').element)
+  })
+
+  it('keeps the row open while creating', async () => {
+    const { wrapper, api } = mountList()
+    let created = (): void => {}
+    vi.mocked(api.habits.create).mockReturnValue(
+      new Promise(resolve => {
+        created = () => resolve({
+          ok: true, value: habit(4, 'Yoga')
+        })
+      }))
+
+    await wrapper.get('.-new > .choose').trigger('click')
+    await wrapper.get('input').setValue('Yoga')
+    await wrapper.get('form').trigger('submit')
+    await button(wrapper, 'Delete Reading').trigger('click')
+    expect(wrapper.find('.question').exists()).toBe(false)
+
+    created()
+    await flushPromises()
+    await button(wrapper, 'Delete Reading').trigger('click')
+    expect(wrapper.find('.question').exists()).toBe(true)
+  })
+
+  it('opens on the new-habit field', async () => {
+    const { wrapper } = mountList([], true)
+    await flushPromises()
+
+    expect(document.activeElement)
+      .toBe(wrapper.get('.-new input').element)
+    await wrapper.get('input')
+      .trigger('keydown', { key: 'Escape' })
+    await flushPromises()
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(focusedName()).toBe('Track a new habit…')
+  })
+
+  it('counts the new-habit row as a row', async () => {
+    const { wrapper } = mountList()
+
+    await wrapper.get('.-new > .choose').trigger('click')
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await flushPromises()
+
     expect(wrapper.find('form').exists()).toBe(false)
     expect(wrapper.findAll('.question')).toHaveLength(1)
   })

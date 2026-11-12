@@ -6,8 +6,10 @@
 // Habit through storage and emits `archived`, while ×,
 // Escape, a click or focus elsewhere cancels. ↑ ↓ Home
 // End move between rows; Tab reaches a row's buttons.
-// ✏️ turns a row into the Habit editor. Only one row
-// at a time edits or asks "Delete?".
+// ✏️ turns a row into the Habit editor, and the last
+// row, "+ Track a new habit…", into an empty one that
+// emits `created` and stays open. Only one row at a
+// time edits or asks "Delete?".
 import {
   nextTick,
   onBeforeUnmount,
@@ -16,7 +18,8 @@ import {
   useTemplateRef,
   watch
 } from 'vue'
-import { Check, Minus, Pencil, X } from '@lucide/vue'
+import { Check, Minus, Pencil, Plus, X }
+  from '@lucide/vue'
 import type { Habit } from '@shared/habits'
 import HabitEditor from '@/components/HabitEditor.vue'
 import { HABIT_ICON_COMPONENTS } from '@/habits/icons'
@@ -25,18 +28,22 @@ import { formatNumber } from '@/locale/format'
 const props = defineProps<{
   /** The active Habits, oldest first. */
   habits: readonly Habit[]
-  /** The current Habit's id. */
-  current: number
+  /** The current Habit's id, if any. */
+  current: number | null
   /** A Habit's done days in the month. */
   done: (habit: Habit) => number
   /** The number of days in the month. */
   days: number
+  /** Opens with the new-habit field focused. */
+  creating?: boolean
 }>()
 
 const emit = defineEmits<{
   choose: [habit: Habit]
   /** Storage has archived it. */
   archived: [habit: Habit]
+  /** Storage has created or restored it. */
+  created: [habit: Habit]
   /** Storage has saved its changes. */
   updated: [habit: Habit]
 }>()
@@ -51,9 +58,12 @@ const root = useTemplateRef<HTMLElement>('root')
 const find = (selector: string): HTMLElement | null =>
   root.value?.querySelector(selector) ?? null
 
-// Roving tabindex over the rows.
-const focused = ref(Math.max(0, props.habits
-  .findIndex(habit => habit.id === props.current)))
+// Roving tabindex over the rows; the new-habit row's
+// index is the number of Habits.
+const focused = ref(props.creating
+  ? props.habits.length
+  : Math.max(0, props.habits
+      .findIndex(habit => habit.id === props.current)))
 
 const focusRow = (index: number): void => {
   focused.value = index
@@ -80,25 +90,31 @@ const onRowKeydown = (
   event.preventDefault()
   // Keeps the date header's shortcuts out of it.
   event.stopPropagation()
-  focusRow(target(index, props.habits.length - 1))
+  focusRow(target(index, props.habits.length))
 }
 
 type RowMode = 'edit' | 'delete'
+/** A Habit's id, or `new` for the new-habit row. */
+type RowId = number | 'new'
 
-/** The Habit editing or asking "Delete?", if any. */
-const active =
-  ref<{ mode: RowMode; id: number } | null>(null)
+/** The row editing or asking "Delete?", if any. */
+const active = ref<{ mode: RowMode; id: RowId } | null>(
+  props.creating ? { mode: 'edit', id: 'new' } : null
+)
 /** Archiving, or the editor saving. */
 const busy = ref(false)
 const error = ref<string | null>(null)
 
-const isActive = (mode: RowMode, id: number): boolean =>
+const isActive = (mode: RowMode, id: RowId): boolean =>
   active.value?.mode === mode && active.value.id === id
 
 const openRow = (mode: RowMode, index: number): boolean => {
   if (busy.value) return false
   focused.value = index
-  active.value = { mode, id: props.habits[index].id }
+  active.value = {
+    mode,
+    id: props.habits.at(index)?.id ?? 'new'
+  }
   error.value = null
   return true
 }
@@ -116,8 +132,9 @@ const cancel = async (refocus: boolean): Promise<void> => {
   error.value = null
   if (!refocus) return
   await nextTick()
-  focusRow(props.habits
-    .findIndex(habit => habit.id === id))
+  const index = props.habits
+    .findIndex(habit => habit.id === id)
+  focusRow(index < 0 ? props.habits.length : index)
 }
 
 const archive = async (index: number): Promise<void> => {
@@ -274,6 +291,29 @@ onMounted(() => {
           />
         </div>
       </li>
+      <li
+        class="row -new"
+        data-id="new"
+        @keydown="onRowKeydown($event, habits.length)"
+      >
+        <HabitEditor
+          v-if="isActive('edit', 'new')"
+          v-model:busy="busy"
+          @saved="emit('created', $event)"
+          @cancel="cancel(true)"
+        />
+        <button
+          v-else
+          class="choose"
+          type="button"
+          :tabindex="habits.length === focused ? 0 : -1"
+          @click="openRow('edit', habits.length)"
+          @focus="focused = habits.length"
+        >
+          <Plus class="icon" aria-hidden="true" />
+          <span class="name">Track a new habit…</span>
+        </button>
+      </li>
     </ul>
     <p v-if="error" class="error" role="alert">
       {{ error }}
@@ -393,6 +433,8 @@ onMounted(() => {
   }
 
   .icon.-check { margin: 0 rem(3px); }
+
+  .row.-new > .choose > .icon { grid-row: auto; }
 
   > .error {
     margin-top: space(1);
