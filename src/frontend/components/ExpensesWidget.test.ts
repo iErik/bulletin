@@ -60,6 +60,22 @@ describe('ExpensesWidget', () => {
     expect(income(wrapper)).toBe('R$25,000.00')
   })
 
+  it('shows the Transactions with their Category', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.list).mockResolvedValue(
+      { ok: true, value: [SALARY] }
+    )
+    vi.mocked(api.expenses.listCategories)
+      .mockResolvedValue(
+        { ok: true, value: [{ id: 1, name: 'Payment' }] }
+      )
+
+    const wrapper = await mountWidget()
+
+    expect(wrapper.get('tbody .chip').text())
+      .toBe('Payment')
+  })
+
   it('reloads when the month changes', async () => {
     const api = stubBulletin()
     await mountWidget()
@@ -92,7 +108,7 @@ describe('ExpensesWidget', () => {
     expect(income(widget)).toBe('R$0.00')
   })
 
-  it.each(['list', 'getBudget'] as const)(
+  it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',
     async method => {
       const api = stubBulletin()

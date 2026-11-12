@@ -106,4 +106,44 @@ describe('Tooltip', () => {
     expect(bubble(wrapper).attributes('aria-hidden'))
       .toBe('true')
   })
+
+  describe('truncatedOnly', () => {
+    /** A trigger whose text is `cut` off or not. */
+    const mountTruncated = (cut: boolean): VueWrapper => {
+      const wrapper = tooltip = mount(Tooltip, {
+        attachTo: document.body,
+        props: {
+          text: 'Groceries',
+          placement: 'above',
+          truncatedOnly: true
+        },
+        slots: { default: '<span>Groc…</span>' }
+      })
+      const trigger = wrapper.get('span > span').element
+      Object.defineProperties(trigger, {
+        scrollWidth: { value: cut ? 80 : 40 },
+        clientWidth: { value: 40 }
+      })
+      return wrapper
+    }
+
+    it('shows above when the text is cut off', async () => {
+      const wrapper = mountTruncated(true)
+
+      await wrapper.trigger('focusin')
+      await vi.advanceTimersByTimeAsync(400)
+
+      expect(bubble(wrapper).classes()).toContain('-above')
+      expect(bubble(wrapper).text()).toBe('Groceries')
+    })
+
+    it('stays hidden when the text fits', async () => {
+      const wrapper = mountTruncated(false)
+
+      await wrapper.trigger('mouseenter')
+      await vi.advanceTimersByTimeAsync(400)
+
+      expect(bubble(wrapper).exists()).toBe(false)
+    })
+  })
 })

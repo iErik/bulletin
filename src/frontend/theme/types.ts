@@ -27,6 +27,10 @@ export interface Palette {
   readonly accent: Scale
   /** Rule breaks and errors, as `--color-danger`. */
   readonly danger: string
+  /** Income amounts, as `--color-income`. */
+  readonly income: string
+  /** Expense amounts, as `--color-expense`. */
+  readonly expense: string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
 }

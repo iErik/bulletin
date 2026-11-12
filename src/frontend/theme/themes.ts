@@ -34,6 +34,9 @@ export const defaultTheme: Theme = {
         '#263372'
       ]),
       danger: '#f07a7c',
+      // Figma's Income and Expense FG.
+      income: '#b5e9a7',
+      expense: '#b47575',
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -61,6 +64,8 @@ export const defaultTheme: Theme = {
         '#1e2c67'
       ]),
       danger: '#c4373b',
+      income: '#2f7d26',
+      expense: '#b03a3a',
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
       mood: {
