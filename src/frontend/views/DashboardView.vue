@@ -28,7 +28,7 @@ const DevThemeToggle = import.meta.env.DEV
     <DateHeader />
   </Teleport>
   <main class="dashboard-view">
-    <Widget class="sleep" title="Sleep">
+    <Widget class="sleep" title="Sleep" icon="moon">
       <SleepTimeline />
     </Widget>
     <ExpensesWidget class="expenses" />
@@ -41,6 +41,13 @@ const DevThemeToggle = import.meta.env.DEV
 
 <style lang="scss">
 @use '@/styles/utils' as *;
+
+// Figma's Sleep frame sits closer to its edges, with
+// its rows 9px below the header.
+.widget-frame.sleep {
+  --widget-inset: #{rem(7px)};
+  --widget-gap: #{rem(9px)};
+}
 
 // Tracks and gaps are the Figma "App Window" frame's,
 // in pixels. At the minimum window size the grid

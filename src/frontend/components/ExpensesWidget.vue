@@ -96,7 +96,11 @@ watch(
 </script>
 
 <template>
-  <Widget class="expenses-widget" title="Expenses">
+  <Widget
+    class="expenses-widget"
+    title="Expenses"
+    icon="dollar-sign"
+  >
     <p v-if="failed" class="message" role="alert">
       Couldn’t load this month.
     </p>
@@ -123,6 +127,15 @@ watch(
 
 <style lang="scss">
 @use '@/styles/utils' as *;
+
+// Figma's Expenses frame sits closer to its edges,
+// with its cards 25px below the header, and its "$"
+// is larger than the other icons.
+.widget-frame.expenses-widget {
+  --widget-inset: #{rem(7px)};
+  --widget-gap: #{rem(25px)};
+  --widget-icon-size: #{rem(16px)};
+}
 
 .expenses-widget > .body {
   display: flex;

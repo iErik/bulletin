@@ -288,6 +288,7 @@ watch(
     ref="frame"
     class="habits-widget"
     title="Habits"
+    icon="checklist"
     @keydown="onKeydown"
   >
     <template v-if="current" #actions>
@@ -348,6 +349,9 @@ watch(
 
 <style lang="scss">
 @use '@/styles/utils' as *;
+
+// Figma's weekday row is 17px below the header.
+.widget-frame.habits-widget { --widget-gap: #{rem(17px)}; }
 
 .habits-widget {
   > .header > .actions > .name {

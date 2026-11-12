@@ -66,7 +66,12 @@ const onSaved = (): void => {
     @saved="onSaved"
     @close="close"
   />
-  <Widget v-else class="weight-widget" title="Weight">
+  <Widget
+    v-else
+    class="weight-widget"
+    title="Weight"
+    icon="activity"
+  >
     <template #actions>
       <button
         ref="add"
@@ -88,6 +93,9 @@ const onSaved = (): void => {
 
 <style lang="scss">
 @use '@/styles/utils' as *;
+
+// Figma's chart area starts 3px below the header.
+.widget-frame.weight-widget { --widget-gap: #{rem(3px)}; }
 
 .weight-widget .action {
   display: grid;

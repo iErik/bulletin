@@ -15,7 +15,13 @@ export type SemanticToken =
   | 'text-on-accent'
 
 /** Palette entries that are single colours. */
-type Single = 'danger' | 'income' | 'expense'
+type Single =
+  | 'danger'
+  | 'income'
+  | 'expense'
+  | 'tile'
+  | 'tile-icon'
+  | 'widget-title'
 
 type ScaleRef = readonly [
   Exclude<keyof Palette, 'mood' | Single>,
@@ -85,8 +91,14 @@ export const applyPalette = (
       colour
     )
   }
-  const singles: readonly Single[] =
-    ['danger', 'income', 'expense']
+  const singles: readonly Single[] = [
+    'danger',
+    'income',
+    'expense',
+    'tile',
+    'tile-icon',
+    'widget-title'
+  ]
   for (const name of singles)
     el.style.setProperty(`--color-${name}`, palette[name])
   for (const mood of MOODS) {

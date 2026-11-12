@@ -153,6 +153,7 @@ onMounted(() => {
   <Widget
     class="mood-picker"
     :title="title"
+    icon="mood"
     @keydown="onKeydown"
   >
     <template #actions>

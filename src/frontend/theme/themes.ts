@@ -37,6 +37,10 @@ export const defaultTheme: Theme = {
       // Figma's Income and Expense FG.
       income: '#b5e9a7',
       expense: '#b47575',
+      // Figma's Widget header: icon tile, icon, title.
+      tile: 'rgb(217 217 217 / 8%)',
+      'tile-icon': '#a5a5a5',
+      'widget-title': 'rgb(165 165 165 / 34%)',
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -66,6 +70,11 @@ export const defaultTheme: Theme = {
       danger: '#c4373b',
       income: '#2f7d26',
       expense: '#b03a3a',
+      // Figma has no light Scheme: the dark header's
+      // greys, mirrored for light surfaces.
+      tile: 'rgb(38 38 38 / 8%)',
+      'tile-icon': '#5a5a5a',
+      'widget-title': 'rgb(90 90 90 / 60%)',
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
       mood: {

@@ -108,6 +108,7 @@ onMounted(() => input.value?.focus())
   <Widget
     class="weight-form"
     title="Add new entry"
+    icon="activity"
     @keydown="onKeydown"
   >
     <template #actions>
