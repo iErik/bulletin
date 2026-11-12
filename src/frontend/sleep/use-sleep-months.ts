@@ -67,7 +67,9 @@ export const useSleepMonths = (
 
   /**
    * Loads `from`'s month to `to`'s, plus the day before
-   * them: its Period may continue onto the first row.
+   * them, whose Period may continue onto the first row,
+   * and the day after: storage lists by calendar day,
+   * while the last row runs to noon the next morning.
    * Resolves false when the load failed or is stale.
    */
   const load = async (
@@ -77,7 +79,7 @@ export const useSleepMonths = (
     const asked = generation
     const result = await window.bulletin.sleep.list({
       from: localDate(addDays(from, -1)),
-      to: localDate(endOfMonth(to))
+      to: localDate(addDays(endOfMonth(to), 1))
     })
     if (asked !== generation) return false
     failed.value = !result.ok

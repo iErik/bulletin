@@ -35,21 +35,21 @@ export const assertNotFuture = (
     throw new StorageFailure({ code: 'future-date' })
 }
 
-/** Noon, local time, `days` after `date`. */
-const noonAfter = (date: string, days = 0): number => {
+/** Midnight, local time, `days` after `date`. */
+const midnightAfter = (date: string, days = 0): number => {
   const [y, m, d] = date.split('-').map(Number)
-  return new Date(y, m - 1, d + days, 12).getTime()
+  return new Date(y, m - 1, d + days).getTime()
 }
 
 /**
- * The epoch-ms window covered by a range of days, each
- * running from noon to noon the next day (local time):
- * from noon on `from`, up to but excluding noon on the
- * day after `to`.
+ * The epoch-ms window covered by a range of calendar
+ * days (local time): from midnight on `from`, up to but
+ * excluding midnight after `to`. A DST day is 23 or 25
+ * hours long.
  */
-export const noonWindow = (
+export const dayWindow = (
   { from, to }: DateRange
 ): { start: number; end: number } => ({
-  start: noonAfter(from),
-  end: noonAfter(to, 1)
+  start: midnightAfter(from),
+  end: midnightAfter(to, 1)
 })

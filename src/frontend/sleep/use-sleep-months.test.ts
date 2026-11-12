@@ -45,11 +45,12 @@ describe('useSleepMonths', () => {
 
     await sleep.reset(day(9, 15))
 
-    // From the day before: its Period may continue
-    // onto the first row.
+    // From the day before, whose Period may continue
+    // onto the first row, to the day after, whose
+    // morning is on the last row.
     expect(api.sleep.list).toHaveBeenCalledWith({
       from: '2026-08-31',
-      to: '2026-11-30'
+      to: '2026-12-01'
     })
     expect(range(sleep))
       .toEqual(['2026-09-01', '2026-11-30'])
@@ -79,11 +80,11 @@ describe('useSleepMonths', () => {
 
     expect(api.sleep.list).toHaveBeenCalledWith({
       from: '2026-04-30',
-      to: '2026-05-31'
+      to: '2026-06-01'
     })
     expect(api.sleep.list).toHaveBeenCalledWith({
       from: '2026-08-31',
-      to: '2026-09-30'
+      to: '2026-10-01'
     })
     expect(range(sleep))
       .toEqual(['2026-05-01', '2026-09-30'])

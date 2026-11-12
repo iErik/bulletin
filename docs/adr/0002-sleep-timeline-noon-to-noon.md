@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0003
 ---
 
 # Sleep Timeline runs noon to noon, one row per day
