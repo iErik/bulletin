@@ -127,6 +127,21 @@ describe('ExpensesWidget', () => {
       .toBe('R$1,500.00')
   })
 
+  it('drops a deleted Transaction', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.list).mockResolvedValue(
+      { ok: true, value: [SALARY] }
+    )
+    const wrapper = await mountWidget()
+
+    await wrapper.get('.delete').trigger('click')
+    await wrapper.get('.-confirm').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('tbody > tr')).toHaveLength(0)
+    expect(income(wrapper)).toBe('R$0.00')
+  })
+
   it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',
     async method => {
