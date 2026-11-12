@@ -36,7 +36,7 @@ const value = (
   wrapper: VueWrapper,
   card: string
 ): string =>
-  wrapper.get(`.card.-${card} > .value`).text()
+  wrapper.get(`.card.-${card} .value`).text()
 
 describe('ExpenseCards', () => {
   useFixedToday()

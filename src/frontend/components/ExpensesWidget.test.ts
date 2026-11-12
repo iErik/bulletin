@@ -108,6 +108,25 @@ describe('ExpensesWidget', () => {
     expect(income(widget)).toBe('R$0.00')
   })
 
+  it('shows a Budget once saved', async () => {
+    const api = stubBulletin()
+    const wrapper = await mountWidget()
+
+    await wrapper.get('.budget-value > .value')
+      .trigger('click')
+    await wrapper.get('.budget-value > input')
+      .setValue('1500')
+    await wrapper.get('.budget-value > input')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(api.expenses.setBudget).toHaveBeenCalledWith(
+      { month: '2026-11', amount: 150_000 }
+    )
+    expect(wrapper.get('.budget-value > .value').text())
+      .toBe('R$1,500.00')
+  })
+
   it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',
     async method => {
