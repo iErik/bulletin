@@ -120,7 +120,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: rem(12px);
+  font-size: rem(13px);
+  font-weight: 500;
   letter-spacing: 0.08em;
   color: var(--color-text);
 

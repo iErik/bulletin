@@ -34,6 +34,10 @@ export default defineConfig({
     },
     plugins: [vue(), svgLoader()],
     build: {
+      // Never inline fonts as data: URLs, which the
+      // Content Security Policy blocks.
+      assetsInlineLimit: (file: string) =>
+        file.endsWith('.woff2') ? false : undefined,
       rolldownOptions: {
         input: src('frontend/index.html')
       }

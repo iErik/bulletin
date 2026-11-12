@@ -392,7 +392,7 @@ const insets = {
   > .plot > .tick,
   > .plot > .month {
     font-size: rem(10px);
-    letter-spacing: 0.04em;
+    font-weight: 700;
     text-transform: uppercase;
     fill: var(--color-text-muted);
   }

@@ -1,11 +1,15 @@
 // Design constants that don't vary by Theme. Colours
 // live in the theme system as CSS custom properties.
 
+// Figma's fonts, bundled through Fontsource (see
+// main.ts), with the system stacks as fallbacks.
 $font-family:
-  system-ui, -apple-system, 'Segoe UI', Roboto,
-  'Helvetica Neue', Arial, sans-serif;
+  'Ubuntu Sans Variable', system-ui, -apple-system,
+  'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+  sans-serif;
 $font-family-mono:
-  ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  'Martian Mono Variable', ui-monospace, 'SF Mono',
+  Menlo, Consolas, monospace;
 
 $font-size-base: 16px;
 $line-height-base: 1.5;
