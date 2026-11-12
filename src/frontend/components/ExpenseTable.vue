@@ -12,7 +12,9 @@
 // The description and value edit in place and save
 // through storage, emitting `updated`; the edit
 // shows while it saves, and a storage error reverts it
-// and shows inline.
+// and shows inline. Clicking a Category chip picks
+// another, or creates one, emitting `category-created`,
+// and saves it the same way.
 import {
   computed,
   nextTick,
@@ -30,8 +32,9 @@ import type {
   Transaction
 } from '@shared/expenses'
 import CellInput from '@/components/CellInput.vue'
-import Tooltip from '@/components/Tooltip.vue'
+import CategoryCell from '@/components/CategoryCell.vue'
 import { amountText, parseAmount } from '@/expenses/amount'
+import type { CategoryChoice } from '@/expenses/categories'
 import { formatAmount } from '@/expenses/money'
 import { amountTone, orderRows } from '@/expenses/rows'
 import { formatDate } from '@/locale/format'
@@ -47,6 +50,8 @@ const emit = defineEmits<{
   deleted: [transaction: Transaction]
   /** Storage has saved an edit to it. */
   updated: [transaction: Transaction]
+  /** Storage has it, maybe from before. */
+  'category-created': [category: Category]
 }>()
 
 /** Edits on their way to storage, by id. */
@@ -57,8 +62,8 @@ const rows = computed(() => orderRows(
     saving.value.get(transaction.id) ?? transaction)
 ))
 
-const names = computed(() => new Map(
-  props.categories.map(({ id, name }) => [id, name])
+const byId = computed(() => new Map(
+  props.categories.map(category => [category.id, category])
 ))
 
 const checkDescription = (text: string): string | null =>
@@ -91,6 +96,26 @@ const save = async (
   }
   if (result.ok) emit('updated', result.value)
   else error.value = 'Couldn’t save the change. Try again.'
+}
+
+/** Gives `transaction` the chosen Category. */
+const assign = async (
+  transaction: Transaction,
+  choice: CategoryChoice
+): Promise<void> => {
+  if (choice.kind === 'pick') {
+    await save(transaction, { categoryId: choice.category.id })
+    return
+  }
+  error.value = null
+  const created = await window.bulletin.expenses
+    .createCategory(choice.name)
+  if (!created.ok) {
+    error.value = 'Couldn’t create the Category. Try again.'
+    return
+  }
+  emit('category-created', created.value)
+  await save(transaction, { categoryId: created.value.id })
 }
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -283,15 +308,12 @@ onBeforeUnmount(() => {
                 />
               </td>
               <td>
-                <Tooltip
-                  :text="names.get(transaction.categoryId) ?? ''"
-                  placement="above"
-                  truncated-only
-                >
-                  <span class="chip" tabindex="0">
-                    {{ names.get(transaction.categoryId) }}
-                  </span>
-                </Tooltip>
+                <CategoryCell
+                  :category="byId.get(transaction.categoryId)
+                    ?? null"
+                  :categories="categories"
+                  @choose="assign(transaction, $event)"
+                />
               </td>
               <td class="date">
                 <time :datetime="transaction.date">
@@ -407,24 +429,6 @@ onBeforeUnmount(() => {
   }
 
   .app-tooltip { max-width: 100%; }
-
-  .chip {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border-radius: rem(4px);
-    @include focus-ring;
-  }
-
-  .chip {
-    max-width: rem(95px);
-    padding: rem(6px) rem(11px);
-    font-size: rem(10px);
-    font-weight: 700;
-    text-transform: uppercase;
-    background: $tint;
-    border-radius: rem(12px);
-  }
 
   td.index {
     position: relative;

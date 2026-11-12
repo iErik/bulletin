@@ -158,6 +158,25 @@ describe('ExpensesWidget', () => {
     expect(income(wrapper)).toBe('R$300.00')
   })
 
+  it('shows a newly created Category', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.list).mockResolvedValue(
+      { ok: true, value: [SALARY] }
+    )
+    vi.mocked(api.expenses.createCategory).mockResolvedValue(
+      { ok: true, value: { id: 7, name: 'Gym' } }
+    )
+    const wrapper = await mountWidget()
+
+    await wrapper.get('tbody .chip').trigger('click')
+    await wrapper.get('.field').setValue('Gym')
+    await wrapper.get('.field')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(wrapper.get('tbody .chip').text()).toBe('Gym')
+  })
+
   it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',
     async method => {

@@ -109,6 +109,81 @@ describe('ExpenseTable', () => {
       .toEqual(['', 'Salary', 'Food', 'R$25,000.00'])
   })
 
+  it('picks another Category for a row', async () => {
+    const api = stubBulletin()
+    const wrapper = mountTable([TRANSACTIONS[1]])
+    await wrapper.setProps({
+      categories: [
+        { id: 1, name: 'Food' },
+        { id: 2, name: 'Pay' }
+      ]
+    })
+
+    await wrapper.get('tbody .chip').trigger('click')
+    await flushPromises()
+    await wrapper.get('.field').setValue('pay')
+    await wrapper.get('.field')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    const saved = { ...TRANSACTIONS[1], categoryId: 2 }
+    expect(api.expenses.createCategory).not.toHaveBeenCalled()
+    expect(api.expenses.update).toHaveBeenCalledWith(saved)
+    expect(wrapper.emitted('updated')).toEqual([[saved]])
+  })
+
+  it('creates a Category nothing matches', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.createCategory).mockResolvedValue(
+      { ok: true, value: { id: 7, name: 'Gym' } }
+    )
+    const wrapper = mountTable([TRANSACTIONS[1]])
+
+    await wrapper.get('tbody .chip').trigger('click')
+    await flushPromises()
+    await wrapper.get('.field').setValue(' Gym ')
+    await wrapper.get('.field')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(api.expenses.createCategory)
+      .toHaveBeenCalledWith('Gym')
+    expect(wrapper.emitted('category-created'))
+      .toEqual([[{ id: 7, name: 'Gym' }]])
+    expect(api.expenses.update).toHaveBeenCalledWith(
+      { ...TRANSACTIONS[1], categoryId: 7 }
+    )
+  })
+
+  it.each([
+    ['createCategory', 'Gym', 'Couldn’t create the Category. Try again.'],
+    ['update', 'Gym', 'Couldn’t save the change. Try again.']
+  ] as const)(
+    'shows an inline error when %s fails',
+    async (method, name, message) => {
+      const api = stubBulletin()
+      vi.mocked(api.expenses.createCategory).mockResolvedValue(
+        { ok: true, value: { id: 7, name } }
+      )
+      vi.mocked(api.expenses[method]).mockResolvedValue(
+        { ok: false, error: { code: 'internal' } }
+      )
+      const wrapper = mountTable([TRANSACTIONS[1]])
+
+      await wrapper.get('tbody .chip').trigger('click')
+      await flushPromises()
+      await wrapper.get('.field').setValue(name)
+      await wrapper.get('.field')
+        .trigger('keydown', { key: 'Enter' })
+      await flushPromises()
+
+      expect(wrapper.emitted('updated')).toBeUndefined()
+      expect(wrapper.get('tbody .chip').text()).toBe('Food')
+      expect(wrapper.get('[role="alert"]').text())
+        .toBe(message)
+    }
+  )
+
   it('saves an edited description', async () => {
     const api = stubBulletin()
     const wrapper = mountTable()

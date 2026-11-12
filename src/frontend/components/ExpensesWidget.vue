@@ -72,6 +72,13 @@ const onUpdated = (saved: Transaction): void => {
   )
 }
 
+/** A new Category joins the list, once. */
+const onCategoryCreated = (category: Category): void => {
+  if (categories.value.some(({ id }) => id === category.id))
+    return
+  categories.value = [...categories.value, category]
+}
+
 const onDeleted = ({ id }: Transaction): void => {
   transactions.value = transactions.value
     .filter(transaction => transaction.id !== id)
@@ -101,6 +108,7 @@ watch(
         :categories="categories"
         @deleted="onDeleted"
         @updated="onUpdated"
+        @category-created="onCategoryCreated"
       />
     </template>
   </Widget>
