@@ -20,8 +20,8 @@ export const defaultTheme: Theme = {
     dark: {
       background: scale([
         '#e4e6eb', '#c3c7d0', '#9ba1ae', '#6f7685',
-        '#4b5160', '#353a46', '#262a33', '#1b1e25',
-        '#121419'
+        '#4b5160', '#353a46', '#262a33', '#191919',
+        '#131313'
       ]),
       foreground: scale([
         '#f5f6f8', '#e2e5ea', '#c8ccd4', '#a6acb8',
