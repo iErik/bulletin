@@ -8,7 +8,8 @@
 // device, falling back to the oldest active Habit.
 // The header's Habit name opens the Habit list in
 // place of the grid; the name, Escape or a click
-// outside the Widget closes it.
+// outside the Widget closes it. Without Habits, "+
+// Track a new habit…" opens it to create one.
 import {
   computed,
   nextTick,
@@ -177,6 +178,11 @@ const frame = useTemplateRef<
 const nameButton = useTemplateRef<HTMLButtonElement>(
   'nameButton'
 )
+const trackButton = useTemplateRef<HTMLButtonElement>(
+  'trackButton'
+)
+/** Whether the list opens on the new-habit field. */
+const creating = ref(false)
 const list = useTemplateRef<
   InstanceType<typeof HabitList>
 >('list')
@@ -186,16 +192,25 @@ const frameElement = (): HTMLElement | undefined =>
 
 /**
  * Closes the list. Focus returns to the name button,
- * unless a click outside has already moved it away.
+ * or without Habits to "+ Track a new habit…", unless
+ * a click outside has already moved it away.
  */
 const closeList = async (): Promise<void> => {
   listing.value = false
+  creating.value = false
   const active = document.activeElement
   const el = frameElement()
   const away = active && active !== document.body
     && !el?.contains(active)
   await nextTick()
-  if (!away) nameButton.value?.focus()
+  if (away) return
+  const button = nameButton.value ?? trackButton.value
+  button?.focus()
+}
+
+const startTracking = (): void => {
+  creating.value = true
+  listing.value = true
 }
 
 const toggleList = (): void => {
@@ -206,6 +221,16 @@ const toggleList = (): void => {
 const choose = (habit: Habit): void => {
   chosen.value = habit.id
   void closeList()
+}
+
+/** Storage's order: oldest first, then by id. */
+const byAge = (a: Habit, b: Habit): number =>
+  a.created.localeCompare(b.created) || a.id - b.id
+
+/** Adds a new or restored Habit; it's not made current. */
+const onCreated = (habit: Habit): void => {
+  habits.value = [...habits.value ?? [], habit]
+    .sort(byAge)
 }
 
 const onUpdated = (habit: Habit): void => {
@@ -280,20 +305,32 @@ watch(
     <p v-if="loadError" class="message" role="alert">
       {{ loadError }}
     </p>
-    <p v-else-if="habits && !current" class="message">
-      No habits yet
-    </p>
     <HabitList
-      v-else-if="current && listing"
+      v-else-if="habits && listing"
       ref="list"
-      :habits="habits ?? []"
-      :current="current.id"
+      :habits="habits"
+      :current="current?.id ?? null"
       :done="doneIn"
       :days="getDaysInMonth(month)"
+      :creating="creating"
       @choose="choose"
       @archived="onArchived"
+      @created="onCreated"
       @updated="onUpdated"
     />
+    <div v-else-if="habits && !current" class="empty">
+      <p class="message">
+        No habits yet
+      </p>
+      <button
+        ref="trackButton"
+        class="track"
+        type="button"
+        @click="startTracking"
+      >
+        + Track a new habit…
+      </button>
+    </div>
     <div v-else-if="current" class="content">
       <MonthGrid
         :month="month"
@@ -333,6 +370,23 @@ watch(
       var(--color-text) 8%,
       transparent
     );
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    gap: space(1);
+    align-items: flex-start;
+  }
+
+  .empty > .track {
+    font-size: rem(13px);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border-radius: rem(6px);
+    @include focus-ring;
+
+    &:hover { color: var(--color-text); }
   }
 
   .content {

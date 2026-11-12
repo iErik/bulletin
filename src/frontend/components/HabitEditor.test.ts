@@ -16,14 +16,14 @@ const READING: Habit = {
   archived: false
 }
 
-const mountEditor = (): {
-  wrapper: VueWrapper
-  api: BulletinApi
-} => {
+/** Mounts it editing Reading, or creating with `{}`. */
+const mountEditor = (
+  props: { habit?: Habit } = { habit: READING }
+): { wrapper: VueWrapper; api: BulletinApi } => {
   const api = stubBulletin()
   editor = mount(HabitEditor, {
     attachTo: document.body,
-    props: { habit: READING }
+    props
   })
   return { wrapper: editor, api }
 }
@@ -46,6 +46,35 @@ describe('HabitEditor', () => {
   afterEach(() => {
     editor?.unmount()
     editor = undefined
+  })
+
+  it('creates a trimmed Habit and clears', async () => {
+    const { wrapper, api } = mountEditor({})
+
+    expect(document.activeElement)
+      .toBe(wrapper.get('input').element)
+    await submit(wrapper, '  Stretch ')
+
+    expect(api.habits.create).toHaveBeenCalledWith({
+      name: 'Stretch',
+      icon: 'meditation'
+    })
+    expect(wrapper.emitted('saved')).toHaveLength(1)
+    expect(wrapper.get('input').element.value).toBe('')
+  })
+
+  it('creates with the chosen icon', async () => {
+    const { wrapper, api } = mountEditor({})
+
+    await wrapper.get('.toggle').trigger('click')
+    await wrapper.get('[aria-label="water"]')
+      .trigger('click')
+    await submit(wrapper, 'Drink')
+
+    expect(api.habits.create).toHaveBeenCalledWith({
+      name: 'Drink',
+      icon: 'water'
+    })
   })
 
   it('rejects an empty name', async () => {
