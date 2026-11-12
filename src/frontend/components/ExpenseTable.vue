@@ -7,7 +7,8 @@
 // or focusing a row turns its # into "−", which asks
 // "Delete?"; ✓ deletes the Transaction through storage
 // and emits `deleted`, while ×, Escape, a click or
-// focus elsewhere cancels. One row asks at a time.
+// focus elsewhere cancels. One row asks at a time. A
+// Transaction storage no longer has counts as deleted.
 import {
   computed,
   nextTick,
@@ -87,7 +88,9 @@ const remove = async (
   const result = await window.bulletin.expenses
     .delete(transaction.id)
   busy.value = false
-  if (!result.ok) {
+  // Already gone, e.g. deleted by another window:
+  // retrying can't help, so treat it as deleted.
+  if (!result.ok && result.error.code !== 'not-found') {
     error.value =
       'Couldn’t delete the Transaction. Try again.'
     // Disabling ✓ dropped focus; give it back to retry.
@@ -101,7 +104,11 @@ const remove = async (
   emit('deleted', transaction)
   await nextTick()
   const next = Math.min(index, rows.value.length - 1)
-  find(`.row:nth-child(${next + 1}) .delete`)?.focus()
+  // With no row left, the table holds focus.
+  const target = next < 0
+    ? find('.table')
+    : find(`.row:nth-child(${next + 1}) .delete`)
+  target?.focus()
 }
 
 const onKeydown = (event: KeyboardEvent): void => {
@@ -129,10 +136,12 @@ watch(() => asking.value !== null, on => {
     document[method](name, onOutside)
 })
 
-// A reload without the asking row stops it asking.
+// A reload without the asking row stops it asking,
+// dropping any error about it.
 watch(rows, now => {
-  if (!now.some(({ id }) => id === asking.value))
-    asking.value = null
+  if (now.some(({ id }) => id === asking.value)) return
+  asking.value = null
+  error.value = null
 })
 
 onBeforeUnmount(() => {
@@ -144,7 +153,7 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="expense-table" @keydown="onKeydown">
     <div class="scroller">
-      <table class="table">
+      <table class="table" tabindex="-1">
         <thead>
           <tr>
             <th scope="col" aria-label="Number" />
@@ -295,6 +304,10 @@ onBeforeUnmount(() => {
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
+    @include focus-ring;
+
+    // Inside, so the scroller doesn't clip it.
+    &:focus-visible { outline-offset: -2px; }
   }
 
   th {

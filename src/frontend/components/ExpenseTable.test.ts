@@ -191,6 +191,72 @@ describe('ExpenseTable', () => {
     expect(wrapper.emitted('deleted')).toBeUndefined()
   })
 
+  it('drops the error when a reload drops the row',
+    async () => {
+      const api = stubBulletin()
+      vi.mocked(api.expenses.delete).mockResolvedValue(
+        { ok: false, error: { code: 'internal' } }
+      )
+      const wrapper = mountTable()
+
+      await ask(wrapper, 'Salary')
+      await wrapper.get('.-confirm').trigger('click')
+      await flushPromises()
+      await wrapper.setProps({
+        transactions: [TRANSACTIONS[0]]
+      })
+
+      expect(asking(wrapper)).toEqual([])
+      expect(wrapper.find('[role="alert"]').exists())
+        .toBe(false)
+    })
+
+  it('treats a Transaction already gone as deleted',
+    async () => {
+      const api = stubBulletin()
+      vi.mocked(api.expenses.delete).mockResolvedValue(
+        { ok: false, error: { code: 'not-found' } }
+      )
+      const wrapper = mountTable()
+
+      await ask(wrapper, 'Salary')
+      await wrapper.get('.-confirm').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.emitted('deleted'))
+        .toEqual([[TRANSACTIONS[1]]])
+      expect(asking(wrapper)).toEqual([])
+      expect(wrapper.find('[role="alert"]').exists())
+        .toBe(false)
+    })
+
+  it('focuses the table after deleting the last row',
+    async () => {
+      stubBulletin()
+      const only = [TRANSACTIONS[1]]
+      const wrapper: VueWrapper = table = mount(
+        ExpenseTable,
+        {
+          attachTo: document.body,
+          props: {
+            transactions: only,
+            categories: [{ id: 1, name: 'Food' }],
+            // Like the Widget, drop it once deleted.
+            onDeleted: () =>
+              void wrapper.setProps({ transactions: [] })
+          }
+        }
+      )
+
+      await ask(wrapper, 'Salary')
+      await wrapper.get('.-confirm').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.findAll('tbody > tr')).toHaveLength(0)
+      expect(document.activeElement)
+        .toBe(wrapper.get('.table').element)
+    })
+
   it('holds ✓ and × while deleting', async () => {
     const api = stubBulletin()
     vi.mocked(api.expenses.delete)
