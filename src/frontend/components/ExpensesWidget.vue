@@ -64,12 +64,16 @@ const onBudgetSaved = (saved: Budget): void => {
     budget.value = saved
 }
 
-/** A saved edit replaces the Transaction. */
+/**
+ * A saved edit replaces the Transaction, or drops it
+ * if its date left the month shown.
+ */
 const onUpdated = (saved: Transaction): void => {
-  transactions.value = transactions.value.map(
-    transaction =>
-      transaction.id === saved.id ? saved : transaction
-  )
+  const others = transactions.value
+    .filter(({ id }) => id !== saved.id)
+  const inMonth = loaded.value !== null
+    && saved.date.startsWith(format(loaded.value, 'yyyy-MM'))
+  transactions.value = inMonth ? [...others, saved] : others
 }
 
 /** A new Category joins the list, once. */
@@ -106,6 +110,7 @@ watch(
       <ExpenseTable
         :transactions="transactions"
         :categories="categories"
+        :today="store.today"
         @deleted="onDeleted"
         @updated="onUpdated"
         @category-created="onCategoryCreated"

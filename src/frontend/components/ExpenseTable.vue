@@ -9,8 +9,8 @@
 // and emits `deleted`, while ×, Escape, a click or
 // focus elsewhere cancels. One row asks at a time. A
 // Transaction storage no longer has counts as deleted.
-// The description and value edit in place and save
-// through storage, emitting `updated`; the edit
+// The description, value and date edit in place and
+// save through storage, emitting `updated`; the edit
 // shows while it saves, and a storage error reverts it
 // and shows inline. Clicking a Category chip picks
 // another, or creates one, emitting `category-created`,
@@ -24,7 +24,6 @@ import {
   useTemplateRef,
   watch
 } from 'vue'
-import { parseISO } from 'date-fns'
 import { Check, Minus, X } from '@lucide/vue'
 import type {
   Category,
@@ -33,16 +32,18 @@ import type {
 } from '@shared/expenses'
 import CellInput from '@/components/CellInput.vue'
 import CategoryCell from '@/components/CategoryCell.vue'
+import DateCell from '@/components/DateCell.vue'
 import { amountText, parseAmount } from '@/expenses/amount'
 import type { CategoryChoice } from '@/expenses/categories'
 import { formatAmount } from '@/expenses/money'
 import { amountTone, orderRows } from '@/expenses/rows'
-import { formatDate } from '@/locale/format'
 
 const props = defineProps<{
   /** The month's Transactions, in any order. */
   transactions: readonly Transaction[]
   categories: readonly Category[]
+  /** The latest day a Transaction can have. */
+  today: Date
 }>()
 
 const emit = defineEmits<{
@@ -316,14 +317,11 @@ onBeforeUnmount(() => {
                 />
               </td>
               <td class="date">
-                <time :datetime="transaction.date">
-                  {{
-                    formatDate(
-                      parseISO(transaction.date),
-                      'short'
-                    )
-                  }}
-                </time>
+                <DateCell
+                  :date="transaction.date"
+                  :max="today"
+                  @commit="save(transaction, { date: $event })"
+                />
               </td>
               <td
                 class="value"
