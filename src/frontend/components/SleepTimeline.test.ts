@@ -917,6 +917,7 @@ describe('SleepTimeline, editing', () => {
     await press(tabStop(), 'Enter')
     expect(tooltip().exists()).toBe(true)
 
+    await type('End', '10:00')
     await press(tooltip().get('input'), 'Escape')
     expect(tooltip().exists()).toBe(false)
     expect(document.activeElement).toBe(tabStop().element)
@@ -943,5 +944,21 @@ describe('SleepTimeline, editing', () => {
     })
     expect(document.activeElement)
       .toBe(row('2026-11-07').element)
+  })
+
+  it('reads added times like the edit tooltip', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+
+    await press(row('2026-11-07'), 'Enter')
+    await type('Start', '1:00')
+    await type('End', '1:00')
+    await press(tooltip().get('input'), 'Enter')
+
+    // After midnight on the 7th's row, for 24 hours.
+    expect(api.sleep.create).toHaveBeenCalledWith({
+      start: at(10, 8, 1),
+      end: at(10, 9, 1)
+    })
   })
 })
