@@ -138,7 +138,7 @@ describe('ExpensesWidget', () => {
     await wrapper.get('.-confirm').trigger('click')
     await flushPromises()
 
-    expect(wrapper.findAll('tbody > tr')).toHaveLength(0)
+    expect(wrapper.findAll('tbody > .row')).toHaveLength(0)
     expect(income(wrapper)).toBe('R$0.00')
   })
 
@@ -195,9 +195,32 @@ describe('ExpensesWidget', () => {
       expect(api.expenses.update).toHaveBeenCalledWith(
         { ...SALARY, date: '2026-10-03' }
       )
-      expect(wrapper.findAll('tbody > tr')).toHaveLength(0)
+      expect(wrapper.findAll('tbody > .row')).toHaveLength(0)
       expect(income(wrapper)).toBe('R$0.00')
     })
+
+  it('shows an added Transaction', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.listCategories).mockResolvedValue(
+      { ok: true, value: [{ id: 1, name: 'Payment' }] }
+    )
+    vi.mocked(api.expenses.create).mockResolvedValue(
+      { ok: true, value: SALARY }
+    )
+    const wrapper = await mountWidget()
+
+    await wrapper.get('.add-entry').trigger('click')
+    await wrapper.get('.description').setValue('Salary')
+    await wrapper.get('.draft .chip').trigger('click')
+    await wrapper.get('.field')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(api.expenses.create).toHaveBeenCalledWith(
+      expect.objectContaining({ date: '2026-11-09' })
+    )
+    expect(income(wrapper)).toBe('R$25,000.00')
+  })
 
   it.each(['list', 'getBudget', 'listCategories'] as const)(
     'shows an inline error when %s fails',

@@ -14,7 +14,11 @@
 // shows while it saves, and a storage error reverts it
 // and shows inline. Clicking a Category chip picks
 // another, or creates one, emitting `category-created`,
-// and saves it the same way.
+// and saves it the same way. "+ Add new entry", always
+// last, adds a draft row on the Selected Date, saved
+// through storage and emitted as `created` once it has
+// a description and a Category. Escape, or focus
+// leaving it with no description, discards it.
 import {
   computed,
   nextTick,
@@ -25,11 +29,13 @@ import {
   watch
 } from 'vue'
 import { Check, Minus, X } from '@lucide/vue'
+import { localDate } from '@shared/dates'
 import type {
   Category,
   NewTransaction,
   Transaction
 } from '@shared/expenses'
+import type { LocalDate } from '@shared/storage'
 import CellInput from '@/components/CellInput.vue'
 import CategoryCell from '@/components/CategoryCell.vue'
 import DateCell from '@/components/DateCell.vue'
@@ -44,6 +50,8 @@ const props = defineProps<{
   categories: readonly Category[]
   /** The latest day a Transaction can have. */
   today: Date
+  /** The Selected Date, which a new one starts on. */
+  day: Date
 }>()
 
 const emit = defineEmits<{
@@ -51,6 +59,8 @@ const emit = defineEmits<{
   deleted: [transaction: Transaction]
   /** Storage has saved an edit to it. */
   updated: [transaction: Transaction]
+  /** Storage has added it. */
+  created: [transaction: Transaction]
   /** Storage has it, maybe from before. */
   'category-created': [category: Category]
 }>()
@@ -99,24 +109,114 @@ const save = async (
   else error.value = 'Couldn’t save the change. Try again.'
 }
 
-/** Gives `transaction` the chosen Category. */
-const assign = async (
-  transaction: Transaction,
+/** The chosen Category, created if it's new. */
+const resolve = async (
   choice: CategoryChoice
-): Promise<void> => {
-  if (choice.kind === 'pick') {
-    await save(transaction, { categoryId: choice.category.id })
-    return
-  }
+): Promise<Category | null> => {
+  if (choice.kind === 'pick') return choice.category
   error.value = null
   const created = await window.bulletin.expenses
     .createCategory(choice.name)
   if (!created.ok) {
     error.value = 'Couldn’t create the Category. Try again.'
-    return
+    return null
   }
   emit('category-created', created.value)
-  await save(transaction, { categoryId: created.value.id })
+  return created.value
+}
+
+/** Gives `transaction` the chosen Category. */
+const assign = async (
+  transaction: Transaction,
+  choice: CategoryChoice
+): Promise<void> => {
+  const category = await resolve(choice)
+  if (category)
+    await save(transaction, { categoryId: category.id })
+}
+
+/** A Transaction being added, until storage has it. */
+interface Draft {
+  description: string
+  categoryId: number | null
+  date: LocalDate
+  amount: number
+}
+
+const draft = ref<Draft | null>(null)
+/** Adding the draft. */
+let adding = false
+
+const startDraft = async (): Promise<void> => {
+  draft.value ??= {
+    description: '',
+    categoryId: null,
+    date: localDate(props.day),
+    amount: 0
+  }
+  await nextTick()
+  find('.draft .description')?.focus()
+}
+
+/** Adds the draft once it has a description and a Category. */
+const add = async (): Promise<void> => {
+  const current = draft.value
+  const description = current?.description.trim()
+  if (!current || adding || !description
+    || current.categoryId === null)
+    return
+  adding = true
+  error.value = null
+  const result = await window.bulletin.expenses.create(
+    { ...current, description, categoryId: current.categoryId }
+  )
+  adding = false
+  if (!result.ok) {
+    error.value = 'Couldn’t add the Transaction. Try again.'
+    return
+  }
+  draft.value = null
+  emit('created', result.value)
+  await nextTick()
+  find(`[data-id="${result.value.id}"] .cell-input > .value`)
+    ?.focus()
+}
+
+const chooseForDraft = async (
+  choice: CategoryChoice
+): Promise<void> => {
+  const category = await resolve(choice)
+  if (!category || !draft.value) return
+  draft.value.categoryId = category.id
+  await add()
+}
+
+const discard = async (): Promise<void> => {
+  draft.value = null
+  await nextTick()
+  find('.add-entry')?.focus()
+}
+
+const onDraftKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Escape') void discard()
+  else if (event.key === 'Enter'
+    && (event.target as Element).matches('.description'))
+    void add()
+  else return
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+// Focus moving out of the draft with no description
+// discards it. Focus going nowhere, as when a popover
+// closes on a click outside, doesn't count.
+const onDraftFocusout = (event: FocusEvent): void => {
+  const next = event.relatedTarget
+  if (!(next instanceof Node)
+    || find('.draft')?.contains(next))
+    return
+  if (draft.value?.description.trim() === '')
+    draft.value = null
 }
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -341,6 +441,65 @@ onBeforeUnmount(() => {
               </td>
             </template>
           </tr>
+          <tr
+            v-if="draft"
+            class="draft"
+            @keydown="onDraftKeydown"
+            @focusout="onDraftFocusout"
+          >
+            <td class="index" />
+            <td>
+              <input
+                v-model="draft.description"
+                class="cell-input -field description"
+                type="text"
+                autocomplete="off"
+                aria-label="Description"
+                placeholder="Description"
+                @blur="add"
+              >
+            </td>
+            <td>
+              <CategoryCell
+                :category="byId.get(draft.categoryId ?? -1)
+                  ?? null"
+                :categories="categories"
+                @choose="chooseForDraft"
+              />
+            </td>
+            <td class="date">
+              <DateCell
+                :date="draft.date"
+                :max="today"
+                @commit="draft.date = $event"
+              />
+            </td>
+            <td
+              class="value"
+              :class="`-${amountTone(draft.amount)}`"
+            >
+              <CellInput
+                :text="formatAmount(draft.amount)"
+                :start="amountText(draft.amount)"
+                label="Value"
+                inputmode="decimal"
+                :check="checkAmount"
+                @commit="draft.amount = parseAmount($event) ?? 0"
+                @invalid="error = $event"
+              />
+            </td>
+          </tr>
+          <tr class="add">
+            <td colspan="5">
+              <button
+                class="add-entry"
+                type="button"
+                @click="startDraft"
+              >
+                + Add new entry
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -431,6 +590,17 @@ onBeforeUnmount(() => {
   td.index {
     position: relative;
     padding-left: rem(12px);
+  }
+
+  .add-entry {
+    padding: rem(4px) rem(6px);
+    margin-left: rem(6px);
+    font: inherit;
+    color: var(--color-text-muted);
+    border-radius: rem(4px);
+    @include focus-ring;
+
+    &:hover { color: var(--color-text); }
   }
 
   td.index > .delete {

@@ -65,10 +65,10 @@ const onBudgetSaved = (saved: Budget): void => {
 }
 
 /**
- * A saved edit replaces the Transaction, or drops it
- * if its date left the month shown.
+ * A saved Transaction joins the month or replaces its
+ * old self, or leaves if its date isn't in the month.
  */
-const onUpdated = (saved: Transaction): void => {
+const onSaved = (saved: Transaction): void => {
   const others = transactions.value
     .filter(({ id }) => id !== saved.id)
   const inMonth = loaded.value !== null
@@ -111,8 +111,10 @@ watch(
         :transactions="transactions"
         :categories="categories"
         :today="store.today"
+        :day="store.day"
         @deleted="onDeleted"
-        @updated="onUpdated"
+        @updated="onSaved"
+        @created="onSaved"
         @category-created="onCategoryCreated"
       />
     </template>

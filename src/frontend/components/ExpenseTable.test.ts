@@ -27,6 +27,8 @@ const TRANSACTIONS = [
 ]
 
 const TODAY = new Date(2026, 10, 12)
+/** The Selected Date. */
+const DAY = new Date(2026, 10, 10)
 
 const mountTable = (
   transactions = TRANSACTIONS
@@ -35,7 +37,8 @@ const mountTable = (
   props: {
     transactions,
     categories: [{ id: 1, name: 'Food' }],
-    today: TODAY
+    today: TODAY,
+    day: DAY
   }
 })
 
@@ -51,9 +54,9 @@ const edit = async (
   return wrapper.find<HTMLInputElement>('tbody input')
 }
 
-/** Each body row's cells' text. */
+/** Each Transaction row's cells' text. */
 const cells = (wrapper: VueWrapper): string[][] =>
-  wrapper.findAll('tbody > tr').map(tr =>
+  wrapper.findAll('tbody > .row').map(tr =>
     tr.findAll('td').map(td => td.text()))
 
 /** Clicks "−" on the row for `description`. */
@@ -299,6 +302,136 @@ describe('ExpenseTable', () => {
     )
   })
 
+  it('ends with “+ Add new entry”', () => {
+    const wrapper = mountTable()
+
+    expect(wrapper.findAll('tbody > tr').at(-1)?.text())
+      .toBe('+ Add new entry')
+  })
+
+  it('adds a draft on the Selected Date', async () => {
+    const wrapper = mountTable([])
+
+    await wrapper.get('.add-entry').trigger('click')
+    await flushPromises()
+
+    const draft = wrapper.get('.draft')
+    expect(document.activeElement)
+      .toBe(draft.get('.description').element)
+    expect(draft.get('time').attributes('datetime'))
+      .toBe('2026-11-10')
+    expect(draft.get('td.value').text()).toBe('R$0.00')
+    expect(draft.get('.chip').attributes('aria-label'))
+      .toBe('Choose a Category')
+  })
+
+  it('saves the draft once it has a Category', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.create).mockResolvedValue({
+      ok: true,
+      value: row(9, '2026-11-10', 'Rent', 0)
+    })
+    const wrapper = mountTable([])
+
+    await wrapper.get('.add-entry').trigger('click')
+    await flushPromises()
+    await wrapper.get('.description').setValue(' Rent ')
+    await wrapper.get('.draft .chip').trigger('click')
+    await flushPromises()
+    await wrapper.get('.field')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(api.expenses.create).toHaveBeenCalledWith({
+      description: 'Rent',
+      categoryId: 1,
+      date: '2026-11-10',
+      amount: 0
+    })
+    expect(wrapper.emitted('created')).toEqual([
+      [row(9, '2026-11-10', 'Rent', 0)]
+    ])
+    expect(wrapper.find('.draft').exists()).toBe(false)
+  })
+
+  it('saves the draft on Enter once it has both',
+    async () => {
+      const api = stubBulletin()
+      const wrapper = mountTable([])
+
+      await wrapper.get('.add-entry').trigger('click')
+      await flushPromises()
+      await wrapper.get('.draft .chip').trigger('click')
+      await flushPromises()
+      await wrapper.get('.field')
+        .trigger('keydown', { key: 'Enter' })
+      await flushPromises()
+      expect(api.expenses.create).not.toHaveBeenCalled()
+      await wrapper.get('.description').setValue('Rent')
+      await wrapper.get('.description')
+        .trigger('keydown', { key: 'Enter' })
+      await flushPromises()
+
+      expect(api.expenses.create).toHaveBeenCalledOnce()
+    })
+
+  it('discards the draft on Escape', async () => {
+    stubBulletin()
+    const wrapper = mountTable([])
+
+    await wrapper.get('.add-entry').trigger('click')
+    await flushPromises()
+    await wrapper.get('.description').setValue('Rent')
+    await wrapper.get('.description')
+      .trigger('keydown', { key: 'Escape' })
+    await flushPromises()
+
+    expect(wrapper.find('.draft').exists()).toBe(false)
+    expect(document.activeElement)
+      .toBe(wrapper.get('.add-entry').element)
+  })
+
+  it.each([
+    ['', false],
+    ['Rent', true]
+  ])(
+    'leaving a draft described %j keeps it: %s',
+    async (description, kept) => {
+      stubBulletin()
+      const wrapper = mountTable([])
+
+      await wrapper.get('.add-entry').trigger('click')
+      await flushPromises()
+      await wrapper.get('.description').setValue(description)
+      wrapper.get<HTMLButtonElement>('.add-entry')
+        .element.focus()
+      await flushPromises()
+
+      expect(wrapper.find('.draft').exists()).toBe(kept)
+    }
+  )
+
+  it('keeps the draft if adding fails', async () => {
+    const api = stubBulletin()
+    vi.mocked(api.expenses.create).mockResolvedValue(
+      { ok: false, error: { code: 'internal' } }
+    )
+    const wrapper = mountTable([])
+
+    await wrapper.get('.add-entry').trigger('click')
+    await flushPromises()
+    await wrapper.get('.description').setValue('Rent')
+    await wrapper.get('.draft .chip').trigger('click')
+    await flushPromises()
+    await wrapper.get('.field')
+      .trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(wrapper.find('.draft').exists()).toBe(true)
+    expect(wrapper.get('[role="alert"]').text())
+      .toBe('Couldn’t add the Transaction. Try again.')
+  })
+
   it('asks “Delete?”, focusing ✓', async () => {
     stubBulletin()
     const wrapper = mountTable()
@@ -445,6 +578,7 @@ describe('ExpenseTable', () => {
             transactions: only,
             categories: [{ id: 1, name: 'Food' }],
             today: TODAY,
+            day: DAY,
             // Like the Widget, drop it once deleted.
             onDeleted: () =>
               void wrapper.setProps({ transactions: [] })
@@ -456,7 +590,7 @@ describe('ExpenseTable', () => {
       await wrapper.get('.-confirm').trigger('click')
       await flushPromises()
 
-      expect(wrapper.findAll('tbody > tr')).toHaveLength(0)
+      expect(wrapper.findAll('tbody > .row')).toHaveLength(0)
       expect(document.activeElement)
         .toBe(wrapper.get('.table').element)
     })
