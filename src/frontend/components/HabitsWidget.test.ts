@@ -13,6 +13,7 @@ import { useFixedToday } from '@/testing/clock'
 import { CURRENT_HABIT_KEY } from '@/habits/current-habit'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
+import DateHeader from './DateHeader.vue'
 import HabitsWidget from './HabitsWidget.vue'
 
 let widget: VueWrapper | undefined
@@ -85,7 +86,8 @@ const openList = async (
 const archiveRow = async (
   row: DOMWrapper<HTMLLIElement>
 ): Promise<void> => {
-  await row.get('.controls > .control').trigger('click')
+  await row.get('[aria-label^="Delete "]')
+    .trigger('click')
   await row.get('.-confirm').trigger('click')
   await flushPromises()
 }
@@ -394,5 +396,50 @@ describe('HabitsWidget', () => {
 
     expect(widget.get('[role="alert"]').text())
       .toBe('Couldn’t load the Habits.')
+  })
+
+  it('renames the current Habit, open till saved',
+    async () => {
+      const { wrapper, api } = await mountWidget()
+      let saved = (): void => {}
+      vi.mocked(api.habits.update).mockReturnValue(
+        new Promise(resolve => {
+          saved = () => resolve({ ok: true, value: {
+            ...HABITS[0], name: 'Books'
+          } })
+        }))
+      const rows = await openList(wrapper)
+
+      await rows[0].get('[aria-label="Edit Reading"]')
+        .trigger('click')
+      await wrapper.get('input').setValue('Books')
+      await wrapper.get('form').trigger('submit')
+      await nameButton(wrapper).trigger('click')
+      document.body.click()
+      await flushPromises()
+      expect(wrapper.find('.habit-list').exists())
+        .toBe(true)
+
+      saved()
+      await flushPromises()
+      expect(name(wrapper)).toBe('Books')
+      expect(wrapper.findAll('.row .name')
+        .map(item => item.text()))
+        .toEqual(['Books', 'Running'])
+    })
+
+  it('keeps the date on ← in the editor', async () => {
+    const { wrapper } = await mountWidget()
+    const header = mount(DateHeader)
+    const rows = await openList(wrapper)
+
+    await rows[0].get('[aria-label="Edit Reading"]')
+      .trigger('click')
+    await wrapper.get('[aria-label="Save"]')
+      .trigger('keydown', { key: 'ArrowLeft' })
+    header.unmount()
+
+    expect(useSelectedDateStore().day)
+      .toEqual(new Date(2026, 10, 9))
   })
 })

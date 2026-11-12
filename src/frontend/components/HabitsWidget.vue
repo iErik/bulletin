@@ -208,6 +208,11 @@ const choose = (habit: Habit): void => {
   void closeList()
 }
 
+const onUpdated = (habit: Habit): void => {
+  habits.value = (habits.value ?? []).map(other =>
+    other.id === habit.id ? habit : other)
+}
+
 const onArchived = (habit: Habit): void => {
   habits.value = (habits.value ?? [])
     .filter(other => other.id !== habit.id)
@@ -287,6 +292,7 @@ watch(
       :days="getDaysInMonth(month)"
       @choose="choose"
       @archived="onArchived"
+      @updated="onUpdated"
     />
     <div v-else-if="current" class="content">
       <MonthGrid
