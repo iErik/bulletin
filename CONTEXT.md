@@ -86,12 +86,9 @@ going to bed at 1 AM on the 8th counts as the 8th.
 _Avoid_: Night, session
 
 **Timeline**:
-The Sleep Widget's track, Figma's snake: one continuous line
-with two rows per day. The AM row runs left to right from 1:00
-to noon, curves round the right edge (noon to 13:00), and the
-PM row runs back right to left to midnight, then curves round
-the left edge (0:00 to 1:00) into the next day. Periods are
-drawn along it.
+The Sleep Widget's per-day track: one row per day, read left to
+right from noon on that day to noon the next, on which Periods
+are drawn.
 _Avoid_: Chart, axis
 
 **Mood**:

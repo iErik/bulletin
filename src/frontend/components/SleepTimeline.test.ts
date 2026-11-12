@@ -129,7 +129,7 @@ describe('SleepTimeline', () => {
 
     expect(api.sleep.list).toHaveBeenCalledWith({
       from: '2026-09-30',
-      to: '2026-11-30'
+      to: '2026-12-01'
     })
     expect(keys()[0]).toBe('2026-10-01')
     expect(keys().at(-1)).toBe('2026-11-30')
@@ -223,7 +223,7 @@ describe('SleepTimeline', () => {
 
     expect(api.sleep.list).toHaveBeenLastCalledWith({
       from: '2025-11-30',
-      to: '2026-02-28'
+      to: '2026-03-01'
     })
     expect(keys()[0]).toBe('2025-12-01')
     expect(list.scrollTop)
@@ -241,7 +241,7 @@ describe('SleepTimeline', () => {
     expect(window.bulletin.sleep.list)
       .toHaveBeenLastCalledWith({
         from: '2026-08-31',
-        to: '2026-09-30'
+        to: '2026-10-01'
       })
     expect(keys()[0]).toBe('2026-09-01')
     expect(list.scrollTop).toBe(10 + 30 * ROW)

@@ -9,9 +9,14 @@ import {
 } from './sleep'
 import { memoryDatabase } from './testing'
 
-/** Epoch ms of a local time in June 2026. */
-const at = (day: number, hour: number, minute = 0): number =>
-  new Date(2026, 5, day, hour, minute).getTime()
+/** Epoch ms of a local time in 2026, June by default. */
+const at = (
+  day: number,
+  hour: number,
+  minute = 0,
+  month = 5
+): number =>
+  new Date(2026, month, day, hour, minute).getTime()
 
 const HOUR = 60 * 60 * 1000
 // Noon on 15 June 2026, local time.
@@ -141,9 +146,9 @@ describe('listSleep', () => {
       .toEqual([at(2, 11), at(2, 12), at(3, 12), at(4, 12)])
   })
 
-  it('keeps a night across a month on its Head\'s day',
+  it('keeps a Period across a month on its Head\'s day',
     async () => {
-      const head = new Date(2026, 4, 31, 23).getTime()
+      const head = at(31, 23, 0, 4)
       await create(head, at(1, 2))
       await create(at(1, 3), at(1, 6))
 
