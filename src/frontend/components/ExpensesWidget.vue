@@ -64,6 +64,14 @@ const onBudgetSaved = (saved: Budget): void => {
     budget.value = saved
 }
 
+/** A saved edit replaces the Transaction. */
+const onUpdated = (saved: Transaction): void => {
+  transactions.value = transactions.value.map(
+    transaction =>
+      transaction.id === saved.id ? saved : transaction
+  )
+}
+
 const onDeleted = ({ id }: Transaction): void => {
   transactions.value = transactions.value
     .filter(transaction => transaction.id !== id)
@@ -92,6 +100,7 @@ watch(
         :transactions="transactions"
         :categories="categories"
         @deleted="onDeleted"
+        @updated="onUpdated"
       />
     </template>
   </Widget>

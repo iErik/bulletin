@@ -9,11 +9,16 @@
 // and emits `deleted`, while ×, Escape, a click or
 // focus elsewhere cancels. One row asks at a time. A
 // Transaction storage no longer has counts as deleted.
+// The description and value edit in place and save
+// through storage, emitting `updated`; the edit
+// shows while it saves, and a storage error reverts it
+// and shows inline.
 import {
   computed,
   nextTick,
   onBeforeUnmount,
   ref,
+  shallowRef,
   useTemplateRef,
   watch
 } from 'vue'
@@ -21,9 +26,12 @@ import { parseISO } from 'date-fns'
 import { Check, Minus, X } from '@lucide/vue'
 import type {
   Category,
+  NewTransaction,
   Transaction
 } from '@shared/expenses'
+import CellInput from '@/components/CellInput.vue'
 import Tooltip from '@/components/Tooltip.vue'
+import { amountText, parseAmount } from '@/expenses/amount'
 import { formatAmount } from '@/expenses/money'
 import { amountTone, orderRows } from '@/expenses/rows'
 import { formatDate } from '@/locale/format'
@@ -37,13 +45,53 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** Storage has deleted it. */
   deleted: [transaction: Transaction]
+  /** Storage has saved an edit to it. */
+  updated: [transaction: Transaction]
 }>()
 
-const rows = computed(() => orderRows(props.transactions))
+/** Edits on their way to storage, by id. */
+const saving = shallowRef(new Map<number, Transaction>())
+
+const rows = computed(() => orderRows(
+  props.transactions.map(transaction =>
+    saving.value.get(transaction.id) ?? transaction)
+))
 
 const names = computed(() => new Map(
   props.categories.map(({ id, name }) => [id, name])
 ))
+
+const checkDescription = (text: string): string | null =>
+  text.trim() === '' ? 'Enter a description.' : null
+
+const checkAmount = (text: string): string | null =>
+  parseAmount(text) === null
+    ? `Enter an amount like ${amountText(-123_456)}.`
+    : null
+
+/** Saves `change` to `transaction`, if it changes it. */
+const save = async (
+  transaction: Transaction,
+  change: Partial<NewTransaction>
+): Promise<void> => {
+  const edited = { ...transaction, ...change }
+  const keys = Object.keys(change) as (keyof NewTransaction)[]
+  if (keys.every(key => edited[key] === transaction[key]))
+    return
+  error.value = null
+  saving.value = new Map(saving.value)
+    .set(edited.id, edited)
+  const result = await window.bulletin.expenses
+    .update(edited)
+  // A later edit to the row keeps showing.
+  if (saving.value.get(edited.id) === edited) {
+    const left = new Map(saving.value)
+    left.delete(edited.id)
+    saving.value = left
+  }
+  if (result.ok) emit('updated', result.value)
+  else error.value = 'Couldn’t save the change. Try again.'
+}
 
 const root = useTemplateRef<HTMLElement>('root')
 
@@ -139,7 +187,9 @@ watch(() => asking.value !== null, on => {
 // A reload without the asking row stops it asking,
 // dropping any error about it.
 watch(rows, now => {
-  if (now.some(({ id }) => id === asking.value)) return
+  if (asking.value === null
+    || now.some(({ id }) => id === asking.value))
+    return
   asking.value = null
   error.value = null
 })
@@ -221,15 +271,16 @@ onBeforeUnmount(() => {
                 </button>
               </td>
               <td>
-                <Tooltip
+                <CellInput
                   :text="transaction.description"
-                  placement="above"
-                  truncated-only
-                >
-                  <span class="text" tabindex="0">
-                    {{ transaction.description }}
-                  </span>
-                </Tooltip>
+                  :start="transaction.description"
+                  label="Description"
+                  :check="checkDescription"
+                  @commit="save(transaction, {
+                    description: $event.trim()
+                  })"
+                  @invalid="error = $event"
+                />
               </td>
               <td>
                 <Tooltip
@@ -256,7 +307,17 @@ onBeforeUnmount(() => {
                 class="value"
                 :class="`-${amountTone(transaction.amount)}`"
               >
-                {{ formatAmount(transaction.amount) }}
+                <CellInput
+                  :text="formatAmount(transaction.amount)"
+                  :start="amountText(transaction.amount)"
+                  label="Value"
+                  inputmode="decimal"
+                  :check="checkAmount"
+                  @commit="save(transaction, {
+                    amount: parseAmount($event) ?? 0
+                  })"
+                  @invalid="error = $event"
+                />
               </td>
             </template>
           </tr>
@@ -347,7 +408,6 @@ onBeforeUnmount(() => {
 
   .app-tooltip { max-width: 100%; }
 
-  .text,
   .chip {
     min-width: 0;
     overflow: hidden;
