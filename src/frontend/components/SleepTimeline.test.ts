@@ -729,6 +729,40 @@ describe('SleepTimeline, editing', () => {
     start: at(10, 8, 1),
     end: at(10, 8, 9)
   }
+  const periodStop = (): Omit<
+    DOMWrapper<Element>,
+    'exists'
+  > => timeline!.get('[data-period="1"]')
+  const button = (label: string): HTMLButtonElement =>
+    tooltip().get<HTMLButtonElement>(
+      `[aria-label="${label}"]`).element
+
+  // happy-dom doesn't, but Chrome sends a focusout,
+  // with no relatedTarget, from a focused element as
+  // it's removed.
+  const focusoutOnRemoval = (): void => {
+    const el = tooltip().element
+    const removeChild = el.removeChild.bind(el)
+    el.removeChild = <T extends Node>(child: T): T => {
+      const focused = document.activeElement
+      if (focused && child.contains(focused)) {
+        focused.dispatchEvent(new FocusEvent(
+          'focusout', { bubbles: true }))
+      }
+      return removeChild(child)
+    }
+  }
+
+  /** Enter on a button, which clicks it. */
+  const activate = async (
+    el: HTMLButtonElement
+  ): Promise<void> => {
+    el.focus()
+    el.dispatchEvent(new KeyboardEvent(
+      'keydown', { key: 'Enter', bubbles: true }))
+    el.click()
+    await settle()
+  }
 
   it('opens on a click and saves on Enter', async () => {
     storing([period])
@@ -736,8 +770,7 @@ describe('SleepTimeline, editing', () => {
     const api = window.bulletin
 
     await click('2026-11-07', x(24 + 5))
-    expect(row('2026-11-07').get('.period').classes())
-      .toContain('-editing')
+    expect(periodStop().classes()).toContain('-editing')
     const start = tooltip().get('[aria-label="Start"]')
     expect((start.element as HTMLInputElement).value)
       .toMatch(/^1:00\sAM$/)
@@ -750,6 +783,8 @@ describe('SleepTimeline, editing', () => {
       { ...period, end: at(10, 8, 9, 47) }
     )
     expect(tooltip().exists()).toBe(false)
+    expect(document.activeElement)
+      .toBe(periodStop().element)
   })
 
   it('keeps a Period of exactly 24 hours', async () => {
@@ -855,16 +890,182 @@ describe('SleepTimeline, editing', () => {
     expect(row('2026-11-07').get('.caption').text())
       .toMatch(/^1:00\sAM to 9:00\sAM$/)
   })
-  it('closes on Escape without saving', async () => {
+
+  it('asks before deleting', async () => {
     storing([period])
     await mountTimeline()
 
     await click('2026-11-07', x(24 + 5))
+    await tooltip().get('[aria-label="Delete"]')
+      .trigger('click')
+    expect(tooltip().text()).toContain('Delete?')
+
+    await press(tooltip().get('input'), 'Escape')
+    expect(tooltip().text()).not.toContain('Delete?')
+
+    await tooltip().get('[aria-label="Delete"]')
+      .trigger('click')
+    await tooltip().get('[aria-label="Delete period"]')
+      .trigger('click')
+    await settle()
+
+    expect(window.bulletin.sleep.delete)
+      .toHaveBeenCalledWith(1)
+    expect(row('2026-11-07').find('.period').exists())
+      .toBe(false)
+    expect(document.activeElement)
+      .toBe(row('2026-11-07').element)
+  })
+
+  it('puts a Period back if deleting fails', async () => {
+    storing([period])
+    window.bulletin.sleep.delete = vi.fn()
+      .mockResolvedValue({
+        ok: false,
+        error: { code: 'internal' }
+      })
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    await tooltip().get('[aria-label="Delete"]')
+      .trigger('click')
+    await tooltip().get('[aria-label="Delete period"]')
+      .trigger('click')
+    await settle()
+
+    expect(timeline!.get('[role="alert"]').text()).toBe(
+      "Couldn't delete the period. Something went wrong."
+    )
+    expect(timeline!.find('[data-period="1"]').exists())
+      .toBe(true)
+  })
+
+  it('stays on "Delete?" as the trash goes', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    focusoutOnRemoval()
+    button('Delete').focus()
+    button('Delete').click()
+    await settle()
+
+    expect(tooltip().text()).toContain('Delete?')
+    expect(document.activeElement)
+      .toBe(button('Keep period'))
+    button('Delete period').click()
+    await settle()
+    expect(window.bulletin.sleep.delete)
+      .toHaveBeenCalledWith(1)
+  })
+
+  it('deletes from the keyboard', async () => {
+    storing([period])
+    await mountTimeline()
+
+    ;(periodStop().element as HTMLElement).focus()
+    await press(periodStop(), 'Enter')
+    focusoutOnRemoval()
+    await activate(button('Delete'))
+    await activate(button('Delete period'))
+
+    expect(window.bulletin.sleep.delete)
+      .toHaveBeenCalledWith(1)
+    expect(document.activeElement)
+      .toBe(row('2026-11-07').element)
+  })
+
+  it('cancels "Delete?" on pointer leave', async () => {
+    storing([period])
+    await mountTimeline()
+
+    await click('2026-11-07', x(24 + 5))
+    await activate(button('Delete'))
+    await tooltip().trigger('pointerleave')
+
+    expect(tooltip().text()).not.toContain('Delete?')
+    expect(document.activeElement).toBe(button('Delete'))
+  })
+
+  it('opens from the keyboard', async () => {
+    storing([period])
+    await mountTimeline()
+
+    expect(periodStop().attributes('tabindex')).toBe('0')
+    expect(periodStop().attributes('aria-label'))
+      .toMatch(/^Period, 1:00\sAM to 9:00\sAM$/)
+    await press(periodStop(), 'Enter')
+    expect(tooltip().exists()).toBe(true)
+
     await type('End', '10:00')
     await press(tooltip().get('input'), 'Escape')
-
     expect(tooltip().exists()).toBe(false)
+    expect(document.activeElement)
+      .toBe(periodStop().element)
     expect(window.bulletin.sleep.update)
       .not.toHaveBeenCalled()
+  })
+
+  it('adds a Period on Enter on a day', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+
+    expect(row('2026-11-10').attributes('tabindex'))
+      .toBeUndefined()
+    await press(row('2026-11-07'), 'Enter')
+    expect(tooltip().text()).toContain('Add period')
+
+    await type('Start', '11:15 PM')
+    await type('End', '7:05 AM')
+    await press(tooltip().get('input'), 'Enter')
+
+    expect(api.sleep.create).toHaveBeenCalledWith({
+      start: at(10, 7, 23, 15),
+      end: at(10, 8, 7, 5)
+    })
+    expect(document.activeElement)
+      .toBe(row('2026-11-07').element)
+  })
+
+  it.each(['click', 'Escape'])(
+    'closes a blank "Add period" on %s',
+    async how => {
+      await mountTimeline()
+
+      await press(row('2026-11-07'), 'Enter')
+      if (how === 'click') document.body.click()
+      else await press(tooltip().get('input'), how)
+      await settle()
+
+      expect(tooltip().exists()).toBe(false)
+    }
+  )
+
+  it('refuses a blank "Add period" on Enter', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+
+    await press(row('2026-11-07'), 'Enter')
+    await press(tooltip().get('input'), 'Enter')
+
+    expect(tooltip().get('[role="alert"]').text())
+      .toMatch(/^Enter times like 2:15\sAM\.$/)
+    expect(api.sleep.create).not.toHaveBeenCalled()
+  })
+
+  it('reads added times like editing', async () => {
+    const api = stubBulletin()
+    await mountTimeline()
+
+    await press(row('2026-11-07'), 'Enter')
+    await type('Start', '1:00')
+    await type('End', '1:00')
+    await press(tooltip().get('input'), 'Enter')
+
+    // After midnight on the 7th's row, for 24 hours.
+    expect(api.sleep.create).toHaveBeenCalledWith({
+      start: at(10, 8, 1),
+      end: at(10, 9, 1)
+    })
   })
 })

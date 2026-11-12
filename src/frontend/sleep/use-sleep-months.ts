@@ -48,6 +48,8 @@ export interface SleepMonths {
    * the one with its `id`.
    */
   add(period: SleepPeriod): void
+  /** Drops the Period with `id`, just deleted. */
+  remove(id: number): void
 }
 
 export const useSleepMonths = (
@@ -144,6 +146,10 @@ export const useSleepMonths = (
     reset,
     loadEarlier,
     loadLater,
-    add: period => merge([period])
+    add: period => merge([period]),
+    remove: id => {
+      periods.value = periods.value
+        .filter(p => p.id !== id)
+    }
   }
 }
