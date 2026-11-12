@@ -14,8 +14,11 @@ export type SemanticToken =
   | 'accent'
   | 'text-on-accent'
 
+/** Palette entries that are single colours. */
+type Single = 'danger' | 'income' | 'expense'
+
 type ScaleRef = readonly [
-  Exclude<keyof Palette, 'mood' | 'danger'>,
+  Exclude<keyof Palette, 'mood' | Single>,
   Shade
 ]
 
@@ -65,8 +68,9 @@ export const moodColour = (mood: Mood): string =>
   `var(--color-${mood.colour})`
 
 /**
- * Writes the semantic custom properties, the danger
- * colour and the Mood colours for a Palette onto
+ * Writes the semantic custom properties, the danger,
+ * Income and Expense colours and the Mood colours for
+ * a Palette onto
  * `el` (the root element by default).
  */
 export const applyPalette = (
@@ -81,7 +85,10 @@ export const applyPalette = (
       colour
     )
   }
-  el.style.setProperty('--color-danger', palette.danger)
+  const singles: readonly Single[] =
+    ['danger', 'income', 'expense']
+  for (const name of singles)
+    el.style.setProperty(`--color-${name}`, palette[name])
   for (const mood of MOODS) {
     el.style.setProperty(
       `--color-${mood.colour}`,

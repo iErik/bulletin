@@ -25,6 +25,8 @@ vi.mock('@/theme/themes', async original => {
       foreground: shades,
       accent: shades,
       danger: colour,
+      income: colour,
+      expense: colour,
       mood: Object.fromEntries(
         MOODS.map(mood => [mood.key, colour])
       ) as Palette['mood']
@@ -126,6 +128,17 @@ describe('theme store', () => {
     expect(moods()).toEqual(
       MOODS.map(mood => light.mood[mood.key])
     )
+  })
+
+  it('writes the Income and Expense colours', () => {
+    mockSystemScheme(true)
+    useThemeStore()
+    const colour = (name: string): string =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`)
+
+    expect([colour('income'), colour('expense')])
+      .toEqual([dark.income, dark.expense])
   })
 
   it('rewrites the CSS variables on Theme change', () => {
