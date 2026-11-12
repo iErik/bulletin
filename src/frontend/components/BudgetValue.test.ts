@@ -44,7 +44,7 @@ const press = async (
   await flushPromises()
 }
 
-const type = async (
+const typeAndPress = async (
   wrapper: VueWrapper,
   text: string,
   key = 'Enter'
@@ -81,7 +81,7 @@ describe('BudgetValue', () => {
   it('saves this month’s Budget on Enter', async () => {
     const { wrapper, api } = await mountOpen(CARRIED)
 
-    await type(wrapper, '1.234,56')
+    await typeAndPress(wrapper, '1.234,56')
 
     expect(api.expenses.setBudget).toHaveBeenCalledWith(
       { month: '2026-11', amount: 123_456 }
@@ -107,20 +107,35 @@ describe('BudgetValue', () => {
     expect(input(wrapper).exists()).toBe(false)
   })
 
-  it('closes untouched on clicking away', async () => {
-    const { wrapper, api } = await mountOpen(CARRIED)
+  it('saves an untouched carried Budget on clicking away',
+    async () => {
+      const { wrapper, api } = await mountOpen(CARRIED)
+
+      await input(wrapper).trigger('blur')
+      await flushPromises()
+
+      expect(api.expenses.setBudget).toHaveBeenCalledWith(
+        { month: '2026-11', amount: 300_000 }
+      )
+      expect(input(wrapper).exists()).toBe(false)
+    })
+
+  it('closes the untouched dash on clicking away', async () => {
+    const { wrapper, api } = await mountOpen(null)
 
     await input(wrapper).trigger('blur')
     await flushPromises()
 
     expect(api.expenses.setBudget).not.toHaveBeenCalled()
     expect(input(wrapper).exists()).toBe(false)
+    expect(wrapper.find('[role="alert"]').exists())
+      .toBe(false)
   })
 
   it('doesn’t resave an unchanged own Budget', async () => {
     const { wrapper, api } = await mountOpen()
 
-    await type(wrapper, '3,000.00')
+    await typeAndPress(wrapper, '3,000.00')
 
     expect(api.expenses.setBudget).not.toHaveBeenCalled()
     expect(input(wrapper).exists()).toBe(false)
@@ -129,7 +144,7 @@ describe('BudgetValue', () => {
   it('cancels on Escape', async () => {
     const { wrapper, api } = await mountOpen()
 
-    await type(wrapper, '99', 'Escape')
+    await typeAndPress(wrapper, '99', 'Escape')
 
     expect(api.expenses.setBudget).not.toHaveBeenCalled()
     expect(wrapper.get('button').text())
@@ -147,7 +162,7 @@ describe('BudgetValue', () => {
     async (text, error) => {
       const { wrapper, api } = await mountOpen()
 
-      await type(wrapper, text)
+      await typeAndPress(wrapper, text)
 
       expect(api.expenses.setBudget).not.toHaveBeenCalled()
       expect(alert(wrapper)).toBe(error)
@@ -159,7 +174,7 @@ describe('BudgetValue', () => {
   it('clears the error on typing', async () => {
     const { wrapper } = await mountOpen()
 
-    await type(wrapper, 'abc')
+    await typeAndPress(wrapper, 'abc')
     await input(wrapper).setValue('30')
 
     expect(wrapper.find('[role="alert"]').exists())
@@ -186,13 +201,25 @@ describe('BudgetValue', () => {
       { ok: false, error: { code: 'internal' } }
     )
 
-    await type(wrapper, '50')
+    await typeAndPress(wrapper, '50')
 
     expect(wrapper.emitted('saved')).toBeUndefined()
     expect(wrapper.get('button').text())
       .toBe('R$3,000.00')
     expect(alert(wrapper))
       .toBe('Couldn’t save the Budget.')
+  })
+
+  it('clears an error when the month changes', async () => {
+    const { wrapper } = await mountOpen()
+
+    await input(wrapper).setValue('-30')
+    await input(wrapper).trigger('blur')
+    await flushPromises()
+    await wrapper.setProps({ month: new Date(2026, 11, 1) })
+
+    expect(wrapper.find('[role="alert"]').exists())
+      .toBe(false)
   })
 
   it('holds while saving', async () => {
@@ -204,7 +231,7 @@ describe('BudgetValue', () => {
           finish = () => done({ ok: true, value: budget })
         }))
 
-    await type(wrapper, '50')
+    await typeAndPress(wrapper, '50')
     await press(wrapper, 'Escape')
     await press(wrapper, 'Enter')
     await input(wrapper).trigger('blur')

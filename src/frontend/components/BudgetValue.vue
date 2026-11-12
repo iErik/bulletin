@@ -3,13 +3,14 @@
 // it, or the dash with no Budget, turns it into an
 // input. Enter or clicking away saves it as `month`'s
 // own Budget through storage and emits `saved`;
-// Escape cancels. Clicking away without typing just
-// closes. A negative or invalid amount isn't saved:
-// on Enter the input stays with an inline error, and
-// clicking away reverts and shows it. A storage error
-// reverts and shows inline. While a save is under way
-// the input holds, ignoring keys and clicks away.
-import { nextTick, ref, useTemplateRef } from 'vue'
+// Escape cancels. Clicking away from the dash without
+// typing just closes. A negative or invalid amount
+// isn't saved: on Enter the input stays with an inline
+// error, and clicking away reverts and shows it. A
+// storage error reverts and shows inline, until the
+// month changes. While a save is under way the input
+// holds, ignoring keys and clicks away.
+import { nextTick, ref, useTemplateRef, watch } from 'vue'
 import { format } from 'date-fns'
 import type { Budget } from '@shared/expenses'
 import { amountText, parseAmount } from '@/expenses/amount'
@@ -34,6 +35,12 @@ const busy = ref(false)
 const error = ref<string | null>(null)
 const field = useTemplateRef<HTMLInputElement>('field')
 const button = useTemplateRef<HTMLButtonElement>('button')
+
+// An error belongs to the month it was made in.
+watch(
+  () => format(props.month, 'yyyy-MM'),
+  () => { error.value = null }
+)
 
 const open = async (): Promise<void> => {
   const { budget } = props
@@ -102,8 +109,10 @@ const onKeydown = (event: KeyboardEvent): void => {
 
 const onBlur = (): void => {
   if (!editing.value || busy.value) return
-  if (typed.value) void save(false)
-  else void close(false)
+  // Nothing typed on the dash: nothing to save.
+  if (!typed.value && text.value === '')
+    void close(false)
+  else void save(false)
 }
 
 const onInput = (): void => {
@@ -131,23 +140,14 @@ const onInput = (): void => {
       @blur="onBlur"
     >
     <button
-      v-else-if="budget"
-      ref="button"
-      class="value"
-      type="button"
-      @click="open"
-    >
-      {{ formatAmount(budget.amount) }}
-    </button>
-    <button
       v-else
       ref="button"
       class="value"
       type="button"
-      aria-label="Set budget"
+      :aria-label="budget ? undefined : 'Set budget'"
       @click="open"
     >
-      —
+      {{ budget ? formatAmount(budget.amount) : '—' }}
     </button>
     <p v-if="error" class="error" role="alert">
       {{ error }}
