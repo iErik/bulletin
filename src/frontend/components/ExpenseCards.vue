@@ -5,7 +5,8 @@
 // month says which month it was set for. A thin bar
 // under the Budget fills with Expenses ÷ Budget, full
 // at most, and turns red past it. Without a Budget,
-// the card shows a dash and no bar.
+// the card shows a dash and no bar. The Budget is
+// edited in place (see `BudgetValue`).
 import { computed } from 'vue'
 import { format } from 'date-fns'
 import {
@@ -20,6 +21,7 @@ import {
   totals
 } from '@/expenses/money'
 import { formatDate } from '@/locale/format'
+import BudgetValue from '@/components/BudgetValue.vue'
 
 const props = defineProps<{
   /** The month's Transactions. */
@@ -28,6 +30,11 @@ const props = defineProps<{
   budget: Budget | null
   /** The first of the month shown. */
   month: Date
+}>()
+
+const emit = defineEmits<{
+  /** The month's own Budget, once saved. */
+  'budget-saved': [budget: Budget]
 }>()
 
 const sums = computed(() => totals(props.transactions))
@@ -89,12 +96,11 @@ const carriedFrom = computed(() => {
         <Wallet class="icon" aria-hidden="true" />
         Budget
       </h3>
-      <p v-if="budget" class="value">
-        {{ formatAmount(budget.amount) }}
-      </p>
-      <p v-else class="value" aria-label="No budget">
-        —
-      </p>
+      <BudgetValue
+        :budget="budget"
+        :month="month"
+        @saved="emit('budget-saved', $event)"
+      />
       <p v-if="carriedFrom" class="from">
         from {{ carriedFrom }}
       </p>

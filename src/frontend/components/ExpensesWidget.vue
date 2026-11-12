@@ -54,6 +54,16 @@ const load = async (from: Date): Promise<void> => {
   loaded.value = from
 }
 
+/**
+ * A saved Budget replaces the shown one, unless the
+ * month changed while it was saving.
+ */
+const onBudgetSaved = (saved: Budget): void => {
+  if (loaded.value
+    && saved.month === format(loaded.value, 'yyyy-MM'))
+    budget.value = saved
+}
+
 watch(
   () => month.value.getTime(),
   () => void load(month.value),
@@ -71,6 +81,7 @@ watch(
         :transactions="transactions"
         :budget="budget"
         :month="loaded"
+        @budget-saved="onBudgetSaved"
       />
       <ExpenseTable
         :transactions="transactions"
