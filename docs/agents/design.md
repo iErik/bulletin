@@ -134,5 +134,4 @@ wasn't done.
 Review UI changes against the frames, not only the
 ticket text. A PR whose UI doesn't match its frames,
 with no departure a ticket or an accepted ADR
-allows, isn't
-ready.
+allows, isn't ready.
