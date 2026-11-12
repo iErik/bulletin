@@ -79,7 +79,8 @@ const editing = shallowRef<{
   key: string
   day: Date
   period: SleepPeriod
-  at: number
+  /** Where on the row it points, from 0 to 1. */
+  fraction: number
 } | null>(null)
 // In the rows' v-for, so an array of one.
 const editor = useTemplateRef<{
@@ -337,8 +338,14 @@ const edit = (period: SleepPeriod, event: Event): void => {
   const from = toFraction(period.start, day)
   const to = Math.min(1, toFraction(period.end, day))
   // Off the row's ends, so it isn't cut off.
-  const at = Math.min(0.85, Math.max(0.15, (from + to) / 2))
-  editing.value = { key: localDate(day), day, period, at }
+  const fraction = Math.min(0.85,
+    Math.max(0.15, (from + to) / 2))
+  editing.value = {
+    key: localDate(day),
+    day,
+    period,
+    fraction
+  }
 }
 
 const close = (): void => {
@@ -534,7 +541,7 @@ watch(() => store.today, today => {
             v-if="editing?.key === row.key"
             ref="editor"
             :key="editing.period.id"
-            :style="{ left: percent(editing.at) }"
+            :style="{ left: percent(editing.fraction) }"
             :period="editing.period"
             :day="editing.day"
             :periods="months.periods.value"

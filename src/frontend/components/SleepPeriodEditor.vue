@@ -39,7 +39,7 @@ const below = ref(false)
 const example = formatTime(new Date(2000, 0, 1, 2, 15))
 
 /** The fields' Period, or why they don't make one. */
-const typed = (): NewSleepPeriod | string => {
+const fromFields = (): NewSleepPeriod | string => {
   const from = parseClock(start.value)
   const to = parseClock(end.value)
   if (!from || !to) return `Enter times like ${example}`
@@ -54,7 +54,7 @@ const typed = (): NewSleepPeriod | string => {
 /** Saves valid times; false, with an error, if not. */
 const commit = (): boolean => {
   const { period } = props
-  const result = typed()
+  const result = fromFields()
   if (typeof result === 'string') {
     error.value = `${result}.`
     return false
