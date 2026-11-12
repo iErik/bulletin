@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
+import Icon from '@/components/Icon.vue'
 import DashboardView from './DashboardView.vue'
 
 let dashboard: VueWrapper | undefined
@@ -34,14 +35,14 @@ describe('DashboardView', () => {
   })
 
   it.each([
-    ['sleep', 'Sleep'],
-    ['expenses', 'Expenses'],
-    ['mood', 'Mood'],
-    ['habits', 'Habits'],
-    ['weight', 'Weight']
+    ['sleep', 'Sleep', 'moon'],
+    ['expenses', 'Expenses', 'dollar-sign'],
+    ['mood', 'Mood', 'mood'],
+    ['habits', 'Habits', 'checklist'],
+    ['weight', 'Weight', 'activity']
   ])(
     'places the %s Widget in its grid area',
-    (area, title) => {
+    (area, title, icon) => {
       const cell = mountDashboard()
         .get(`.dashboard-view > .${area}`)
       // The Mood Widget wraps its frame.
@@ -50,6 +51,8 @@ describe('DashboardView', () => {
         : cell.get('.widget-frame')
 
       expect(widget.get('.title').text()).toBe(title)
+      expect(widget.get('.tile').findComponent(Icon)
+        .props('name')).toBe(icon)
     }
   )
 

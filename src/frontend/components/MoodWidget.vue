@@ -141,7 +141,7 @@ watch(
       @saved="onSaved"
       @close="close"
     />
-    <Widget v-else title="Mood">
+    <Widget v-else class="mood-grid-frame" title="Mood" icon="mood">
       <p v-if="failed" class="error" role="alert">
         Couldn’t load the Moods.
       </p>
@@ -159,6 +159,9 @@ watch(
 
 <style lang="scss">
 @use '@/styles/utils' as *;
+
+// Figma's weekday row is 17px below the header.
+.widget-frame.mood-grid-frame { --widget-gap: #{rem(17px)}; }
 
 // Holds the grid's frame or the picker's, filling the
 // Dashboard's Mood area.

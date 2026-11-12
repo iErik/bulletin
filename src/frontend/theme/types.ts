@@ -31,6 +31,12 @@ export interface Palette {
   readonly income: string
   /** Expense amounts, as `--color-expense`. */
   readonly expense: string
+  /** A Widget's icon tile, as `--color-tile`. */
+  readonly tile: string
+  /** A Widget's icon, as `--color-tile-icon`. */
+  readonly 'tile-icon': string
+  /** A Widget's title, as `--color-widget-title`. */
+  readonly 'widget-title': string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
 }
