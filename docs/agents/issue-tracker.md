@@ -7,8 +7,9 @@ Work in this repo is organized as Linear tickets (team prefix: `BLT`). Use the L
 1. Read the full ticket: description, acceptance criteria, comments, linked documents, sub-issues, and relations.
 2. Check that every "blocked by" issue is Done. If not, stop and tell me.
 3. Only start a ticket that is in **Ready**, or one I explicitly name in my prompt.
-4. If the ticket is ambiguous, has no checkable acceptance criteria, or contradicts the code, do not guess. Post your questions as a comment on the ticket, leave its status as it is, set its triage label back to `needs-info`, and stop.
-5. For anything beyond a small fix, post a short plan as a comment (files you'll touch, approach, risks) and wait for my go-ahead before writing code.
+4. For UI work, read every Figma frame the ticket links, as [Design](design.md#before-planning) describes. Figma is the visual contract.
+5. If the ticket is ambiguous, has no checkable acceptance criteria, or contradicts the code, do not guess. Post your questions as a comment on the ticket, leave its status as it is, set its triage label back to `needs-info`, and stop.
+6. For anything beyond a small fix, post a short plan as a comment (files you'll touch, approach, risks, and for UI work the Figma frames read and the values that matter) and wait for my go-ahead before writing code.
 
 ### Branches and scope
 
@@ -36,6 +37,7 @@ Work in this repo is organized as Linear tickets (team prefix: `BLT`). Use the L
 ### Before moving to In Review
 
 - [ ] Every acceptance criterion is met, and you can say how you verified each one
+- [ ] For UI work, the app matches its Figma frames, checked in the running app ([Design check](design.md#design-check-before-review))
 - [ ] Tests added or updated for the change
 - [ ] `pnpm lint` passes
 - [ ] `pnpm typecheck` passes
@@ -54,7 +56,7 @@ The test, lint and typecheck items apply only if the project has them. If it doe
   any finding. It doesn't fix anything: run
   `pnpm lint:fix`, then stage the fixes.
 - Commit messages and the PR title start with the ticket ID: `BLT-12: Add retry to GraphQL client`.
-- PR description includes: link to the ticket, a short summary of the change, how it was verified, and any deviations from the ticket or decisions I should look at.
+- PR description includes: link to the ticket, a short summary of the change, how it was verified, and any deviations from the ticket or decisions I should look at. For UI work, it also has a **Design check** section ([Design](design.md#design-check-before-review)).
 
 ### Line length
 

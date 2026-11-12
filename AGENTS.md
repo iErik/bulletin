@@ -17,6 +17,15 @@ ready-for-agent, ready-for-human, wontfix. See
 Single-context: one `CONTEXT.md` and `docs/adr/` at
 the repo root. See `docs/agents/domain.md`.
 
+### Design
+
+The Figma design is the visual contract: UI matches
+its frames exactly, and a ticket overrides Figma only
+where it says so. Read the frames through the Figma
+plugin before planning UI work, and check the app
+against them before review. See
+`docs/agents/design.md`.
+
 ### Testing
 
 Vitest, with a `renderer` and a `main` project, a
