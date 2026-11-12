@@ -73,19 +73,26 @@ const nameButton = (
 ): DOMWrapper<HTMLButtonElement> =>
   wrapper.find<HTMLButtonElement>('.actions > .name')
 
+const rowNames = (wrapper: VueWrapper): string[] =>
+  wrapper.findAll('.row:not(.-new) .name')
+    .map(item => item.text())
+
 /** Opens the Habit list and returns its rows. */
 const openList = async (
   wrapper: VueWrapper
 ): Promise<DOMWrapper<HTMLLIElement>[]> => {
   await nameButton(wrapper).trigger('click')
   await flushPromises()
-  return wrapper.findAll<HTMLLIElement>('.row')
+  return wrapper.findAll<HTMLLIElement>(
+    '.row:not(.-new)'
+  )
 }
 
 const archiveRow = async (
   row: DOMWrapper<HTMLLIElement>
 ): Promise<void> => {
-  await row.get('.controls > .control').trigger('click')
+  await row.get('[aria-label^="Delete "]')
+    .trigger('click')
   await row.get('.-confirm').trigger('click')
   await flushPromises()
 }
@@ -364,7 +371,8 @@ describe('HabitsWidget', () => {
       await archiveRow(rows[1])
 
       expect(api.habits.archive).toHaveBeenCalledWith(2)
-      expect(wrapper.findAll('.row')).toHaveLength(1)
+      expect(wrapper.findAll('.row:not(.-new)'))
+        .toHaveLength(1)
       expect(name(wrapper)).toBe('Reading')
       expect(localStorage.getItem(CURRENT_HABIT_KEY))
         .toBe('1')
@@ -394,5 +402,74 @@ describe('HabitsWidget', () => {
 
     expect(widget.get('[role="alert"]').text())
       .toBe('Couldn’t load the Habits.')
+  })
+
+  it('creates the first Habit from the empty state',
+    async () => {
+      const { wrapper, api } = await mountWidget([])
+
+      await wrapper.get('.track').trigger('click')
+      await flushPromises()
+      const input = wrapper.get('input')
+      expect(document.activeElement).toBe(input.element)
+      await input.setValue('Yoga')
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+
+      expect(api.habits.create).toHaveBeenCalled()
+      expect(name(wrapper)).toBe('Yoga')
+      expect(wrapper.find('.habit-list').exists())
+        .toBe(true)
+    })
+
+  it('adds a Habit without making it current',
+    async () => {
+      const { wrapper, api } = await mountWidget()
+      vi.mocked(api.habits.create).mockResolvedValue({
+        ok: true,
+        value: habit(3, 'Yoga', '2026-11-09')
+      })
+      await openList(wrapper)
+
+      await wrapper.get('.-new > .choose').trigger('click')
+      await wrapper.get('input').setValue('Yoga')
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+
+      expect(rowNames(wrapper))
+        .toEqual(['Reading', 'Running', 'Yoga'])
+      expect(name(wrapper)).toBe('Reading')
+    })
+
+  it('puts a restored Habit back in its place',
+    async () => {
+      const { wrapper, api } = await mountWidget()
+      vi.mocked(api.habits.create).mockResolvedValue({
+        ok: true,
+        value: habit(3, 'Water', '2026-02-01')
+      })
+      await openList(wrapper)
+
+      await wrapper.get('.-new > .choose').trigger('click')
+      await wrapper.get('input').setValue('water')
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+
+      expect(rowNames(wrapper))
+        .toEqual(['Reading', 'Water', 'Running'])
+    })
+
+  it('renames the current Habit', async () => {
+    const { wrapper } = await mountWidget()
+    const rows = await openList(wrapper)
+
+    await rows[0].get('[aria-label="Edit Reading"]')
+      .trigger('click')
+    await wrapper.get('input').setValue('Books')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(name(wrapper)).toBe('Books')
+    expect(rowNames(wrapper)).toEqual(['Books', 'Running'])
   })
 })
