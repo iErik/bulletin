@@ -9,7 +9,7 @@ import type {
   SleepPeriod
 } from '@shared/sleep'
 import type { Database } from './database'
-import { dateRangeSchema, noonWindow } from './dates'
+import { dateRangeSchema, dayWindow } from './dates'
 import { parse, StorageFailure } from './errors'
 import { MAX_PERIOD_MS, sleep } from './schema'
 
@@ -73,15 +73,15 @@ const assertNoOverlap = (
 }
 
 /**
- * Periods whose Head falls in the range's days, each
- * running noon to noon, oldest first.
+ * Periods whose Head falls in the range's calendar
+ * days, local time, oldest first.
  */
 export const listSleep = async (
   db: Database,
   range: unknown
 ): Promise<SleepPeriod[]> => {
   const days: DateRange = parse(dateRangeSchema, range)
-  const { start, end } = noonWindow(days)
+  const { start, end } = dayWindow(days)
   const rows = await db
     .select()
     .from(sleep)

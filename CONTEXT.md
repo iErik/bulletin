@@ -81,15 +81,17 @@ _Avoid_: Current date, active date
 A Sleep Entry: one stretch of sleep, from its Head (start) to
 its Tail (end). A day can have several Periods (naps, broken
 sleep), a Period can cross midnight, and Periods never overlap.
-A Period belongs to the day whose noon-to-noon window contains
-its Head, so going to bed at 1 AM on the 8th counts as the
-night of the 7th.
+A Period belongs to its Head's calendar day, local time, so
+going to bed at 1 AM on the 8th counts as the 8th.
 _Avoid_: Night, session
 
 **Timeline**:
-The Sleep Widget's per-day track: one row per day, read left to
-right from noon on that day to noon the next, on which Periods
-are drawn.
+The Sleep Widget's track, Figma's snake: one continuous line
+with two rows per day. The AM row runs left to right from 1:00
+to noon, curves round the right edge (noon to 13:00), and the
+PM row runs back right to left to midnight, then curves round
+the left edge (0:00 to 1:00) into the next day. Periods are
+drawn along it.
 _Avoid_: Chart, axis
 
 **Mood**:

@@ -6,8 +6,7 @@ export type EpochMs = number
 /**
  * A Sleep Entry: one stretch of sleep, from its Head
  * (`start`) to its Tail (`end`), at most 24 hours. It
- * belongs to the day whose noon-to-noon window, local
- * time, contains its Head.
+ * belongs to its Head's calendar day, local time.
  */
 export interface SleepPeriod {
   readonly id: number
@@ -21,8 +20,8 @@ export type NewSleepPeriod = Omit<SleepPeriod, 'id'>
 /** `window.bulletin.sleep`. */
 export interface SleepApi {
   /**
-   * Periods whose Head falls in the range's days, each
-   * day running noon to noon. Oldest first.
+   * Periods whose Head falls in the range's calendar
+   * days, local time. Oldest first.
    */
   list(range: DateRange): Promise<
     StorageResult<SleepPeriod[]>

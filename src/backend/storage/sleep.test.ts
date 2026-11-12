@@ -120,19 +120,16 @@ describe('createSleep', () => {
 })
 
 describe('listSleep', () => {
-  it('lists by the noon-to-noon day of the Head', async () => {
-    await create(at(7, 12), at(7, 13))
-    await create(at(8, 1), at(8, 2))
-    await create(at(8, 11, 59), at(8, 12))
+  it('lists by the calendar day of the Head', async () => {
+    await create(at(7, 6), at(7, 15))
+    await create(at(7, 23, 59), at(8, 0))
+    await create(at(8, 0), at(8, 1))
     await create(at(8, 12), at(8, 13))
 
-    expect(await heads('2026-06-07')).toEqual([
-      at(7, 12),
-      at(8, 1),
-      at(8, 11, 59)
-    ])
+    expect(await heads('2026-06-07'))
+      .toEqual([at(7, 6), at(7, 23, 59)])
     expect(await heads('2026-06-08'))
-      .toEqual([at(8, 12)])
+      .toEqual([at(8, 0), at(8, 12)])
   })
 
   it('lists a range of days, oldest first', async () => {
@@ -141,15 +138,19 @@ describe('listSleep', () => {
     await create(at(2, 11), at(2, 12))
 
     expect(await heads('2026-06-02', '2026-06-04'))
-      .toEqual([at(2, 12), at(3, 12), at(4, 12)])
+      .toEqual([at(2, 11), at(2, 12), at(3, 12), at(4, 12)])
   })
 
-  it('crosses the end of a month', async () => {
-    await create(at(1, 3), at(1, 9))
+  it('keeps a night across a month on its Head\'s day',
+    async () => {
+      const head = new Date(2026, 4, 31, 23).getTime()
+      await create(head, at(1, 2))
+      await create(at(1, 3), at(1, 6))
 
-    expect(await heads('2026-05-31'))
-      .toEqual([at(1, 3)])
-  })
+      expect(await heads('2026-05-31')).toEqual([head])
+      expect(await heads('2026-06-01'))
+        .toEqual([at(1, 3)])
+    })
 
   it('rejects a range ending before it starts', () =>
     failsWith(
