@@ -698,6 +698,7 @@ $dot: rem(7px);
     scrollbar-gutter: stable;
     padding-top: space(2);
     font-size: rem(11px);
+    font-weight: 500;
     color: var(--color-text-muted);
   }
 
@@ -724,11 +725,13 @@ $dot: rem(7px);
     display: flex;
     flex-direction: column;
     font-size: rem(14px);
+    font-weight: 300;
     color: var(--color-text-muted);
   }
 
   > .label > .caption {
-    font-size: rem(10px);
+    font-size: rem(9px);
+    font-weight: 500;
   }
 
   > .track {

@@ -352,8 +352,7 @@ watch(
 .habits-widget {
   > .header > .actions > .name {
     font-size: rem(13px);
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-weight: 700;
     text-transform: uppercase;
     color: var(--color-text-muted);
     border-radius: rem(7px);

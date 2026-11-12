@@ -236,7 +236,8 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  font-size: rem(12px);
+  font-size: rem(13px);
+  font-weight: 500;
   white-space: nowrap;
   cursor: auto;
   background: color-mix(
