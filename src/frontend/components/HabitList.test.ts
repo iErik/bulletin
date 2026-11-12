@@ -218,4 +218,42 @@ describe('HabitList', () => {
     expect(row(wrapper, 'Water').text())
       .toContain('Delete?')
   })
+
+  it('edits a row in place', async () => {
+    const { wrapper, api } = mountList()
+
+    await button(wrapper, 'Edit Water').trigger('click')
+    await flushPromises()
+    const input = wrapper.get<HTMLInputElement>('input')
+    expect(input.element.value).toBe('Water')
+    expect(document.activeElement).toBe(input.element)
+    await input.setValue('Tea')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(api.habits.update).toHaveBeenCalledWith({
+      id: 3,
+      name: 'Tea',
+      icon: 'reading'
+    })
+    expect(wrapper.emitted('updated')?.[0])
+      .toEqual([expect.objectContaining({ name: 'Tea' })])
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(focusedName()).toBe('Water')
+  })
+
+  it('edits or asks for one row at a time', async () => {
+    const { wrapper } = mountList()
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await button(wrapper, 'Edit Water').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.question').exists()).toBe(false)
+    expect(wrapper.findAll('form')).toHaveLength(1)
+
+    await button(wrapper, 'Delete Reading').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.findAll('.question')).toHaveLength(1)
+  })
 })

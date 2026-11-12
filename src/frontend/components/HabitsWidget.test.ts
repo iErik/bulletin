@@ -85,7 +85,8 @@ const openList = async (
 const archiveRow = async (
   row: DOMWrapper<HTMLLIElement>
 ): Promise<void> => {
-  await row.get('.controls > .control').trigger('click')
+  await row.get('[aria-label^="Delete "]')
+    .trigger('click')
   await row.get('.-confirm').trigger('click')
   await flushPromises()
 }
@@ -394,5 +395,21 @@ describe('HabitsWidget', () => {
 
     expect(widget.get('[role="alert"]').text())
       .toBe('Couldn’t load the Habits.')
+  })
+
+  it('renames the current Habit', async () => {
+    const { wrapper } = await mountWidget()
+    const rows = await openList(wrapper)
+
+    await rows[0].get('[aria-label="Edit Reading"]')
+      .trigger('click')
+    await wrapper.get('input').setValue('Books')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(name(wrapper)).toBe('Books')
+    expect(wrapper.findAll('.row .name')
+      .map(item => item.text()))
+      .toEqual(['Books', 'Running'])
   })
 })
