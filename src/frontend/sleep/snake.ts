@@ -44,12 +44,12 @@ export const ROW_GAP = 28.5
 /** Room above the first day's AM row. */
 export const SNAKE_TOP = 23
 /** From each curve's outer edge to the snake's side. */
-const EDGE = 10
+export const SNAKE_EDGE = 10
 
 /** The layout of a snake `width` px wide. */
 export const snakeLayout = (width: number): SnakeLayout => ({
-  left: EDGE + ROW_GAP / 2,
-  right: width - EDGE - ROW_GAP / 2,
+  left: SNAKE_EDGE + ROW_GAP / 2,
+  right: width - SNAKE_EDGE - ROW_GAP / 2,
   top: SNAKE_TOP,
   gap: ROW_GAP
 })
@@ -268,7 +268,11 @@ export const stretchSpan = (
   const step = 5 * 60_000
   let left = Infinity
   let right = -Infinity
-  for (let time = from; ; time = Math.min(to, time + step)) {
+  for (
+    let time = from;
+    ;
+    time = Math.min(to, time + step)
+  ) {
     const { x } = pointAt(time, first, layout)
     left = Math.min(left, x)
     right = Math.max(right, x)

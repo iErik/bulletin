@@ -19,8 +19,10 @@ import { addDays, startOfDay } from 'date-fns'
 import type { EpochMs, SleepPeriod } from '@shared/sleep'
 import type { End } from '@/sleep/selection'
 import {
+  type Point,
   pointAt,
   ROW_GAP,
+  SNAKE_EDGE,
   SNAKE_TOP,
   snakeLayout,
   stretchPath,
@@ -61,54 +63,81 @@ const width = ref(0)
 const layout = computed(() => snakeLayout(width.value))
 
 // Room for the day after the last too, where a Period
-// that crosses its midnight ends.
+// that crosses its midnight ends: as late as its PM row.
 const height = computed(() =>
-  2 * SNAKE_TOP + props.days * 2 * ROW_GAP)
+  2 * SNAKE_TOP + (2 * props.days + 1) * ROW_GAP)
 
-/** A dotted line along every AM and PM row. */
+/**
+ * A dotted line along every AM and PM row, the day
+ * after the last's too, out to the curves' edges.
+ */
 const track = computed(() => {
   const { top, gap } = layout.value
+  const to = width.value - SNAKE_EDGE
   const lines: string[] = []
-  for (let day = 0; day < props.days; day++) {
-    const y = top + 2 * gap * day
-    lines.push(`M 0 ${y} H ${width.value}`)
-    lines.push(`M 0 ${y + gap} H ${width.value}`)
-  }
+  const last = top + (2 * props.days + 1) * gap
+  for (let y = top; y <= last; y += gap)
+    lines.push(`M ${SNAKE_EDGE} ${y} H ${to}`)
   return lines.join(' ')
 })
 
-const draw = (stretch: Stretch): {
-  path: string
-  span: { left: number; right: number }
-  head: { x: number; y: number }
-  tail: { x: number; y: number }
-} => {
+/** A drawn stretch: a Period, or the preview. */
+interface Drawn {
+  readonly key: string
+  readonly period?: SleepPeriod
+  readonly path: string
+  /** Where its gradient starts and ends. */
+  readonly x1: number
+  readonly x2: number
+  readonly ends: readonly { end: End; at: Point }[]
+}
+
+/**
+ * Draws `stretch`. Its gradient runs across its span
+ * from the Head's side to the Tail's, at least 1 px.
+ */
+const draw = (key: string, stretch: Stretch): Drawn => {
   const { start, end } = stretch
   const { first } = props
+  const at = layout.value
+  const head = pointAt(start, first, at)
+  const tail = pointAt(end, first, at)
+  const { left, right } = stretchSpan(start, end, first, at)
+  const [x1, x2] = head.x <= tail.x
+    ? [left, Math.max(right, left + 1)]
+    : [right, Math.min(left, right - 1)]
   return {
-    path: stretchPath(start, end, first, layout.value),
-    span: stretchSpan(start, end, first, layout.value),
-    head: pointAt(start, first, layout.value),
-    tail: pointAt(end, first, layout.value)
+    key,
+    path: stretchPath(start, end, first, at),
+    x1,
+    x2,
+    ends: [
+      { end: 'start', at: head },
+      { end: 'end', at: tail }
+    ]
   }
 }
 
-const drawn = computed(() => width.value > 0
-  ? props.periods.map(period => ({
-      period,
-      ...draw(period)
-    }))
-  : [])
-
-const previewed = computed(() =>
-  props.preview && width.value > 0
-    ? draw(props.preview)
-    : null)
+/** The Periods, then the preview over them. */
+const drawn = computed((): Drawn[] => {
+  if (width.value === 0) return []
+  const periods = props.periods.map(period => ({
+    ...draw(`period-${period.id}`, period),
+    period
+  }))
+  return props.preview
+    ? [...periods, draw('preview', props.preview)]
+    : periods
+})
 
 const chip = computed(() => props.hover && width.value > 0
   ? {
       text: props.hover.text,
-      ...pointAt(props.hover.time, props.first, layout.value)
+      ...pointAt(
+        props.hover.time,
+        props.first,
+        layout.value
+      )
     }
   : null)
 
@@ -123,23 +152,17 @@ const range = computed(() => {
 
 const timeOf = (event: MouseEvent): EpochMs => {
   const box = svg.value!.getBoundingClientRect()
-  const time = timeAt(
-    { x: event.clientX - box.left, y: event.clientY - box.top },
-    props.first,
-    layout.value
-  )
+  const point = {
+    x: event.clientX - box.left,
+    y: event.clientY - box.top
+  }
+  const time = timeAt(point, props.first, layout.value)
   const { from, to } = range.value
   return Math.min(to, Math.max(from, time))
 }
 
-const gradient = (period: number | 'preview'): string =>
-  `${id}-line-${period}`
-
-/** A gradient's ends: at least 1 px apart, to show. */
-const across = (span: { left: number; right: number }): {
-  x1: number
-  x2: number
-} => ({ x1: span.left, x2: Math.max(span.right, span.left + 1) })
+/** An element id in this snake. */
+const elementId = (name: string): string => `${id}-${name}`
 
 const px = (n: number): string => `${n}px`
 
@@ -171,9 +194,14 @@ onBeforeUnmount(() => observer?.disconnect())
       @click="emit('press', timeOf($event))"
     >
       <defs>
-        <!-- Figma's "Zooommm" effect on the end circles. -->
+        <!--
+          Figma's "Zooommm" effect on the end circles, as
+          Figma exports it: each shadow's blur radius is
+          twice its stdDeviation, and the last blur
+          softens the whole stack.
+        -->
         <filter
-          :id="`${id}-end`"
+          :id="elementId('end')"
           x="-400%"
           y="-400%"
           width="900%"
@@ -189,57 +217,68 @@ onBeforeUnmount(() => observer?.disconnect())
           <feGaussianBlur
             in="spread"
             stdDeviation="6.7"
-            result="b1"
+            result="spread-blur"
           />
           <feFlood class="glow" flood-opacity="0.12" />
-          <feComposite in2="b1" operator="in" result="s1" />
+          <feComposite
+            in2="spread-blur"
+            operator="in"
+            result="spread-glow"
+          />
           <feGaussianBlur
             in="SourceAlpha"
             stdDeviation="4.6"
-            result="b2"
+            result="near-blur"
           />
           <feFlood class="glow" flood-opacity="0.82" />
-          <feComposite in2="b2" operator="in" result="s2" />
-          <feOffset in="SourceAlpha" dy="2" result="o3" />
+          <feComposite
+            in2="near-blur"
+            operator="in"
+            result="near-glow"
+          />
+          <feOffset
+            in="SourceAlpha"
+            dy="2"
+            result="tint-offset"
+          />
           <feGaussianBlur
-            in="o3"
+            in="tint-offset"
             stdDeviation="2.5"
-            result="b3"
+            result="tint-blur"
           />
           <feFlood class="tint" flood-opacity="0.35" />
-          <feComposite in2="b3" operator="in" result="s3" />
+          <feComposite
+            in2="tint-blur"
+            operator="in"
+            result="tint-glow"
+          />
           <feGaussianBlur
             in="SourceAlpha"
             stdDeviation="8.75"
-            result="b4"
+            result="far-blur"
           />
           <feFlood class="glow" flood-opacity="0.38" />
-          <feComposite in2="b4" operator="in" result="s4" />
+          <feComposite
+            in2="far-blur"
+            operator="in"
+            result="far-glow"
+          />
           <feMerge>
-            <feMergeNode in="s1" />
-            <feMergeNode in="s2" />
-            <feMergeNode in="s3" />
-            <feMergeNode in="s4" />
+            <feMergeNode in="spread-glow" />
+            <feMergeNode in="near-glow" />
+            <feMergeNode in="tint-glow" />
+            <feMergeNode in="far-glow" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
           <feGaussianBlur stdDeviation="1.75" />
         </filter>
-        <!-- Each line's gradient runs left to right. -->
         <linearGradient
           v-for="line in drawn"
-          :id="gradient(line.period.id)"
-          :key="line.period.id"
+          :id="elementId(line.key)"
+          :key="line.key"
           gradientUnits="userSpaceOnUse"
-          v-bind="across(line.span)"
-        >
-          <stop class="from" />
-          <stop class="to" offset="1" />
-        </linearGradient>
-        <linearGradient
-          v-if="previewed"
-          :id="gradient('preview')"
-          gradientUnits="userSpaceOnUse"
-          v-bind="across(previewed.span)"
+          :x1="line.x1"
+          :x2="line.x2"
         >
           <stop class="from" />
           <stop class="to" offset="1" />
@@ -248,57 +287,43 @@ onBeforeUnmount(() => observer?.disconnect())
       <path class="track" :d="track" />
       <g
         v-for="line in drawn"
-        :key="line.period.id"
+        :key="line.key"
         class="period"
-        :class="{ '-editing': editing === line.period.id }"
-        :data-period="line.period.id"
+        :class="line.period ? {
+          '-editing': editing === line.period.id
+        } : ['-preview', { '-broken': broken }]"
+        :data-period="line.period?.id"
       >
         <path
           class="line"
           :d="line.path"
-          :stroke="`url(#${gradient(line.period.id)})`"
+          :stroke="`url(#${elementId(line.key)})`"
         />
         <circle
-          v-for="end in (['start', 'end'] as const)"
+          v-for="{ end, at } in line.ends"
           :key="end"
           class="end"
           :class="`-${end}`"
-          :cx="end === 'start' ? line.head.x : line.tail.x"
-          :cy="end === 'start' ? line.head.y : line.tail.y"
+          :cx="at.x"
+          :cy="at.y"
           r="3.5"
-          :filter="`url(#${id}-end)`"
+          :filter="`url(#${elementId('end')})`"
         />
         <!-- Wider targets for dragging an end. -->
-        <circle
-          v-for="end in (['start', 'end'] as const)"
-          :key="`handle-${end}`"
-          class="handle"
-          :class="`-${end}`"
-          :cx="end === 'start' ? line.head.x : line.tail.x"
-          :cy="end === 'start' ? line.head.y : line.tail.y"
-          r="7"
-          @pointerdown.stop="emit('grab', line.period, end)"
-        />
-      </g>
-      <g
-        v-if="previewed"
-        class="period -preview"
-        :class="{ '-broken': broken }"
-      >
-        <path
-          class="line"
-          :d="previewed.path"
-          :stroke="`url(#${gradient('preview')})`"
-        />
-        <circle
-          v-for="(end, i) in [previewed.head, previewed.tail]"
-          :key="i"
-          class="end"
-          :cx="end.x"
-          :cy="end.y"
-          r="3.5"
-          :filter="`url(#${id}-end)`"
-        />
+        <template v-if="line.period">
+          <circle
+            v-for="{ end, at } in line.ends"
+            :key="`handle-${end}`"
+            class="handle"
+            :class="`-${end}`"
+            :cx="at.x"
+            :cy="at.y"
+            r="7"
+            @pointerdown.stop="
+              emit('grab', line.period, end)"
+            @click.stop
+          />
+        </template>
       </g>
     </svg>
     <span
@@ -337,7 +362,9 @@ onBeforeUnmount(() => observer?.disconnect())
   .from { stop-color: var(--color-sleep-line-from); }
   .to { stop-color: var(--color-sleep-line-to); }
 
-  // Figma's "Zammm" effect on the line.
+  // Figma's "Zammm" effect on the line. CSS's
+  // drop-shadow takes Figma's 10.3 blur radius as is,
+  // and blur() a stdDeviation: half its 0.8.
   .period > .line {
     fill: none;
     stroke-width: 2;
@@ -373,7 +400,9 @@ onBeforeUnmount(() => observer?.disconnect())
   .period.-broken {
     --color-sleep-line-from: var(--color-danger);
     --color-sleep-line-to: var(--color-danger);
+    --color-sleep-line-glow: var(--color-danger);
     --color-sleep-end: var(--color-danger);
+    --color-sleep-end-tint: var(--color-danger);
   }
 
   // The time on the snake, above it, in inverted

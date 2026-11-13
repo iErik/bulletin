@@ -4,6 +4,7 @@ import { flushPromises, mount, type VueWrapper }
   from '@vue/test-utils'
 import type { SleepPeriod } from '@shared/sleep'
 import {
+  type Point,
   pointAt,
   snakeLayout,
   stretchPath
@@ -19,7 +20,7 @@ const FIRST = new Date(2026, 10, 7)
 const WIDTH = 600
 const LAYOUT = snakeLayout(WIDTH)
 
-const point = (time: number): { x: number; y: number } =>
+const point = (time: number): Point =>
   pointAt(time, FIRST, LAYOUT)
 
 let snake: VueWrapper | undefined
@@ -40,7 +41,7 @@ const mountSnake = async (
 const ends = (
   wrapper: VueWrapper,
   period: number
-): { x: number; y: number }[] =>
+): Point[] =>
   wrapper.findAll(`[data-period="${period}"] .end`)
     .map(end => ({
       x: Number(end.attributes('cx')),
@@ -61,27 +62,47 @@ describe('SleepSnake', () => {
     vi.restoreAllMocks()
   })
 
-  it('dots every AM and PM row', async () => {
-    const wrapper = await mountSnake()
+  it("dots every row, out to the curves' edges",
+    async () => {
+      const wrapper = await mountSnake()
 
-    const track = wrapper.get('.track').attributes('d')!
-    expect(track.match(/M /g)).toHaveLength(3 * 2)
-    expect(track.startsWith('M 0 23 H 600 M 0 51.5 H 600'))
-      .toBe(true)
-  })
+      const track = wrapper.get('.track').attributes('d')!
+      // Three days and the day after's AM and PM rows.
+      expect(track.match(/M /g)).toHaveLength(4 * 2)
+      expect(track)
+        .toMatch(/^M 10 23 H 590 M 10 51\.5 H 590 /)
+      expect(track.endsWith('M 10 222.5 H 590')).toBe(true)
+    })
 
-  it('draws a Period across noon as one stretch', async () => {
-    const period: SleepPeriod =
-      { id: 1, start: at(7, 6), end: at(7, 15) }
-    const wrapper = await mountSnake({ periods: [period] })
+  it("holds the day after's PM row, where a Period can end",
+    async () => {
+      const wrapper = await mountSnake({ periods: [
+        { id: 1, start: at(9, 15), end: at(10, 14) }
+      ] })
 
-    const line = wrapper.get('[data-period="1"] .line')
-    expect(line.attributes('d')).toBe(
-      stretchPath(period.start, period.end, FIRST, LAYOUT))
-    expect(line.attributes('d')).toContain(' A ')
-    expect(ends(wrapper, 1))
-      .toEqual([point(period.start), point(period.end)])
-  })
+      const [, tail] = ends(wrapper, 1)
+      const height =
+        Number(wrapper.get('svg').attributes('height'))
+      expect(tail.y).toBe(222.5)
+      expect(height - tail.y).toBe(23)
+    })
+
+  it('draws a Period across noon as one stretch',
+    async () => {
+      const period: SleepPeriod =
+        { id: 1, start: at(7, 6), end: at(7, 15) }
+      const wrapper =
+        await mountSnake({ periods: [period] })
+
+      const line = wrapper.get('[data-period="1"] .line')
+      expect(line.attributes('d')).toBe(
+        stretchPath(
+          period.start, period.end, FIRST, LAYOUT
+        ))
+      expect(line.attributes('d')).toContain(' A ')
+      expect(ends(wrapper, 1))
+        .toEqual([point(period.start), point(period.end)])
+    })
 
   it("runs a Period past midnight into the next day's rows",
     async () => {
@@ -97,17 +118,22 @@ describe('SleepSnake', () => {
         .attributes('d')).toContain(' 0 0 0 ')
     })
 
-  it('shades a line left to right across its span', async () => {
-    const wrapper = await mountSnake({ periods: [
-      { id: 1, start: at(7, 2), end: at(7, 7) }
-    ] })
+  it('shades a line from its Head\'s side to its Tail\'s',
+    async () => {
+      const wrapper = await mountSnake({ periods: [
+        { id: 1, start: at(7, 2), end: at(7, 7) },
+        // On a PM row, right to left.
+        { id: 2, start: at(7, 14), end: at(7, 20) }
+      ] })
 
-    const gradient = wrapper.get('linearGradient')
-    expect(Number(gradient.attributes('x1')))
-      .toBe(point(at(7, 2)).x)
-    expect(Number(gradient.attributes('x2')))
-      .toBe(point(at(7, 7)).x)
-  })
+      const [am, pm] = wrapper.findAll('linearGradient')
+        .map(g => [g.attributes('x1'), g.attributes('x2')]
+          .map(Number))
+      expect(am)
+        .toEqual([point(at(7, 2)).x, point(at(7, 7)).x])
+      expect(pm)
+        .toEqual([point(at(7, 14)).x, point(at(7, 20)).x])
+    })
 
   it('marks the Period being edited', async () => {
     const wrapper = await mountSnake({
@@ -138,13 +164,15 @@ describe('SleepSnake', () => {
     const svg = wrapper.get('svg')
     const { x, y } = point(at(8, 18, 30))
 
-    await svg.trigger('pointermove', { clientX: x, clientY: y })
-    await svg.trigger('click', { clientX: x, clientY: y })
+    const where = { clientX: x, clientY: y }
+    await svg.trigger('pointermove', where)
+    await svg.trigger('click', where)
     await svg.trigger('pointerleave')
 
     expect(wrapper.emitted('point'))
       .toEqual([[at(8, 18, 30)], [null]])
-    expect(wrapper.emitted('press')).toEqual([[at(8, 18, 30)]])
+    expect(wrapper.emitted('press'))
+      .toEqual([[at(8, 18, 30)]])
   })
 
   it('keeps a click on the days it draws', async () => {
@@ -164,10 +192,13 @@ describe('SleepSnake', () => {
       { id: 1, start: at(7, 2), end: at(7, 7) }
     const wrapper = await mountSnake({ periods: [period] })
 
-    await wrapper.get('.handle.-end').trigger('pointerdown')
+    const handle = wrapper.get('.handle.-end')
+    await handle.trigger('pointerdown')
+    await handle.trigger('click')
 
     expect(wrapper.emitted('grab'))
       .toEqual([[period, 'end']])
+    expect(wrapper.emitted('press')).toBeUndefined()
   })
 
   it('shows a time on the snake', async () => {
