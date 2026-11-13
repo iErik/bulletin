@@ -238,4 +238,19 @@ describe('SleepSnake', () => {
     expect(wrapper.emitted('open')).toEqual([[period]])
     setLocaleOverride(null)
   })
+
+  it('dims the days to come, and takes their input',
+    async () => {
+      const wrapper = await mountSnake({ future: 2 })
+      const future = wrapper.get('.future')
+
+      // From the middle of the third day's first curve.
+      expect(Number(future.attributes('y')))
+        .toBe(LAYOUT.top + 4 * LAYOUT.gap - LAYOUT.gap / 2)
+      await future.trigger('pointermove')
+      await future.trigger('click')
+
+      expect(wrapper.emitted('point')).toEqual([[null]])
+      expect(wrapper.emitted('press')).toBeUndefined()
+    })
 })

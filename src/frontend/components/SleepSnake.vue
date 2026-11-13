@@ -49,6 +49,8 @@ const props = defineProps<{
   editing?: number | null
   /** A time to show on the snake, and its text. */
   hover?: { time: EpochMs; text: string } | null
+  /** The index of the first day to dim and disable. */
+  future?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -83,6 +85,17 @@ const track = computed(() => {
   for (let y = top; y <= last; y += gap)
     lines.push(`M ${SNAKE_EDGE} ${y} H ${to}`)
   return lines.join(' ')
+})
+
+/**
+ * The days from `future` on, from the middle of their
+ * first curve down, in pixels.
+ */
+const dimmed = computed(() => {
+  if (props.future == null) return null
+  const { top, gap } = layout.value
+  const y = top + 2 * gap * props.future - gap / 2
+  return { y, height: Math.max(0, height.value - y) }
 })
 
 /** A drawn stretch: a Period, or the preview. */
@@ -352,6 +365,17 @@ onBeforeUnmount(() => observer?.disconnect())
           />
         </template>
       </g>
+      <!-- Covers the days to come, and takes input. -->
+      <rect
+        v-if="dimmed"
+        class="future"
+        x="0"
+        :y="dimmed.y"
+        width="100%"
+        :height="dimmed.height"
+        @pointermove.stop="emit('point', null)"
+        @click.stop
+      />
     </svg>
     <span
       v-if="chip"
@@ -410,6 +434,13 @@ onBeforeUnmount(() => observer?.disconnect())
   }
 
   .period > .end { fill: var(--color-sleep-end); }
+
+  // As dim as the dates beside them: 35% shows through.
+  > .canvas > .future {
+    cursor: default;
+    fill: var(--color-surface-raised);
+    opacity: 0.65;
+  }
 
   .period > .handle {
     cursor: ew-resize;

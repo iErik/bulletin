@@ -147,6 +147,9 @@ describe('SleepTimeline', () => {
       expect(future.attributes('aria-disabled'))
         .toBe('true')
     }
+    // The snake from the 10th on too.
+    expect(timeline!.findComponent(SleepSnake)
+      .props('future')).toBe(keys().indexOf('2026-11-10'))
   })
 
   it("draws a Period, with its times on its Head's day",
@@ -318,10 +321,10 @@ const fakeTrack = (): void => {
 
 /**
  * Minutes from noon on a day: `h` counted from noon,
- * as the noon-to-noon rows had it, so `x(24 + 6)` is
+ * as the noon-to-noon rows had it, so `fromNoon(24 + 6)` is
  * 6 AM the next day.
  */
-const x = (h: number, m = 0): number =>
+const fromNoon = (h: number, m = 0): number =>
   (h - 12) * 60 + m
 
 /** The time `minutes` from noon on `key`'s day. */
@@ -380,10 +383,10 @@ describe('SleepTimeline, creating', () => {
   it('shows the snapped time on hover', async () => {
     await mountTimeline()
 
-    await move('2026-11-07', x(23, 2))
+    await move('2026-11-07', fromNoon(23, 2))
     expect(hover()).toMatch(/^11:00\sPM$/)
 
-    await move('2026-11-07', x(24 + 6, 3))
+    await move('2026-11-07', fromNoon(24 + 6, 3))
     expect(hover()).toMatch(/^6:05\sAM$/)
 
     await leave()
@@ -396,7 +399,7 @@ describe('SleepTimeline, creating', () => {
     ])
     await mountTimeline()
 
-    await move('2026-11-07', x(24 + 4))
+    await move('2026-11-07', fromNoon(24 + 4))
     expect(hovering()).toBe(false)
   })
 
@@ -404,12 +407,12 @@ describe('SleepTimeline, creating', () => {
     const api = stubBulletin()
     await mountTimeline()
 
-    await click('2026-11-07', x(23))
-    await move('2026-11-08', x(13))
+    await click('2026-11-07', fromNoon(23))
+    await move('2026-11-08', fromNoon(13))
     expect(timeline!.get('.-preview').findAll('.end'))
       .toHaveLength(2)
 
-    await click('2026-11-08', x(13))
+    await click('2026-11-08', fromNoon(13))
     expect(api.sleep.create).toHaveBeenCalledWith({
       start: at(10, 7, 23),
       end: at(10, 8, 13)
@@ -424,8 +427,8 @@ describe('SleepTimeline, creating', () => {
     const api = stubBulletin()
     await mountTimeline()
 
-    await click('2026-11-07', x(6))
-    await click('2026-11-07', x(15))
+    await click('2026-11-07', fromNoon(6))
+    await click('2026-11-07', fromNoon(15))
 
     expect(api.sleep.create).toHaveBeenCalledWith({
       start: at(10, 7, 6),
@@ -436,11 +439,11 @@ describe('SleepTimeline, creating', () => {
   it('keeps a new Head out of the red', async () => {
     await mountTimeline()
 
-    await click('2026-11-07', x(23))
+    await click('2026-11-07', fromNoon(23))
     expect(timeline!.get('.-preview').classes())
       .not.toContain('-broken')
 
-    await click('2026-11-07', x(23))
+    await click('2026-11-07', fromNoon(23))
     expect(hover())
       .toBe('It ends where it starts')
   })
@@ -449,8 +452,8 @@ describe('SleepTimeline, creating', () => {
     const api = stubBulletin()
     await mountTimeline()
 
-    await click('2026-11-08', x(13))
-    await click('2026-11-07', x(23))
+    await click('2026-11-08', fromNoon(13))
+    await click('2026-11-07', fromNoon(23))
 
     expect(api.sleep.create).toHaveBeenCalledWith({
       start: at(10, 7, 23),
@@ -461,11 +464,11 @@ describe('SleepTimeline, creating', () => {
   // Each from a Head on `from`'s row to `key`'s row.
   it.each([
     ['overlapping', '2026-11-06', '2026-11-06',
-      x(24 + 4), 'It overlaps another period'],
+      fromNoon(24 + 4), 'It overlaps another period'],
     ['over 24 hours', '2026-11-05', '2026-11-06',
-      x(24 + 1), "It's over 24 hours"],
+      fromNoon(24 + 1), "It's over 24 hours"],
     ['in the future', '2026-11-08', '2026-11-09',
-      x(16), 'It ends in the future']
+      fromNoon(16), 'It ends in the future']
   ])('refuses a Period %s', async (
     _,
     from,
@@ -480,7 +483,7 @@ describe('SleepTimeline, creating', () => {
     await mountTimeline()
     const api = window.bulletin
 
-    await click(from, x(23, 30))
+    await click(from, fromNoon(23, 30))
     await move(key, end)
     expect(timeline!.get('.-preview').classes())
       .toContain('-broken')
@@ -495,19 +498,19 @@ describe('SleepTimeline, creating', () => {
   it('refuses a Head in the future', async () => {
     await mountTimeline()
 
-    await click('2026-11-09', x(16))
+    await click('2026-11-09', fromNoon(16))
 
     expect(hover())
       .toBe('It ends in the future')
-    await move('2026-11-08', x(23))
+    await move('2026-11-08', fromNoon(23))
     expect(timeline!.find('.-preview').exists())
       .toBe(false)
   })
 
   it('cancels on Escape', async () => {
     await mountTimeline()
-    await click('2026-11-07', x(23))
-    await move('2026-11-07', x(24 + 2))
+    await click('2026-11-07', fromNoon(23))
+    await move('2026-11-07', fromNoon(24 + 2))
 
     window.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape' })
@@ -521,12 +524,12 @@ describe('SleepTimeline, creating', () => {
   it('cancels on a click outside', async () => {
     const api = stubBulletin()
     await mountTimeline()
-    await click('2026-11-07', x(23))
-    await move('2026-11-07', x(24 + 2))
+    await click('2026-11-07', fromNoon(23))
+    await move('2026-11-07', fromNoon(24 + 2))
 
     document.body.click()
     await settle()
-    await click('2026-11-07', x(24 + 3))
+    await click('2026-11-07', fromNoon(24 + 3))
 
     expect(timeline!.find('.-preview').exists())
       .toBe(true)
@@ -543,8 +546,8 @@ describe('SleepTimeline, creating', () => {
     } })
     await mountTimeline()
 
-    await click('2026-11-07', x(23))
-    await click('2026-11-07', x(24 + 6))
+    await click('2026-11-07', fromNoon(23))
+    await click('2026-11-07', fromNoon(24 + 6))
 
     expect(timeline!.get('[role="alert"]').text()).toBe(
       "Couldn't save the period. "
@@ -604,7 +607,7 @@ describe('SleepTimeline, dragging', () => {
     const api = window.bulletin
 
     await grab('end',
-      ['2026-11-07', x(24 + 10, 2)])
+      ['2026-11-07', fromNoon(24 + 10, 2)])
     expect(hover()).toMatch(/^10:00\sAM$/)
     expect(api.sleep.update).not.toHaveBeenCalled()
 
@@ -616,7 +619,7 @@ describe('SleepTimeline, dragging', () => {
       .toMatch(/^1:00\sAM to 10:00\sAM$/)
 
     // The release's click starts no selection.
-    await click('2026-11-07', x(24 + 10))
+    await click('2026-11-07', fromNoon(24 + 10))
     expect(timeline!.find('.-preview').exists())
       .toBe(false)
   })
@@ -625,7 +628,7 @@ describe('SleepTimeline, dragging', () => {
     storing([period])
     await mountTimeline()
 
-    await move('2026-11-07', x(24 + 9, 20))
+    await move('2026-11-07', fromNoon(24 + 9, 20))
     await handle('end').trigger('pointerdown')
     await release()
 
@@ -638,9 +641,9 @@ describe('SleepTimeline, dragging', () => {
     storing([period])
     await mountTimeline()
 
-    await move('2026-11-07', x(24 + 9, 20))
+    await move('2026-11-07', fromNoon(24 + 9, 20))
     await grab('end',
-      ['2026-11-07', x(24 + 9, 50)])
+      ['2026-11-07', fromNoon(24 + 9, 50)])
     await release()
 
     expect(window.bulletin.sleep.update)
@@ -653,7 +656,7 @@ describe('SleepTimeline, dragging', () => {
     storing([period])
     await mountTimeline()
 
-    await grab('end', ['2026-11-07', x(36, 30)])
+    await grab('end', ['2026-11-07', fromNoon(36, 30)])
 
     expect(hover()).toMatch(/^12:30\sPM$/)
   })
@@ -666,7 +669,7 @@ describe('SleepTimeline, dragging', () => {
     await mountTimeline()
 
     await grab('end',
-      ['2026-11-07', x(24 + 11, 30)])
+      ['2026-11-07', fromNoon(24 + 11, 30)])
     await release()
 
     expect(window.bulletin.sleep.update)
@@ -685,7 +688,7 @@ describe('SleepTimeline, dragging', () => {
       storing([nap])
       await mountTimeline()
 
-      await grab('start', ['2026-11-07', x(24 + 11)])
+      await grab('start', ['2026-11-07', fromNoon(24 + 11)])
       await release()
 
       expect(window.bulletin.sleep.update)
@@ -706,7 +709,7 @@ describe('SleepTimeline, dragging', () => {
     await mountTimeline()
 
     await grab('start',
-      ['2026-11-07', x(23)])
+      ['2026-11-07', fromNoon(23)])
     await release()
 
     expect(timeline!.get('[role="alert"]').text()).toBe(
@@ -796,7 +799,7 @@ describe('SleepTimeline, editing', () => {
     await mountTimeline()
     const api = window.bulletin
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     expect(periodStop().classes()).toContain('-editing')
     const start = tooltip().get('[aria-label="Start"]')
     expect((start.element as HTMLInputElement).value)
@@ -823,14 +826,14 @@ describe('SleepTimeline, editing', () => {
     storing([day])
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     const start = tooltip().get('[aria-label="Start"]')
     await press(start, 'Enter')
     expect(window.bulletin.sleep.update)
       .not.toHaveBeenCalled()
     expect(tooltip().exists()).toBe(false)
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await type('Start', '23:00')
     await type('End', '23:00')
     await press(
@@ -847,7 +850,7 @@ describe('SleepTimeline, editing', () => {
     storing([period])
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await type('Start', '23:30')
     document.body.click()
     await settle()
@@ -872,7 +875,7 @@ describe('SleepTimeline, editing', () => {
     ])
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await type('End', end)
     await press(tooltip().get('input'), 'Enter')
     document.body.click()
@@ -888,10 +891,10 @@ describe('SleepTimeline, editing', () => {
     storing([period])
     await mountTimeline()
 
-    await move('2026-11-07', x(24 + 9))
+    await move('2026-11-07', fromNoon(24 + 9))
     await handle('end').trigger('pointerdown')
     await release()
-    await click('2026-11-07', x(24 + 9))
+    await click('2026-11-07', fromNoon(24 + 9))
 
     expect(tooltip().exists()).toBe(false)
   })
@@ -905,7 +908,7 @@ describe('SleepTimeline, editing', () => {
       })
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await type('End', '10:00')
     await press(tooltip().get('input'), 'Enter')
 
@@ -920,7 +923,7 @@ describe('SleepTimeline, editing', () => {
     storing([period])
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await tooltip().get('[aria-label="Delete"]')
       .trigger('click')
     expect(tooltip().text()).toContain('Delete?')
@@ -951,7 +954,7 @@ describe('SleepTimeline, editing', () => {
       })
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await tooltip().get('[aria-label="Delete"]')
       .trigger('click')
     await tooltip().get('[aria-label="Delete period"]')
@@ -969,7 +972,7 @@ describe('SleepTimeline, editing', () => {
     storing([period])
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     focusoutOnRemoval()
     button('Delete').focus()
     button('Delete').click()
@@ -1004,7 +1007,7 @@ describe('SleepTimeline, editing', () => {
     storing([period])
     await mountTimeline()
 
-    await click('2026-11-07', x(24 + 5))
+    await click('2026-11-07', fromNoon(24 + 5))
     await activate(button('Delete'))
     await tooltip().trigger('pointerleave')
 

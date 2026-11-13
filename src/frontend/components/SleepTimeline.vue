@@ -157,6 +157,12 @@ const rows = computed(() =>
   })
 )
 
+/** The first day after today, as a day index. */
+const future = computed(() => {
+  const index = rows.value.findIndex(row => row.future)
+  return index === -1 ? null : index
+})
+
 /**
  * The time on the snake: the pointer's, the dragged
  * end's, or why a click was refused. None over a Period
@@ -475,66 +481,69 @@ watch(() => store.today, today => {
     <p v-if="saveError" class="error" role="alert">
       {{ saveError }}
     </p>
-    <div
-      ref="scroller"
-      class="rows"
-      @scroll.passive="loadNearEdges"
-    >
-      <ol class="days">
-        <li
-          v-for="row in rows"
-          :key="row.key"
-          class="day-row"
-          :class="{
-            '-future': row.future,
-            '-selected': row.selected
-          }"
-          :data-day="row.key"
-          :aria-disabled="row.future || undefined"
-          :tabindex="row.future ? undefined : 0"
-          @keydown.enter.self="add(row.day)"
-        >
-          <span class="date">{{ row.label }}</span>
-          <span v-if="row.caption" class="caption">
-            {{ row.caption }}
-          </span>
-        </li>
-      </ol>
-      <SleepSnake
-        v-if="rows.length > 0"
-        class="snake"
-        :first="rows[0].day"
-        :days="rows.length"
-        :periods="periods"
-        :preview="preview"
-        :broken="!!broken"
-        :editing="editing?.period?.id ?? null"
-        :hover="hover"
-        @point="onPoint"
-        @press="onPress"
-        @grab="grab"
-        @open="edit"
+    <div class="view">
+      <div
+        ref="scroller"
+        class="rows"
+        @scroll.passive="loadNearEdges"
       >
-        <template #default="{ place }">
-          <span
-            v-if="editing"
-            class="anchor"
-            :style="place(editing.at)"
+        <ol class="days">
+          <li
+            v-for="row in rows"
+            :key="row.key"
+            class="day-row"
+            :class="{
+              '-future': row.future,
+              '-selected': row.selected
+            }"
+            :data-day="row.key"
+            :aria-disabled="row.future || undefined"
+            :tabindex="row.future ? undefined : 0"
+            @keydown.enter.self="add(row.day)"
           >
-            <SleepPeriodEditor
-              ref="editor"
-              :key="editing.period?.id ?? 'add'"
-              :period="editing.period"
-              :day="editing.day"
-              :periods="months.periods.value"
-              @save="onSave"
-              @remove="
-                editing.period && remove(editing.period)"
-              @close="close"
-            />
-          </span>
-        </template>
-      </SleepSnake>
+            <span class="date">{{ row.label }}</span>
+            <span v-if="row.caption" class="caption">
+              {{ row.caption }}
+            </span>
+          </li>
+        </ol>
+        <SleepSnake
+          v-if="rows.length > 0"
+          class="snake"
+          :first="rows[0].day"
+          :days="rows.length"
+          :periods="periods"
+          :preview="preview"
+          :broken="!!broken"
+          :editing="editing?.period?.id ?? null"
+          :future="future"
+          :hover="hover"
+          @point="onPoint"
+          @press="onPress"
+          @grab="grab"
+          @open="edit"
+        >
+          <template #default="{ place }">
+            <span
+              v-if="editing"
+              class="anchor"
+              :style="place(editing.at)"
+            >
+              <SleepPeriodEditor
+                ref="editor"
+                :key="editing.period?.id ?? 'add'"
+                :period="editing.period"
+                :day="editing.day"
+                :periods="months.periods.value"
+                @save="onSave"
+                @remove="
+                  editing.period && remove(editing.period)"
+                @close="close"
+              />
+            </span>
+          </template>
+        </SleepSnake>
+      </div>
     </div>
     <SleepHours class="hours" />
   </div>
@@ -564,30 +573,48 @@ $day: 57px;
     color: var(--color-text-muted);
   }
 
-  // Figma's transparency mask: the days fade out
-  // towards the scales.
-  > .rows {
-    position: relative; // Days' offsetTop is from here
+  > .view {
+    position: relative;
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    overflow-anchor: none; // We keep the position
-    scrollbar-gutter: stable;
-    mask-image: linear-gradient(
-      #000,
-      rgb(0 0 0 / 56%) 80%,
-      transparent
+  }
+
+  // Figma's transparency mask, as the Widget's colour
+  // over the days: the same on its solid background,
+  // and the tooltip can sit over it.
+  > .view::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    content: '';
+    background: linear-gradient(
+      transparent,
+      color-mix(
+        in sRGB,
+        var(--color-surface-raised) 44%,
+        transparent
+      ) 80%,
+      var(--color-surface-raised)
     );
   }
 
-  > .rows > .days {
+  .rows {
+    position: relative; // Days' offsetTop is from here
+    height: 100%;
+    overflow-y: auto;
+    overflow-anchor: none; // We keep the position
+    scrollbar-gutter: stable;
+  }
+
+  .rows > .days {
     width: $labels;
     padding: $first-row 0 0;
     margin: 0;
     list-style: none;
   }
 
-  > .rows > .snake {
+  .rows > .snake {
     position: absolute;
     top: 0;
     right: 0;
@@ -596,9 +623,12 @@ $day: 57px;
 
   // The tooltip sits above this point on the snake, as
   // wide as it needs: the point has no width to fill.
-  > .rows > .snake > .anchor { position: absolute; }
+  .rows > .snake > .anchor {
+    position: absolute;
+    z-index: 2;
+  }
 
-  > .rows > .snake > .anchor > .sleep-period-editor {
+  .rows > .snake > .anchor > .sleep-period-editor {
     width: max-content;
   }
 
