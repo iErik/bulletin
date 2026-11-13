@@ -39,6 +39,8 @@ vi.mock('@/theme/themes', async original => {
       tile: colour,
       'tile-icon': colour,
       'widget-title': colour,
+      'habit-pill': colour,
+      'habit-pill-text': colour,
       'pill-empty': colour,
       weekday: colour,
       pill: Object.fromEntries(
@@ -184,6 +186,21 @@ describe('theme store', () => {
     store.setPreference('light')
 
     expect(pills()).toEqual(expected(light))
+  })
+
+  it("writes the Habits header's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const names = ['habit-pill', 'habit-pill-text'] as const
+    const read = (): string[] => names.map(name =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`))
+
+    expect(read()).toEqual(names.map(name => dark[name]))
+
+    store.setPreference('light')
+
+    expect(read()).toEqual(names.map(name => light[name]))
   })
 
   it("writes the Weight line's colours", () => {
