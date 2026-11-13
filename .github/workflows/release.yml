@@ -90,7 +90,7 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v5
         with:
@@ -112,7 +112,7 @@ jobs:
           --publish never
           -c.extraMetadata.version="$VERSION"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.os }}
           path: ${{ matrix.files }}
@@ -128,7 +128,7 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           pattern: packages-*
           merge-multiple: true
@@ -178,7 +178,7 @@ jobs:
           # No pnpm in this job; v5 would cache for it
           package-manager-cache: false
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           pattern: packages-*
           merge-multiple: true
