@@ -20,11 +20,14 @@ const ENTRIES: WeightEntry[] = [
   { date: '2026-09-10', grams: 65_000 }
 ]
 
-// The plot spans x 44 to 371 at the default size.
-const LEFT = 44
-const RIGHT = 371
+// The plot spans x 38 to 372 and y 25 to 130 at the
+// default size, 375 by 150.
+const LEFT = 38
+const RIGHT = 372
+const TOP = 25
+const BOTTOM = 130
 // Jul 2's centre, day 151.5 of 334
-const JUL_2 = 192
+const JUL_2 = 190
 
 const mountChart = (
   props: Partial<{
@@ -96,9 +99,40 @@ describe('WeightChart', () => {
       .toEqual(['Feb', 'Apr', 'Jun', 'Aug', 'Oct', 'Dec'])
   })
 
+  it('starts each month label before its month', () => {
+    const xs = mountChart().findAll('.month')
+      .map(el => Number(el.attributes('x')))
+
+    // Feb 1 is the plot's left edge, Mar 1 is 28 days on.
+    expect(xs[0]).toBe(LEFT - 4)
+    expect(xs[1]).toBe(LEFT + 28 - 4)
+  })
+
+  it('puts the month labels under the plot', () => {
+    expect(mountChart().get('.month').attributes('y'))
+      .toBe(String(BOTTOM + 17))
+  })
+
   it('labels the y axis every 10 kg', () => {
-    expect(texts(mountChart(), '.tick'))
+    const chart = mountChart()
+
+    expect(texts(chart, '.tick'))
       .toEqual(['60 kg', '70 kg', '80 kg'])
+    expect(chart.findAll('.tick').map(
+      el => el.attributes('y')
+    )).toEqual([String(BOTTOM), '77.5', String(TOP)])
+  })
+
+  it('draws grid lines at all but the bottom tick', () => {
+    const lines = mountChart().findAll('.grid')
+
+    expect(lines.map(el => el.attributes('y1')))
+      .toEqual([String(TOP), '77.5'])
+    expect(lines.map(el => el.attributes('y2')))
+      .toEqual([String(TOP), '77.5'])
+    expect(lines[0].attributes('x1')).toBe(String(LEFT))
+    expect(lines[0].attributes('x2'))
+      .toBe(String(RIGHT - 14.5))
   })
 
   describe('hovering', () => {
@@ -119,10 +153,10 @@ describe('WeightChart', () => {
       await hover(chart, JUL_2)
       const cursor = chart.get('.cursor')
 
-      expect(cursor.attributes('y1')).toBe('8')
-      // 63.4 kg on a 60 to 80 kg axis from y 128 to 8
+      expect(cursor.attributes('y1')).toBe(String(TOP))
+      // 63.4 kg on a 60 to 80 kg axis from y 130 to 25
       expect(Number(cursor.attributes('y2')))
-        .toBeCloseTo(107.6)
+        .toBeCloseTo(112.15)
       expect(cursor.attributes('x1'))
         .toBe(cursor.attributes('x2'))
     })
@@ -223,18 +257,18 @@ describe('WeightChart', () => {
       const glow = mountChart({ day: new Date(2026, 6, 2) })
         .get('.glow')
 
-      // 63.4 kg on a 60 to 80 kg axis from y 128 to 8
+      // 63.4 kg on a 60 to 80 kg axis from y 130 to 25
       expect(Number(glow.attributes('cy')))
-        .toBeCloseTo(107.6)
+        .toBeCloseTo(112.15)
     })
 
     it('is interpolated between Entries', () => {
       const glow = mountChart().get('.glow')
       const cy = Number(glow.attributes('cy'))
 
-      // Between 63.4 kg (y 107.6) and 65 kg (y 98)
-      expect(cy).toBeLessThan(107.6)
-      expect(cy).toBeGreaterThan(98)
+      // Between 63.4 kg (y 112.15) and 65 kg (y 103.75)
+      expect(cy).toBeLessThan(112.15)
+      expect(cy).toBeGreaterThan(103.75)
     })
 
     it('is absent after the last Entry', () => {
@@ -251,9 +285,9 @@ describe('WeightChart', () => {
       const chart = mountChart({ entries: LONE })
 
       expect(chart.find('.notice').exists()).toBe(false)
-      // 63.4 kg on a 50 to 70 kg axis from y 128 to 8
+      // 63.4 kg on a 50 to 70 kg axis from y 130 to 25
       expect(Number(chart.get('.dot').attributes('cy')))
-        .toBeCloseTo(47.6)
+        .toBeCloseTo(59.65)
     })
 
     it('glows unclipped on its own day', () => {
@@ -263,7 +297,7 @@ describe('WeightChart', () => {
       }).get('.glow')
 
       expect(Number(glow.attributes('cy')))
-        .toBeCloseTo(47.6)
+        .toBeCloseTo(59.65)
       expect(glow.attributes('clip-path')).toBeUndefined()
     })
 
