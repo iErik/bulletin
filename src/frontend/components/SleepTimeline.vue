@@ -552,10 +552,15 @@ watch(() => store.today, today => {
 <style lang="scss">
 @use '@/styles/utils' as *;
 
-// Figma's Sleep frame: the labels' column, and the
-// first AM row's height from the top, less a pixel so
-// a date's top meets its row.
-$labels: rem(73px);
+// Figma's Sleep frame, from the Widget's 7px padding:
+// dates at x 21, and the labels' column up to its
+// separator at x 81. The separator is the Widget's
+// colour, so it shows as the gap before the dotted
+// rows, which start 10px on at x 91. The first AM row
+// is 23px from the top; a date's top sits a pixel
+// above it.
+$labels: rem(74px);
+$label-inset: rem(14px);
 $first-row: 22px;
 
 // A day is two of the snake's rows, 28.5px apart.
@@ -645,7 +650,7 @@ $day: 57px;
   display: flex;
   flex-direction: column;
   height: $day;
-  padding-left: rem(11px);
+  padding-left: $label-inset;
   color: var(--color-sleep-date);
 
   > .date {

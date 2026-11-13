@@ -97,7 +97,7 @@ onBeforeUnmount(() => observer?.disconnect())
 // the scales line up with the snake above them.
 .sleep-hours {
   display: grid;
-  grid-template-columns: var(--sleep-labels, rem(73px)) 1fr;
+  grid-template-columns: var(--sleep-labels, rem(74px)) 1fr;
   row-gap: rem(7px);
   align-items: center;
 
