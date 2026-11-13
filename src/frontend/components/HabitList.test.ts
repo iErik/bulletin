@@ -211,6 +211,72 @@ describe('HabitList', () => {
     expect(api.habits.archive).not.toHaveBeenCalled()
   })
 
+  it('treats a Habit already gone as archived',
+    async () => {
+      const { wrapper, api } = mountList()
+      vi.mocked(api.habits.archive).mockResolvedValue({
+        ok: false,
+        error: { code: 'not-found' }
+      })
+
+      await button(wrapper, 'Delete Reading')
+        .trigger('click')
+      await button(wrapper, 'Delete').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.emitted('archived'))
+        .toEqual([[HABITS[0]]])
+      expect(wrapper.find('.question').exists())
+        .toBe(false)
+      expect(wrapper.find('[role="alert"]').exists())
+        .toBe(false)
+    })
+
+  it('stops asking when a reload drops the Habit',
+    async () => {
+      const { wrapper, api } = mountList()
+      vi.mocked(api.habits.archive).mockResolvedValue({
+        ok: false,
+        error: { code: 'internal' }
+      })
+
+      await button(wrapper, 'Delete Reading')
+        .trigger('click')
+      await button(wrapper, 'Delete').trigger('click')
+      await flushPromises()
+      await wrapper.setProps({ habits: HABITS.slice(1) })
+
+      expect(wrapper.find('.question').exists())
+        .toBe(false)
+      expect(wrapper.find('[role="alert"]').exists())
+        .toBe(false)
+    })
+
+  it('focuses the new-habit row after the last Habit',
+    async () => {
+      stubBulletin()
+      const wrapper: VueWrapper = list = mount(HabitList, {
+        attachTo: document.body,
+        props: {
+          habits: [HABITS[0]],
+          current: null,
+          done: () => 0,
+          days: 30,
+          // Like the Widget, drop it once archived.
+          onArchived: () =>
+            void wrapper.setProps({ habits: [] })
+        }
+      })
+
+      await button(wrapper, 'Delete Reading')
+        .trigger('click')
+      await button(wrapper, 'Delete').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.findAll('.row')).toHaveLength(1)
+      expect(focusedName()).toBe('Track a new habit…')
+    })
+
   it('asks for one row at a time', async () => {
     const { wrapper } = mountList()
 

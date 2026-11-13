@@ -22,11 +22,9 @@
 import {
   computed,
   nextTick,
-  onBeforeUnmount,
   ref,
   shallowRef,
-  useTemplateRef,
-  watch
+  useTemplateRef
 } from 'vue'
 import { Check, Minus, X } from '@lucide/vue'
 import { localDate } from '@shared/dates'
@@ -43,6 +41,8 @@ import { amountText, parseAmount } from '@/expenses/amount'
 import type { CategoryChoice } from '@/expenses/categories'
 import { formatAmount } from '@/expenses/money'
 import { amountTone, orderRows } from '@/expenses/rows'
+import { useRowDeleteConfirm }
+  from '@/composables/use-row-delete-confirm'
 
 const props = defineProps<{
   /** The month's Transactions, in any order. */
@@ -225,104 +225,27 @@ const root = useTemplateRef<HTMLElement>('root')
 const find = (selector: string): HTMLElement | null =>
   root.value?.querySelector(selector) ?? null
 
-/** The id of the row asking "Delete?", if any. */
-const asking = ref<number | null>(null)
-/** Deleting. */
-const busy = ref(false)
 const error = ref<string | null>(null)
 
-const focusConfirm = (): void => {
-  find('.controls > .-confirm')?.focus()
-}
-
-const ask = async (id: number): Promise<void> => {
-  if (busy.value) return
-  asking.value = id
-  error.value = null
-  await nextTick()
-  focusConfirm()
-}
-
-const cancel = async (refocus: boolean): Promise<void> => {
-  if (busy.value || asking.value === null) return
-  const id = asking.value
-  asking.value = null
-  error.value = null
-  if (!refocus) return
-  await nextTick()
-  find(`[data-id="${id}"] .delete`)?.focus()
-}
-
-const remove = async (
-  transaction: Transaction
-): Promise<void> => {
-  if (busy.value) return
-  const index = rows.value.indexOf(transaction)
-  busy.value = true
-  const result = await window.bulletin.expenses
-    .delete(transaction.id)
-  busy.value = false
-  // Already gone, e.g. deleted by another window:
-  // retrying can't help, so treat it as deleted.
-  if (!result.ok && result.error.code !== 'not-found') {
-    error.value =
-      'Couldn’t delete the Transaction. Try again.'
-    // Disabling ✓ dropped focus; give it back to retry.
-    await nextTick()
-    if (document.activeElement === document.body)
-      focusConfirm()
-    return
-  }
-  asking.value = null
-  error.value = null
-  emit('deleted', transaction)
-  await nextTick()
-  const next = Math.min(index, rows.value.length - 1)
+const {
+  asking,
+  busy,
+  ask,
+  cancel,
+  confirm: remove,
+  onKeydown
+} = useRowDeleteConfirm({
+  rows: () => rows.value,
+  find,
+  remove: transaction => window.bulletin.expenses
+    .delete(transaction.id),
+  deleted: transaction => emit('deleted', transaction),
+  failure: 'Couldn’t delete the Transaction. Try again.',
   // With no row left, the table holds focus.
-  const target = next < 0
-    ? find('.table')
-    : find(`.row:nth-child(${next + 1}) .delete`)
-  target?.focus()
-}
-
-const onKeydown = (event: KeyboardEvent): void => {
-  if (event.key !== 'Escape' || asking.value === null)
-    return
-  event.preventDefault()
-  event.stopPropagation()
-  void cancel(true)
-}
-
-// A click or focus outside the asking row cancels.
-const onOutside = (event: Event): void => {
-  const row = find(`[data-id="${asking.value}"]`)
-  if (row && event.composedPath().includes(row)) return
-  void cancel(false)
-}
-
-const EVENTS = ['pointerdown', 'focusin'] as const
-
-watch(() => asking.value !== null, on => {
-  const method = on
-    ? 'addEventListener'
-    : 'removeEventListener'
-  for (const name of EVENTS)
-    document[method](name, onOutside)
-})
-
-// A reload without the asking row stops it asking,
-// dropping any error about it.
-watch(rows, now => {
-  if (asking.value === null
-    || now.some(({ id }) => id === asking.value))
-    return
-  asking.value = null
-  error.value = null
-})
-
-onBeforeUnmount(() => {
-  for (const name of EVENTS)
-    document.removeEventListener(name, onOutside)
+  refocus: transaction => (transaction
+    ? find(`[data-id="${transaction.id}"] .delete`)
+    : find('.table'))?.focus(),
+  error
 })
 </script>
 

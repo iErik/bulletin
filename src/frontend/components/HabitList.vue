@@ -4,24 +4,26 @@
 // the current one. Clicking a row, or Enter on it,
 // emits `choose`. "−" asks "Delete?"; ✓ archives the
 // Habit through storage and emits `archived`, while ×,
-// Escape, a click or focus elsewhere cancels. ↑ ↓ Home
+// Escape, a click or focus elsewhere cancels. A Habit
+// storage no longer has counts as archived. ↑ ↓ Home
 // End move between rows; Tab reaches a row's buttons.
 // ✏️ turns a row into the Habit editor, and the last
 // row, "+ Track a new habit…", into an empty one that
 // emits `created` and stays open. Only one row at a
 // time edits or asks "Delete?".
 import {
+  computed,
   nextTick,
-  onBeforeUnmount,
   onMounted,
   ref,
-  useTemplateRef,
-  watch
+  useTemplateRef
 } from 'vue'
 import { Check, Minus, Pencil, Plus, X }
   from '@lucide/vue'
 import type { Habit } from '@shared/habits'
 import HabitEditor from '@/components/HabitEditor.vue'
+import { useRowDeleteConfirm }
+  from '@/composables/use-row-delete-confirm'
 import { HABIT_ICON_COMPONENTS } from '@/habits/icons'
 import { formatNumber } from '@/locale/format'
 
@@ -103,95 +105,72 @@ const active = ref<{ mode: RowMode; id: RowId } | null>(
 )
 /** Archiving, or the editor saving. */
 const busy = ref(false)
-const error = ref<string | null>(null)
 
 const isActive = (mode: RowMode, id: RowId): boolean =>
   active.value?.mode === mode && active.value.id === id
 
-const openRow = (mode: RowMode, index: number): boolean => {
-  if (busy.value) return false
+const {
+  error,
+  ask,
+  cancel: cancelDelete,
+  confirm: archive,
+  onKeydown
+} = useRowDeleteConfirm({
+  rows: () => props.habits,
+  find,
+  remove: habit => window.bulletin.habits.archive(habit.id),
+  deleted: habit => emit('archived', habit),
+  failure: 'Couldn’t delete the Habit. Try again.',
+  // With no Habit left, the new-habit row.
+  refocus: habit => focusRow(habit
+    ? props.habits.indexOf(habit)
+    : props.habits.length),
+  asking: computed({
+    get: () => active.value?.mode === 'delete'
+      && active.value.id !== 'new'
+      ? active.value.id
+      : null,
+    set: id => {
+      active.value = id === null
+        ? null
+        : { mode: 'delete', id }
+    }
+  }),
+  busy
+})
+
+const openEditor = (index: number): void => {
+  if (busy.value) return
   focused.value = index
   active.value = {
-    mode,
+    mode: 'edit',
     id: props.habits.at(index)?.id ?? 'new'
   }
   error.value = null
-  return true
 }
 
 const askDelete = async (index: number): Promise<void> => {
-  if (!openRow('delete', index)) return
-  await nextTick()
-  find('.controls > .-confirm')?.focus()
+  if (busy.value) return
+  focused.value = index
+  await ask(props.habits[index].id)
 }
 
-const cancel = async (refocus: boolean): Promise<void> => {
+/** Closes the editor, refocusing its row. */
+const closeEditor = async (): Promise<void> => {
   if (busy.value || active.value === null) return
   const { id } = active.value
   active.value = null
   error.value = null
-  if (!refocus) return
   await nextTick()
   const index = props.habits
     .findIndex(habit => habit.id === id)
   focusRow(index < 0 ? props.habits.length : index)
 }
 
-const archive = async (index: number): Promise<void> => {
-  if (busy.value) return
-  const habit = props.habits[index]
-  busy.value = true
-  const result = await window.bulletin.habits
-    .archive(habit.id)
-  busy.value = false
-  if (!result.ok) {
-    error.value = 'Couldn’t delete the Habit. Try again.'
-    // Disabling ✓ dropped focus; give it back to retry.
-    await nextTick()
-    if (document.activeElement === document.body)
-      find('.controls > .-confirm')?.focus()
-    return
-  }
-  active.value = null
-  emit('archived', habit)
-  await nextTick()
-  focusRow(Math.min(index, props.habits.length - 1))
-}
-
 const onUpdated = async (habit: Habit): Promise<void> => {
   emit('updated', habit)
-  await cancel(true)
+  await closeEditor()
 }
-
-const onKeydown = (event: KeyboardEvent): void => {
-  if (event.key !== 'Escape'
-    || active.value?.mode !== 'delete') return
-  event.preventDefault()
-  event.stopPropagation()
-  void cancel(true)
-}
-
-// A click or focus outside the asking row cancels.
-const onOutside = (event: Event): void => {
-  const row = find(`[data-id="${active.value?.id}"]`)
-  if (row && event.composedPath().includes(row)) return
-  void cancel(false)
-}
-
-const EVENTS = ['pointerdown', 'focusin'] as const
-
-watch(() => active.value?.mode === 'delete', asking => {
-  const method = asking
-    ? 'addEventListener'
-    : 'removeEventListener'
-  for (const name of EVENTS)
-    document[method](name, onOutside)
-})
-
-onBeforeUnmount(() => {
-  for (const name of EVENTS)
-    document.removeEventListener(name, onOutside)
-})
 
 // Lets the Habits Widget keep it open while writing.
 defineExpose({ busy })
@@ -217,7 +196,7 @@ onMounted(() => {
           v-model:busy="busy"
           :habit="habit"
           @saved="onUpdated"
-          @cancel="cancel(true)"
+          @cancel="closeEditor"
         />
         <button
           v-else
@@ -248,7 +227,7 @@ onMounted(() => {
             type="button"
             aria-label="Delete"
             :disabled="busy"
-            @click="archive(i)"
+            @click="archive(habit)"
           >
             <Check class="icon" aria-hidden="true" />
           </button>
@@ -257,7 +236,7 @@ onMounted(() => {
             type="button"
             aria-label="Don’t delete"
             :disabled="busy"
-            @click="cancel(true)"
+            @click="cancelDelete(true)"
           >
             <X class="icon" aria-hidden="true" />
           </button>
@@ -271,7 +250,7 @@ onMounted(() => {
             type="button"
             :tabindex="i === focused ? 0 : -1"
             :aria-label="`Edit ${habit.name}`"
-            @click="openRow('edit', i)"
+            @click="openEditor(i)"
           >
             <Pencil class="icon" aria-hidden="true" />
           </button>
@@ -300,14 +279,14 @@ onMounted(() => {
           v-if="isActive('edit', 'new')"
           v-model:busy="busy"
           @saved="emit('created', $event)"
-          @cancel="cancel(true)"
+          @cancel="closeEditor"
         />
         <button
           v-else
           class="choose"
           type="button"
           :tabindex="habits.length === focused ? 0 : -1"
-          @click="openRow('edit', habits.length)"
+          @click="openEditor(habits.length)"
           @focus="focused = habits.length"
         >
           <Plus class="icon" aria-hidden="true" />
