@@ -255,6 +255,27 @@ export const stretchPath = (
   return parts.join(' ')
 }
 
+/**
+ * The leftmost and rightmost x from `from` to `to`
+ * along the snake, to the nearest five minutes.
+ */
+export const stretchSpan = (
+  from: EpochMs,
+  to: EpochMs,
+  first: Date,
+  layout: SnakeLayout
+): { left: number; right: number } => {
+  const step = 5 * 60_000
+  let left = Infinity
+  let right = -Infinity
+  for (let time = from; ; time = Math.min(to, time + step)) {
+    const { x } = pointAt(time, first, layout)
+    left = Math.min(left, x)
+    right = Math.max(right, x)
+    if (time >= to) return { left, right }
+  }
+}
+
 /** A Period's stretch of the snake, Head to Tail. */
 export const periodPath = (
   period: SleepPeriod,
