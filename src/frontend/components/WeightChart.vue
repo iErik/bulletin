@@ -12,7 +12,6 @@ import {
   useId,
   watch
 } from 'vue'
-import { getDaysInMonth } from 'date-fns'
 import { scaleLinear } from 'd3-scale'
 import { area, curveMonotoneX, line } from 'd3-shape'
 import type { WeightEntry } from '@shared/weight'
@@ -42,8 +41,16 @@ const props = defineProps<{
   failed?: boolean
 }>()
 
-// Room for the axis labels, in pixels.
-const PAD = { top: 8, right: 4, bottom: 22, left: 44 }
+// Room for the axis labels, in pixels, from the
+// Weight frame: the top tick 25px down, the bottom one
+// 20px up, the kg labels in the left 38px.
+const PAD = { top: 25, right: 3, bottom: 20, left: 38 }
+// The grid lines stop short of the plot's right edge.
+const GRID_INSET = 14.5
+// The month labels' middles, below the bottom tick
+const MONTH_GAP = 17
+// Each month label starts this far before its month.
+const MONTH_LEAD = 4
 const GLOW_RADIUS = 64
 // Half the tooltip's height, to keep it inside.
 const TIP_HALF = 14
@@ -134,11 +141,9 @@ const months = computed(() =>
     label: i % 2 === 0
       ? formatDate(month, 'monthShort')
       : '',
-    // Under the month's middle
-    x: x.value(
-      dayX(span.value, month) - 0.5
-        + getDaysInMonth(month) / 2
-    )
+    // From just before the month's first day
+    x: x.value(dayX(span.value, month) - 0.5)
+      - MONTH_LEAD
   }))
 )
 
@@ -148,6 +153,11 @@ const ticks = computed(() =>
     label: formatAxisKg(kg),
     y: y.value(kg)
   }))
+)
+
+// At every tick but the bottom one, top down.
+const grid = computed(() =>
+  ticks.value.slice(1).reverse()
 )
 
 const label = computed(() => {
@@ -303,12 +313,21 @@ const insets = {
       >
         {{ tick.label }}
       </text>
+      <line
+        v-for="tick in grid"
+        :key="tick.kg"
+        class="grid"
+        :x1="plot.left"
+        :x2="plot.right - GRID_INSET"
+        :y1="tick.y"
+        :y2="tick.y"
+      />
       <text
         v-for="month in months"
         :key="month.key"
         class="month"
         :x="month.x"
-        :y="size.height - 4"
+        :y="plot.bottom + MONTH_GAP"
       >
         {{ month.label }}
       </text>
@@ -394,11 +413,25 @@ const insets = {
     font-size: rem(10px);
     font-weight: 700;
     text-transform: uppercase;
-    fill: var(--color-text-muted);
+    fill: var(--color-widget-title);
   }
 
-  > .plot > .tick { dominant-baseline: middle; }
-  > .plot > .month { text-anchor: middle; }
+  // Centred on their y, as Figma centres them.
+  > .plot > .tick,
+  > .plot > .month { dominant-baseline: central; }
+
+  // Figma's dashes, fainter at the top tick.
+  > .plot > .grid {
+    stroke: color-mix(
+      in sRGB,
+      var(--color-text) 5%,
+      transparent
+    );
+    stroke-dasharray: 3 3;
+    stroke-width: 0.5;
+
+    &:first-of-type { opacity: 0.5; }
+  }
 
   .fill-top {
     stop-color: var(--color-text);
