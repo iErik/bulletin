@@ -259,14 +259,21 @@ describe('theme store', () => {
     const fail = (): never => {
       throw new Error('denied')
     }
-    vi.spyOn(Storage.prototype, 'getItem')
-      .mockImplementation(fail)
-    vi.spyOn(Storage.prototype, 'setItem')
-      .mockImplementation(fail)
+    // Stub the global, not `Storage.prototype`:
+    // happy-dom binds the prototype's methods onto
+    // `localStorage` on first use, so a spy there can
+    // outlive this test.
+    const storage = {
+      getItem: vi.fn(fail),
+      setItem: vi.fn(fail)
+    }
+    vi.stubGlobal('localStorage', storage)
 
     const store = useThemeStore()
     store.setPreference('light')
 
+    expect(storage.getItem).toHaveBeenCalled()
+    expect(storage.setItem).toHaveBeenCalled()
     expect(store.themeId).toBe('default')
     expect(store.scheme).toBe('light')
   })
