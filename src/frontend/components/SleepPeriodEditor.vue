@@ -199,7 +199,7 @@ onMounted(() => {
     <input
       ref="first"
       v-model="start"
-      class="part -time -start"
+      class="part -time"
       type="text"
       aria-label="Start"
       autocomplete="off"
@@ -297,12 +297,12 @@ onMounted(() => {
   }
 
   // As wide as its time, up to the clock's longest one
-  // while typing. Figma sets "2:15" 12px in and 10px
-  // from its separator, and "11:05" 9px and 8px.
+  // while typing. Figma's padding is uneven (12/10px
+  // and 9/8px); the maintainer chose 10px each side.
   > .part.-time {
     field-sizing: content;
-    max-width: calc(var(--time-chars) * 1ch + rem(22px));
-    padding-inline: rem(9px) rem(8px);
+    max-width: calc(var(--time-chars) * 1ch + rem(20px));
+    padding-inline: rem(10px);
     font: inherit;
     background: transparent;
     border: 0;
@@ -311,10 +311,6 @@ onMounted(() => {
     &:focus-visible {
       background: var(--color-surface);
     }
-  }
-
-  > .part.-time.-start {
-    padding-inline: rem(12px) rem(10px);
   }
 
   // After the fields' reset, so they get it too.
