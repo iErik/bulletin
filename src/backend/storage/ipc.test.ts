@@ -4,9 +4,12 @@ import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import { WEIGHT_CHANNELS } from '@shared/weight'
+import { logError } from '../electron/log'
 import { StorageFailure } from './errors'
 import { handleStorage, runOperation } from './ipc'
 import { memoryDatabase } from './testing'
+
+vi.mock('../electron/log', () => ({ logError: vi.fn() }))
 
 type Handler =
   (event: object, payload: unknown) => Promise<unknown>
@@ -42,19 +45,21 @@ describe('runOperation', () => {
     })
   })
 
-  it('hides unexpected errors', async () => {
-    const log = vi.spyOn(console, 'error')
-      .mockImplementation(() => {})
+  it('hides unexpected errors and logs them', async () => {
+    vi.mocked(logError).mockClear()
+    const error = new Error('SQLITE_ERROR: no such table')
     const fail = async (): Promise<never> => {
-      throw new Error('SQLITE_ERROR: no such table')
+      throw error
     }
 
     expect(await runOperation(fail, db, null)).toEqual({
       ok: false,
       error: { code: 'internal' }
     })
-    expect(log).toHaveBeenCalledOnce()
-    log.mockRestore()
+    expect(logError).toHaveBeenCalledExactlyOnceWith(
+      'Storage operation failed:',
+      error
+    )
   })
 })
 

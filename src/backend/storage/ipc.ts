@@ -1,5 +1,6 @@
 import type { IpcMain } from 'electron'
 import type { StorageResult } from '@shared/storage'
+import { logError } from '../electron/log'
 import { EXPENSES_CHANNELS } from '@shared/expenses'
 import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
@@ -65,7 +66,7 @@ export const runOperation = async (
   } catch (error) {
     if (error instanceof StorageFailure)
       return { ok: false, error: error.error }
-    console.error('Storage operation failed:', error)
+    logError('Storage operation failed:', error)
     return { ok: false, error: { code: 'internal' } }
   }
 }
