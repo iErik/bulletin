@@ -148,11 +148,15 @@ export const openDatabase = ({
 
 /** The startup dialog's text for a failed open. */
 export const openErrorMessage = (
-  error: unknown
+  error: unknown,
+  logFile?: string
 ): string => {
+  const log = logFile
+    ? `\n\nThe full error is in this log file:\n${logFile}`
+    : ''
   if (!(error instanceof OpenDatabaseError)) {
     return `Your data was not changed.\n\n`
-      + `Details: ${innermostReason(error)}`
+      + `Details: ${innermostReason(error)}${log}`
   }
   const copy = error.backup
     ? ` A copy was saved to\n${error.backup}`
@@ -161,5 +165,5 @@ export const openErrorMessage = (
     ? `\n(migration ${error.migration})`
     : ''
   return `Your data was not changed.${copy}\n\n`
-    + `Details: ${error.reason}${migration}`
+    + `Details: ${error.reason}${migration}${log}`
 }

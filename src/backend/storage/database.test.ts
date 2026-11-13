@@ -204,6 +204,25 @@ describe('openErrorMessage', () => {
     )
   })
 
+  it('says where the log file is', () => {
+    const error = new OpenDatabaseError(
+      'database is locked',
+      undefined,
+      undefined,
+      undefined
+    )
+
+    expect(openErrorMessage(error, '/logs/main.log')).toBe(
+      'Your data was not changed.\n\n'
+        + 'Details: database is locked\n\n'
+        + 'The full error is in this log file:\n'
+        + '/logs/main.log'
+    )
+    expect(openErrorMessage(new Error('x'), '/a.log'))
+      .toBe('Your data was not changed.\n\nDetails: x'
+        + '\n\nThe full error is in this log file:\n/a.log')
+  })
+
   it('falls back to the innermost cause', () => {
     const error = new Error('outer', {
       cause: new Error('inner')

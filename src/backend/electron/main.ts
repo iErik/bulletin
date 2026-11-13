@@ -12,6 +12,7 @@ import {
 } from '../storage/database'
 import { handleStorage } from '../storage/ipc'
 import { storagePaths } from '../storage/paths'
+import { logError, startLog } from './log'
 import { guardNavigation } from './navigation'
 import {
   handleWindowControls,
@@ -21,6 +22,14 @@ import {
   windowFrameOptions,
   windowSizeOptions
 } from './window-options'
+
+const logFile = startLog({
+  userData: app.getPath('userData'),
+  version: app.getVersion(),
+  platform: process.platform,
+  arch: process.arch,
+  dev: !app.isPackaged
+})
 
 // Set by electron-vite while running `pnpm dev`.
 const devUrl = app.isPackaged
@@ -81,10 +90,10 @@ function startStorage(): boolean {
     handleStorage(ipcMain, db)
     return true
   } catch (error) {
-    console.error('Could not open the database:', error)
+    logError('Could not open the database:', error)
     dialog.showErrorBox(
       'Bulletin could not open its data',
-      openErrorMessage(error)
+      openErrorMessage(error, logFile)
     )
     app.exit(1)
     return false

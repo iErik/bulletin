@@ -11,6 +11,18 @@ importers:
       drizzle-orm:
         specifier: 1.0.0-rc.5
         version: 1.0.0-rc.5(zod@4.6.7)
+      electron-log:
+        specifier: ^5.4.4
+        version: 5.4.4
+      pinia:
+        specifier: ^4.1.0
+        version: 4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3))
+      vue:
+        specifier: ^3.5.45
+        version: 3.5.45(typescript@6.0.3)
+      vue-router:
+        specifier: ^4.6.4
+        version: 4.6.4(vue@3.5.45(typescript@6.0.3))
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -87,9 +99,6 @@ importers:
       lefthook:
         specifier: ^2.2.2
         version: 2.2.2
-      pinia:
-        specifier: ^4.1.0
-        version: 4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3))
       postcss-html:
         specifier: ^2.0.0
         version: 2.0.0(postcss@8.5.32)
@@ -117,15 +126,9 @@ importers:
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@24.19.2)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(vite@8.3.6(@types/node@24.19.2)(jiti@2.7.0)(sass@1.108.1))
-      vue:
-        specifier: ^3.5.45
-        version: 3.5.45(typescript@6.0.3)
       vue-eslint-parser:
         specifier: ^10.4.2
         version: 10.4.2(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
-      vue-router:
-        specifier: ^4.6.4
-        version: 4.6.4(vue@3.5.45(typescript@6.0.3))
       vue-tsc:
         specifier: ^3.3.14
         version: 3.3.14(typescript@6.0.3)
@@ -1483,6 +1486,10 @@ packages:
     resolution: {integrity: sha512-ASgIuQnOq4RuD8jMhS9hI0LS3EMRT1I/M5R6utqifB/BHN80IcCjBdt+DED+NmNPvmBgEtrlExXZitNdA7kXOg==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  electron-log@5.4.4:
+    resolution: {integrity: sha512-istWgaXjBfURBSS8LWVW9C3jsc6+ac+tY1lXrQEOTp0lVj+a4OlO1Tmqb36GgnEUDv92DGC9VI1HNXwJinWpgA==}
+    engines: {node: '>= 14'}
 
   electron-publish@26.18.0:
     resolution: {integrity: sha512-MagnqaZSALSWjcdKu5HEVhYUZD/2BDL3q7XzrqWwub6gf/UfD3ItMgmthVDv9w5y9E0gH1C3JWqKaXwf6f4ROg==}
@@ -4456,6 +4463,8 @@ snapshots:
     transitivePeerDependencies:
       - electron-builder-squirrel-windows
       - supports-color
+
+  electron-log@5.4.4: {}
 
   electron-publish@26.18.0(supports-color@10.2.2):
     dependencies:
