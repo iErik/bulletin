@@ -44,12 +44,12 @@ export const ROW_GAP = 28.5
 /** Room above the first day's AM row. */
 export const SNAKE_TOP = 23
 /** From each curve's outer edge to the snake's side. */
-const EDGE = 10
+export const SNAKE_EDGE = 10
 
 /** The layout of a snake `width` px wide. */
 export const snakeLayout = (width: number): SnakeLayout => ({
-  left: EDGE + ROW_GAP / 2,
-  right: width - EDGE - ROW_GAP / 2,
+  left: SNAKE_EDGE + ROW_GAP / 2,
+  right: width - SNAKE_EDGE - ROW_GAP / 2,
   top: SNAKE_TOP,
   gap: ROW_GAP
 })
@@ -253,6 +253,37 @@ export const stretchPath = (
     }
   }
   return parts.join(' ')
+}
+
+/** A horizontal extent, in pixels. */
+export interface Span {
+  readonly left: number
+  readonly right: number
+}
+
+/**
+ * The leftmost and rightmost x from `from` to `to`
+ * along the snake, to the nearest five minutes.
+ */
+export const stretchSpan = (
+  from: EpochMs,
+  to: EpochMs,
+  first: Date,
+  layout: SnakeLayout
+): Span => {
+  const step = 5 * 60_000
+  let left = Infinity
+  let right = -Infinity
+  for (
+    let time = from;
+    ;
+    time = Math.min(to, time + step)
+  ) {
+    const { x } = pointAt(time, first, layout)
+    left = Math.min(left, x)
+    right = Math.max(right, x)
+    if (time >= to) return { left, right }
+  }
 }
 
 /** A Period's stretch of the snake, Head to Tail. */

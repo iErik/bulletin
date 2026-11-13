@@ -5,6 +5,7 @@ import {
   snakeLayout,
   snakePath,
   stretchPath,
+  stretchSpan,
   timeAt,
   type SnakeLayout
 } from './snake'
@@ -121,4 +122,15 @@ describe('snake', () => {
       gap: 28.5
     })
   })
+
+  it('spans a stretch from its leftmost to rightmost x',
+    () => {
+      expect(stretchSpan(at(7, 2), at(7, 7), FIRST, LAYOUT))
+        .toEqual({ left: 150, right: 400 })
+      // Round the right curve, past the row's end.
+      expect(
+        stretchSpan(at(7, 6), at(7, 15), FIRST, LAYOUT)
+      )
+        .toEqual({ left: 350, right: 665 })
+    })
 })
