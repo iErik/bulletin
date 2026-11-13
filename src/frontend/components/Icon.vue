@@ -43,13 +43,18 @@ const a11y = computed(() =>
 </template>
 
 <style lang="scss">
-// Sized to the text and drawn in its colour.
+// Drawn in the text's colour. An icon exported from
+// Figma at a size keeps it; one without a size is
+// sized to the text.
 .app-icon {
   display: inline-block;
-  width: 1em;
-  height: 1em;
   color: inherit;
   vertical-align: -0.125em;
   flex-shrink: 0;
+}
+
+.app-icon:not([width]) {
+  width: 1em;
+  height: 1em;
 }
 </style>

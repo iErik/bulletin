@@ -15,6 +15,7 @@
     "electron.vite.config.ts",
     "drizzle.config.ts",
     "vitest.config.mts",
+    "svg-icons.ts",
     "src/backend/**/*.ts",
     "src/shared/**/*.ts",
     "scripts/**/*.ts",

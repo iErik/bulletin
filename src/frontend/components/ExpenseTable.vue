@@ -26,7 +26,6 @@ import {
   shallowRef,
   useTemplateRef
 } from 'vue'
-import { Check, Minus, X } from '@lucide/vue'
 import { localDate } from '@shared/dates'
 import type {
   Category,
@@ -37,6 +36,7 @@ import type { LocalDate } from '@shared/storage'
 import CellInput from '@/components/CellInput.vue'
 import CategoryCell from '@/components/CategoryCell.vue'
 import DateCell from '@/components/DateCell.vue'
+import Icon from '@/components/Icon.vue'
 import { amountText, parseAmount } from '@/expenses/amount'
 import type { CategoryChoice } from '@/expenses/categories'
 import { formatAmount } from '@/expenses/money'
@@ -294,7 +294,7 @@ const {
                   :disabled="busy"
                   @click="remove(transaction)"
                 >
-                  <Check class="icon" aria-hidden="true" />
+                  <Icon name="check" />
                 </button>
                 <button
                   class="control"
@@ -303,7 +303,7 @@ const {
                   :disabled="busy"
                   @click="cancel(true)"
                 >
-                  <X class="icon" aria-hidden="true" />
+                  <Icon name="close" />
                 </button>
               </div>
             </td>
@@ -316,7 +316,7 @@ const {
                   :aria-label="`Delete ${transaction.description}`"
                   @click="ask(transaction.id)"
                 >
-                  <Minus class="icon" aria-hidden="true" />
+                  <Icon name="minus" />
                 </button>
               </td>
               <td>
@@ -598,11 +598,6 @@ const {
       cursor: default;
       opacity: 0.4;
     }
-  }
-
-  .icon {
-    width: rem(16px);
-    height: rem(16px);
   }
 
   > .error {

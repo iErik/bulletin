@@ -18,10 +18,11 @@ import {
   ref,
   useTemplateRef
 } from 'vue'
-import { Check, Minus, Pencil, Plus, X }
-  from '@lucide/vue'
+// Figma has no edit icon; Lucide's pencil stands in.
+import { Pencil } from '@lucide/vue'
 import type { Habit } from '@shared/habits'
 import HabitEditor from '@/components/HabitEditor.vue'
+import Icon from '@/components/Icon.vue'
 import { useRowDeleteConfirm }
   from '@/composables/use-row-delete-confirm'
 import { HABIT_ICON_COMPONENTS } from '@/habits/icons'
@@ -229,7 +230,7 @@ onMounted(() => {
             :disabled="busy"
             @click="archive(habit)"
           >
-            <Check class="icon" aria-hidden="true" />
+            <Icon name="check" />
           </button>
           <button
             class="control"
@@ -238,7 +239,7 @@ onMounted(() => {
             :disabled="busy"
             @click="cancelDelete(true)"
           >
-            <X class="icon" aria-hidden="true" />
+            <Icon name="close" />
           </button>
         </div>
         <div
@@ -261,12 +262,12 @@ onMounted(() => {
             :aria-label="`Delete ${habit.name}`"
             @click="askDelete(i)"
           >
-            <Minus class="icon" aria-hidden="true" />
+            <Icon name="minus" />
           </button>
-          <Check
+          <Icon
             v-if="habit.id === current"
-            class="icon -check"
-            aria-hidden="true"
+            class="current"
+            name="check"
           />
         </div>
       </li>
@@ -289,7 +290,7 @@ onMounted(() => {
           @click="openEditor(habits.length)"
           @focus="focused = habits.length"
         >
-          <Plus class="icon" aria-hidden="true" />
+          <Icon class="add" name="plus" />
           <span class="name">Track a new habit…</span>
         </button>
       </li>
@@ -406,14 +407,15 @@ onMounted(() => {
     }
   }
 
+  // Lucide's pencil, the one icon Figma doesn't draw.
   .icon {
     width: rem(16px);
     height: rem(16px);
   }
 
-  .icon.-check { margin: 0 rem(3px); }
+  .controls > .current { margin: 0 rem(3px); }
 
-  .row.-new > .choose > .icon { grid-row: auto; }
+  .row.-new > .choose > .add { grid-row: auto; }
 
   > .error {
     margin-top: space(1);

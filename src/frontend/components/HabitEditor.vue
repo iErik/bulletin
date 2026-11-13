@@ -12,12 +12,12 @@ import {
   ref,
   useTemplateRef
 } from 'vue'
-import { Check, X } from '@lucide/vue'
 import type { Habit, HabitIcon } from '@shared/habits'
 import type { StorageError, StorageResult }
   from '@shared/storage'
 import HabitIconPicker
   from '@/components/HabitIconPicker.vue'
+import Icon from '@/components/Icon.vue'
 
 const props = defineProps<{
   /** The Habit to edit; creates one without it. */
@@ -113,7 +113,7 @@ onMounted(() => {
       :aria-label="habit ? 'Save' : 'Create'"
       :disabled="busy"
     >
-      <Check class="icon" aria-hidden="true" />
+      <Icon name="check" />
     </button>
     <button
       class="control"
@@ -122,7 +122,7 @@ onMounted(() => {
       :disabled="busy"
       @click="emit('cancel')"
     >
-      <X class="icon" aria-hidden="true" />
+      <Icon name="close" />
     </button>
     <p v-if="error" class="error" role="alert">
       {{ error }}

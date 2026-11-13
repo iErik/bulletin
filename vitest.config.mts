@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
-import svgLoader from 'vite-svg-loader'
+import { svgIcons } from './svg-icons'
 
 const src = (path: string): string =>
   fileURLToPath(new URL(`./src/${path}`, import.meta.url))
@@ -17,7 +17,7 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        plugins: [vue(), svgLoader()],
+        plugins: [vue(), svgIcons()],
         test: {
           name: 'renderer',
           environment: 'happy-dom',

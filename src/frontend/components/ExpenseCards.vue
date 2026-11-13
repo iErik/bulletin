@@ -9,11 +9,6 @@
 // edited in place (see `BudgetValue`).
 import { computed } from 'vue'
 import { format } from 'date-fns'
-import {
-  BanknoteArrowDown,
-  BanknoteArrowUp,
-  Wallet
-} from '@lucide/vue'
 import type { Budget, Transaction } from '@shared/expenses'
 import {
   budgetProgress,
@@ -22,6 +17,7 @@ import {
 } from '@/expenses/money'
 import { formatDate } from '@/locale/format'
 import BudgetValue from '@/components/BudgetValue.vue'
+import Icon from '@/components/Icon.vue'
 
 const props = defineProps<{
   /** The month's Transactions. */
@@ -72,7 +68,7 @@ const carriedFrom = computed(() => {
   <div class="expense-cards">
     <section class="card -income">
       <h3 class="title">
-        <BanknoteArrowUp class="icon" aria-hidden="true" />
+        <Icon class="icon" name="receipt-add" />
         Income
       </h3>
       <p class="value">
@@ -81,10 +77,7 @@ const carriedFrom = computed(() => {
     </section>
     <section class="card -expenses">
       <h3 class="title">
-        <BanknoteArrowDown
-          class="icon"
-          aria-hidden="true"
-        />
+        <Icon class="icon" name="receipt-minus" />
         Expenses
       </h3>
       <p class="value">
@@ -93,7 +86,7 @@ const carriedFrom = computed(() => {
     </section>
     <section class="card -budget">
       <h3 class="title">
-        <Wallet class="icon" aria-hidden="true" />
+        <Icon class="icon" name="empty-wallet" />
         Budget
       </h3>
       <BudgetValue
