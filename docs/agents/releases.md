@@ -32,6 +32,26 @@ the version injected into the packaged app), files
 the GitHub Release; a failed release deletes its tag)
 and bump. `release.yml`'s comments explain each one.
 
+## What ships in the app
+
+electron-builder packs electron-vite's output into
+`app.asar`, plus every package in `package.json`'s
+`dependencies`, and what they depend on, under its
+`node_modules`. electron-vite leaves `dependencies`
+out of the main and preload bundles, which load them
+from there at runtime. The renderer's bundle already
+holds everything it imports.
+
+So a package goes in `dependencies` only if the main
+process or preload loads it at runtime: something
+`src/backend` or `src/shared` imports, like
+`drizzle-orm` and `zod`. A package only `src/frontend`
+imports, like `vue` or `date-fns`, goes in
+`devDependencies`, where the renderer build still
+finds it. In `dependencies`, it would ship as dead
+weight: `vue`, `date-fns`, `@lucide/vue` and four
+others once added about 44 MB to `app.asar`.
+
 ## Versions
 
 `package.json`'s `version` is the last version
