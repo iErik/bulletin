@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi }
 import { flushPromises, mount, type VueWrapper }
   from '@vue/test-utils'
 import type { SleepPeriod } from '@shared/sleep'
+import { setLocaleOverride } from '@/locale/format'
 import {
   type Point,
   pointAt,
@@ -179,8 +180,8 @@ describe('SleepSnake', () => {
 
     expect(wrapper.emitted('point'))
       .toEqual([[at(8, 18, 30)], [null]])
-    expect(wrapper.emitted('press'))
-      .toEqual([[at(8, 18, 30)]])
+    expect(wrapper.emitted('press')?.map(([time]) => time))
+      .toEqual([at(8, 18, 30)])
   })
 
   it('keeps a click on the days it draws', async () => {
@@ -191,8 +192,8 @@ describe('SleepSnake', () => {
       clientY: -500
     })
 
-    expect(wrapper.emitted('press'))
-      .toEqual([[at(7, 0)]])
+    expect(wrapper.emitted('press')?.[0][0])
+      .toBe(at(7, 0))
   })
 
   it('reports a press on an end as a grab', async () => {
@@ -220,5 +221,21 @@ describe('SleepSnake', () => {
     const style = chip.element.style
     expect(parseFloat(style.left)).toBeCloseTo(x)
     expect(parseFloat(style.top)).toBeCloseTo(y)
+  })
+
+  it('opens a Period on Enter, and labels it', async () => {
+    setLocaleOverride('en-US')
+    const period: SleepPeriod =
+      { id: 1, start: at(7, 2), end: at(7, 7) }
+    const wrapper = await mountSnake({ periods: [period] })
+    const stop = wrapper.get('[data-period="1"]')
+
+    expect(stop.attributes('tabindex')).toBe('0')
+    expect(stop.attributes('aria-label'))
+      .toMatch(/^Period, 2:00\sAM to 7:00\sAM$/)
+    await stop.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('open')).toEqual([[period]])
+    setLocaleOverride(null)
   })
 })

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// The Sleep Widget's body: one Timeline row per day
-// (ADR 0002), oldest first, with the rest of the
+// The Sleep Widget's body: the Timeline as Figma's
+// snake (ADR 0003), oldest day first, with each day's
+// date and times by its AM row and the rest of the
 // current month dimmed below today. Months load as the
-// list nears either edge, and the Selected Date's row
+// list nears either edge, and the Selected Date's day
 // scrolls to the centre whenever it changes. Scrolling
 // never changes the Selected Date.
 //
@@ -16,7 +17,7 @@
 // release. A storage error puts it back.
 //
 // Clicking a Period, or Enter on it, opens its edit
-// tooltip; Enter on a day row opens "Add period".
+// tooltip; Enter on a day opens "Add period".
 // Clicking away saves it, and Escape closes it and
 // gives focus back to the Period or row.
 import {
@@ -36,8 +37,10 @@ import type {
   SleepPeriod
 } from '@shared/sleep'
 import { localDate } from '@shared/dates'
+import SleepHours from '@/components/SleepHours.vue'
 import SleepPeriodEditor
   from '@/components/SleepPeriodEditor.vue'
+import SleepSnake from '@/components/SleepSnake.vue'
 import { formatDate, formatTime } from '@/locale/format'
 import { caption } from '@/sleep/caption'
 import {
@@ -49,13 +52,9 @@ import {
   snap,
   type End
 } from '@/sleep/selection'
-import {
-  axisTicks,
-  rowOf,
-  segmentsOf,
-  toFraction,
-  toTime
-} from '@/sleep/timeline'
+// The tooltip still reads typed times in a noon-to-noon
+// row until BLT-84.
+import { rowOf } from '@/sleep/timeline'
 import { useSleepMonths } from '@/sleep/use-sleep-months'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
@@ -65,33 +64,28 @@ const months = useSleepMonths(() => store.today)
 const scroller = useTemplateRef<HTMLElement>('scroller')
 const root = useTemplateRef<HTMLElement>('root')
 
-/** The snapped time under the pointer, and its row. */
-const pointer = shallowRef<{
-  key: string
-  time: EpochMs
-} | null>(null)
+/** The snapped time under the pointer. */
+const pointer = ref<EpochMs | null>(null)
 /** The first click's time, while selecting. */
 const head = ref<EpochMs | null>(null)
 /** Why the last click was refused, until it moves. */
 const refusal = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const saving = ref(false)
-/**
- * Whose tooltip is open: a Period, or a day to add one
- * on, drawn on `key`'s row at `fraction`.
- */
+/** Whose tooltip is open: a Period, or a day to add one. */
 const editing = shallowRef<{
+  /** The day focused when it closes without a Period. */
   key: string
+  /** The row it reads typed times in. */
   day: Date
   period?: SleepPeriod
-  /** Where on the row it points, from 0 to 1. */
-  fraction: number
+  /** Where on the snake it points. */
+  at: EpochMs
 } | null>(null)
-// One in the rows' v-for, so an array.
 const editor = useTemplateRef<{
   commit(): boolean
   $el: Node
-}[]>('editor')
+}>('editor')
 /**
  * The Period being dragged, which end, and the time
  * under the pointer when it was pressed.
@@ -107,12 +101,10 @@ const grabbed = shallowRef<{
 // it, and a press without moving changes nothing.
 const moved = computed(() => {
   const at = pointer.value
-  if (!grabbed.value || !at) return null
+  if (!grabbed.value || at === null) return null
   const { saved, end, from } = grabbed.value
-  if (at.time === from) return null
-  const to = from === null
-    ? at.time
-    : saved[end] + at.time - from
+  if (at === from) return null
+  const to = from === null ? at : saved[end] + at - from
   return drag(saved, end, to,
     months.periods.value, Date.now())
 })
@@ -128,8 +120,8 @@ const periods = computed(() => {
 
 /** The Period the selection would create. */
 const preview = computed(() =>
-  head.value !== null && pointer.value
-    ? ordered(head.value, pointer.value.time)
+  head.value !== null && pointer.value !== null
+    ? ordered(head.value, pointer.value)
     : null
 )
 
@@ -141,32 +133,24 @@ const broken = computed(() =>
   && breaks(preview.value, months.periods.value,
     Date.now()))
 
-// Each row's own Periods, by the row of their Head.
-const byRow = computed(() => {
-  const rows = new Map<string, SleepPeriod[]>()
+// Each day's own Periods, by their Head's calendar day.
+const byDay = computed(() => {
+  const days = new Map<string, SleepPeriod[]>()
   for (const period of periods.value) {
-    const key = localDate(rowOf(period.start))
-    rows.set(key, [...rows.get(key) ?? [], period])
+    const key = localDate(new Date(period.start))
+    days.set(key, [...days.get(key) ?? [], period])
   }
-  return rows
+  return days
 })
 
 const rows = computed(() =>
   months.days.value.map(day => {
     const key = localDate(day)
-    const own = byRow.value.get(key) ?? []
-    const before = byRow.value
-      .get(localDate(addDays(day, -1))) ?? []
     return {
       key,
       day,
       label: formatDate(day, 'short'),
-      caption: caption(own),
-      segments: segmentsOf([...before, ...own], day),
-      preview: preview.value
-        ? segmentsOf([{ id: 0, ...preview.value }], day)
-        : [],
-      hover: hoverOn(key, day),
+      caption: caption(byDay.value.get(key) ?? []),
       future: isAfter(day, store.today),
       selected: isSameDay(day, store.day)
     }
@@ -174,63 +158,37 @@ const rows = computed(() =>
 )
 
 /**
- * The time tooltip on `key`'s row: the pointer's time,
- * the dragged end's, or why a click was refused. None
- * over a Period unless selecting, as that's not an
- * empty part.
+ * The time on the snake: the pointer's, the dragged
+ * end's, or why a click was refused. None over a Period
+ * unless selecting, as that's not an empty part.
  */
-function hoverOn(
-  key: string,
-  day: Date
-): { fraction: number; text: string } | null {
+const hover = computed(() => {
   if (editing.value) return null
   const at = moved.value && grabbed.value
-    ? dragged(moved.value[grabbed.value.end],
-        grabbed.value.end)
+    ? moved.value[grabbed.value.end]
     : pointer.value
-  if (at?.key !== key) return null
+  if (at === null) return null
   if (head.value === null && !moved.value
-    && periodAt(months.periods.value, at.time))
+    && periodAt(months.periods.value, at))
     return null
   return {
-    fraction: toFraction(at.time, day),
-    text: refusal.value ?? formatTime(new Date(at.time))
+    time: at,
+    text: refusal.value ?? formatTime(new Date(at))
   }
-}
-
-// A dragged end's time, on the row it's drawn on. A
-// Tail on noon ends the row before.
-const dragged = (time: EpochMs, end: End): {
-  key: string
-  time: EpochMs
-} => ({
-  key: localDate(rowOf(end === 'end' ? time - 1 : time)),
-  time
 })
 
-/** The time under the pointer on `day`'s row. */
-const exactAt = (event: MouseEvent, day: Date): EpochMs => {
-  const track = event.currentTarget as HTMLElement
-  const box = track.getBoundingClientRect()
-  const x = (event.clientX - box.left) / box.width
-  return toTime(Math.min(1, Math.max(0, x)), day)
-}
-
-const timeAt = (event: MouseEvent, day: Date): EpochMs =>
-  snap(exactAt(event, day))
-
-const onMove = (
-  event: MouseEvent,
-  day: Date,
-  key: string
-): void => {
-  const time = timeAt(event, day)
-  if (pointer.value?.time !== time) refusal.value = null
-  pointer.value = { key, time }
+const onPoint = (time: EpochMs | null): void => {
+  if (time === null) {
+    onLeave()
+    return
+  }
+  const snapped = snap(time)
+  if (pointer.value !== snapped) refusal.value = null
+  pointer.value = snapped
 }
 
 // While selecting or dragging, the Period stays where
-// the pointer left it, so moving between rows doesn't
+// the pointer left it, so leaving the snake doesn't
 // flicker.
 const onLeave = (): void => {
   if (head.value === null && !grabbed.value)
@@ -238,15 +196,17 @@ const onLeave = (): void => {
   refusal.value = null
 }
 
-// The click ending a drag isn't a click on the track.
+// The click ending a drag isn't a click on the snake.
 let released = false
 
-const onClick = (event: MouseEvent, day: Date): void => {
+const onPress = (
+  exact: EpochMs,
+  event: MouseEvent
+): void => {
   if (saving.value || released || editing.value) return
-  const time = timeAt(event, day)
+  const time = snap(exact)
   if (head.value === null) {
-    const over = periodAt(months.periods.value,
-      exactAt(event, day))
+    const over = periodAt(months.periods.value, exact)
     if (over) {
       edit(over, event)
       return
@@ -287,7 +247,7 @@ const grab = (period: SleepPeriod, end: End): void => {
   grabbed.value = {
     saved: period,
     end,
-    from: pointer.value?.time ?? null
+    from: pointer.value
   }
   window.addEventListener('pointerup', release)
   window.addEventListener('pointercancel', drop)
@@ -346,28 +306,32 @@ const open = (
   cancel()
   saveError.value = null
   opening = event ?? null
-  // Off the row's ends, so it isn't cut off.
-  const fraction = Math.min(0.85,
-    Math.max(0.15, target.fraction))
-  editing.value = { ...target, fraction }
+  editing.value = target
 }
 
-/** Opens `period`'s tooltip over its Head's row. */
+/** Opens `period`'s tooltip at its middle. */
 const edit = (period: SleepPeriod, event?: Event): void => {
-  const day = rowOf(period.start)
-  const to = Math.min(1, toFraction(period.end, day))
+  open({
+    key: localDate(new Date(period.start)),
+    day: rowOf(period.start),
+    period,
+    at: (period.start + period.end) / 2
+  }, event)
+}
+
+/** Opens "Add period" on `day`'s AM row. */
+const add = (day: Date): void => {
   open({
     key: localDate(day),
     day,
-    period,
-    fraction: (toFraction(period.start, day) + to) / 2
-  }, event)
+    at: new Date(day).setHours(6, 30)
+  })
 }
 
 /** Saves the open tooltip; false if it can't. */
 const commitAway = (): boolean => {
   closingAway = true
-  const done = editor.value?.[0]?.commit() ?? true
+  const done = editor.value?.commit() ?? true
   closingAway = false
   return done
 }
@@ -423,7 +387,7 @@ const onKeydown = (event: Event): void => {
 // The Head's own click is inside, so it never cancels.
 const onDocumentClick = (event: Event): void => {
   const path = event.composedPath()
-  const tooltip = editor.value?.[0]?.$el
+  const tooltip = editor.value?.$el
   if (editing.value && event !== opening
     && !(tooltip && path.includes(tooltip)))
     commitAway()
@@ -449,19 +413,7 @@ onBeforeUnmount(() => {
   drop()
 })
 
-const ticks = axisTicks().map(tick => ({
-  ...tick,
-  label: formatTime(new Date(tick.time))
-}))
-
-const label = (period: SleepPeriod): string =>
-  `Period, ${formatTime(new Date(period.start))} `
-  + `to ${formatTime(new Date(period.end))}`
-
-const percent = (fraction: number): string =>
-  `${fraction * 100}%`
-
-/** Scrolls the Selected Date's row to the centre. */
+/** Scrolls the Selected Date's day to the centre. */
 const centre = (): void => {
   const list = scroller.value
   const row = list?.querySelector<HTMLElement>(
@@ -523,154 +475,86 @@ watch(() => store.today, today => {
     <p v-if="saveError" class="error" role="alert">
       {{ saveError }}
     </p>
-    <ol
+    <div
       ref="scroller"
       class="rows"
       @scroll.passive="loadNearEdges"
     >
-      <li
-        v-for="row in rows"
-        :key="row.key"
-        class="day-row"
-        :class="{
-          '-future': row.future,
-          '-selected': row.selected
-        }"
-        :data-day="row.key"
-        :aria-disabled="row.future || undefined"
-        :tabindex="row.future ? undefined : 0"
-        @keydown.enter.self="open({
-          key: row.key,
-          day: row.day,
-          fraction: 0.5
-        })"
-      >
-        <div class="label">
+      <ol class="days">
+        <li
+          v-for="row in rows"
+          :key="row.key"
+          class="day-row"
+          :class="{
+            '-future': row.future,
+            '-selected': row.selected
+          }"
+          :data-day="row.key"
+          :aria-disabled="row.future || undefined"
+          :tabindex="row.future ? undefined : 0"
+          @keydown.enter.self="add(row.day)"
+        >
           <span class="date">{{ row.label }}</span>
           <span v-if="row.caption" class="caption">
             {{ row.caption }}
           </span>
-        </div>
-        <div
-          class="track"
-          @pointermove="onMove($event, row.day, row.key)"
-          @pointerleave="onLeave"
-          @click="onClick($event, row.day)"
-        >
-          <div
-            v-for="segment in row.segments"
-            :key="segment.period.id"
-            class="period"
-            :class="{
-              '-head': segment.head,
-              '-tail': segment.tail,
-              '-editing':
-                editing?.period?.id === segment.period.id
-            }"
-            :style="{
-              left: percent(segment.from),
-              width: percent(segment.to - segment.from)
-            }"
-            v-bind="segment.head ? {
-              tabindex: 0,
-              role: 'button',
-              'aria-label': label(segment.period),
-              'data-period': segment.period.id
-            } : {}"
-            @keydown.enter.stop="edit(segment.period)"
-          >
-            <span
-              v-if="segment.head"
-              class="handle -start"
-              @pointerdown.stop="
-                grab(segment.period, 'start')"
-            />
-            <span
-              v-if="segment.tail"
-              class="handle -end"
-              @pointerdown.stop="
-                grab(segment.period, 'end')"
-            />
-          </div>
-          <div
-            v-for="(segment, i) in row.preview"
-            :key="`preview-${i}`"
-            class="period -preview"
-            :class="{
-              '-head': segment.head,
-              '-tail': segment.tail,
-              '-broken': broken
-            }"
-            :style="{
-              left: percent(segment.from),
-              width: percent(segment.to - segment.from)
-            }"
-          />
-          <SleepPeriodEditor
-            v-if="editing?.key === row.key"
-            ref="editor"
-            :key="editing.period?.id ?? 'add'"
-            :style="{ left: percent(editing.fraction) }"
-            :period="editing.period"
-            :day="editing.day"
-            :periods="months.periods.value"
-            @save="onSave"
-            @remove="
-              editing.period && remove(editing.period)"
-            @close="close"
-          />
+        </li>
+      </ol>
+      <SleepSnake
+        v-if="rows.length > 0"
+        class="snake"
+        :first="rows[0].day"
+        :days="rows.length"
+        :periods="periods"
+        :preview="preview"
+        :broken="!!broken"
+        :editing="editing?.period?.id ?? null"
+        :hover="hover"
+        @point="onPoint"
+        @press="onPress"
+        @grab="grab"
+        @open="edit"
+      >
+        <template #default="{ place }">
           <span
-            v-if="row.hover"
-            class="hover"
-            aria-hidden="true"
-            :style="{ left: percent(row.hover.fraction) }"
+            v-if="editing"
+            class="anchor"
+            :style="place(editing.at)"
           >
-            {{ row.hover.text }}
+            <SleepPeriodEditor
+              ref="editor"
+              :key="editing.period?.id ?? 'add'"
+              :period="editing.period"
+              :day="editing.day"
+              :periods="months.periods.value"
+              @save="onSave"
+              @remove="
+                editing.period && remove(editing.period)"
+              @close="close"
+            />
           </span>
-        </div>
-      </li>
-    </ol>
-    <div class="axis" aria-hidden="true">
-      <div class="track">
-        <span
-          v-for="tick in ticks"
-          :key="tick.fraction"
-          class="tick"
-          :style="{ left: percent(tick.fraction) }"
-        >
-          {{ tick.label }}
-        </span>
-      </div>
+        </template>
+      </SleepSnake>
     </div>
+    <SleepHours class="hours" />
   </div>
 </template>
 
 <style lang="scss">
 @use '@/styles/utils' as *;
 
-// The label column and the track's inset, shared by
-// the rows and the axis so their times line up.
-$label-width: rem(112px);
-$track-inset: space(6);
-$dot: rem(7px);
+// Figma's Sleep frame: the labels' column, and the
+// first AM row's height from the top, less a pixel so
+// a date's top meets its row.
+$labels: rem(73px);
+$first-row: 22px;
 
-@mixin columns {
-  display: grid;
-  grid-template-columns: $label-width 1fr;
-
-  > .track {
-    position: relative;
-    grid-column: 2;
-    margin: 0 $track-inset;
-  }
-}
-
-@mixin glow {
-  background: var(--color-text);
-  box-shadow: 0 0 rem(6px) var(--color-text);
-}
+// A day is two of the snake's rows, 28.5px apart.
+$day: 57px;
 
 .sleep-timeline {
+  --sleep-labels: #{$labels};
+
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -680,160 +564,70 @@ $dot: rem(7px);
     color: var(--color-text-muted);
   }
 
+  // Figma's transparency mask: the days fade out
+  // towards the scales.
   > .rows {
-    position: relative; // Rows' offsetTop is from here
+    position: relative; // Days' offsetTop is from here
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     overflow-anchor: none; // We keep the position
     scrollbar-gutter: stable;
+    mask-image: linear-gradient(
+      #000,
+      rgb(0 0 0 / 56%) 80%,
+      transparent
+    );
   }
 
-  // The same gutter as the rows' scrollbar, so the
-  // ticks line up where scrollbars take up space.
-  > .axis {
-    @include columns;
+  > .rows > .days {
+    width: $labels;
+    padding: $first-row 0 0;
+    margin: 0;
+    list-style: none;
+  }
 
+  > .rows > .snake {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: $labels;
+  }
+
+  // The tooltip sits above this point on the snake, as
+  // wide as it needs: the point has no width to fill.
+  > .rows > .snake > .anchor { position: absolute; }
+
+  > .rows > .snake > .anchor > .sleep-period-editor {
+    width: max-content;
+  }
+
+  // The same gutter as the days' scrollbar, so the
+  // hours line up where scrollbars take up space.
+  > .hours {
+    padding-top: space(2);
     overflow-y: hidden;
     scrollbar-gutter: stable;
-    padding-top: space(2);
-    font-size: rem(11px);
-    font-weight: 500;
-    color: var(--color-text-muted);
-  }
-
-  > .axis > .track {
-    height: space(5);
-    border-top: 1px dotted var(--color-border);
-  }
-
-  > .axis > .track > .tick {
-    position: absolute;
-    top: space(1);
-    white-space: nowrap;
-    transform: translateX(-50%);
   }
 }
 
 .day-row {
-  @include columns;
+  display: flex;
+  flex-direction: column;
+  height: $day;
+  padding-left: rem(11px);
+  color: var(--color-sleep-date);
 
-  align-items: center;
-  min-height: rem(52px);
-
-  > .label {
-    display: flex;
-    flex-direction: column;
+  > .date {
     font-size: rem(14px);
     font-weight: 300;
-    color: var(--color-text-muted);
+    line-height: 1.2;
   }
 
-  > .label > .caption {
+  > .caption {
     font-size: rem(9px);
     font-weight: 500;
-  }
-
-  > .track {
-    height: 0;
-    cursor: crosshair;
-    border-top: 1px dotted var(--color-border);
-  }
-
-  // The track is a line: this widens where it takes
-  // the pointer, and its events land on the track.
-  > .track::before {
-    position: absolute;
-    inset: rem(-12px) 0 auto;
-    height: rem(24px);
-    content: '';
-  }
-
-  // The time under the pointer, above the line, in
-  // inverted colours like the app's tooltips.
-  > .track > .hover {
-    position: absolute;
-    bottom: space(2);
-    z-index: 1;
-    padding: space(1) space(2);
-    font-size: rem(12px);
-    white-space: nowrap;
-    color: var(--color-surface);
-    background: var(--color-text);
-    border-radius: $radius-small;
-    transform: translateX(-50%);
-    pointer-events: none;
-  }
-
-  // Centred on the dotted line above the track's box.
-  > .track > .period {
-    position: absolute;
-    top: -0.5px;
-    height: 2px;
-    border-radius: 1px;
-    transform: translateY(-50%);
-    @include glow;
-  }
-
-  // The Head and Tail circles.
-  > .track > .period.-head::before,
-  > .track > .period.-tail::after {
-    position: absolute;
-    top: 50%;
-    width: $dot;
-    height: $dot;
-    content: '';
-    border-radius: 50%;
-    @include glow;
-  }
-
-  > .track > .period.-head::before {
-    left: 0;
-    transform: translate(-50%, -50%);
-  }
-
-  > .track > .period.-tail::after {
-    right: 0;
-    transform: translate(50%, -50%);
-  }
-
-  // A wider target for dragging the Head or Tail.
-  > .track > .period > .handle {
-    position: absolute;
-    top: 50%;
-    width: rem(14px);
-    height: rem(14px);
-    cursor: ew-resize;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  > .track > .period > .handle.-start {
-    left: 0;
-  }
-
-  > .track > .period > .handle.-end {
-    left: 100%;
-  }
-
-  > .track > .period[tabindex] {
-    @include focus-ring;
-  }
-
-  // Highlighted while its tooltip is open.
-  > .track > .period.-editing {
-    height: 3px;
-    box-shadow: 0 0 rem(10px) var(--color-text);
-  }
-
-  > .track > .period.-preview {
-    opacity: 0.7;
-    pointer-events: none;
-  }
-
-  // The glow, Head and Tail all take it from here.
-  > .track > .period.-broken {
-    --color-text: var(--color-danger);
+    color: var(--color-sleep-caption);
   }
 
   &:focus-visible {
@@ -841,9 +635,7 @@ $dot: rem(7px);
     outline-offset: -2px;
   }
 
-  &.-selected > .label {
-    color: var(--color-text);
-  }
+  &.-selected > .date { font-weight: 400; }
 
   // The rest of the month: shown, but not usable.
   &.-future {
