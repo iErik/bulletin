@@ -9,12 +9,14 @@
 // inline error instead. A blank "Add period" closes
 // on a click away, but not on Enter. Escape cancels
 // "Delete?", then closes. It sits above its point, or
-// below when there's no room.
+// below when there's no room, shifted sideways to stay
+// inside the list.
 import {
   nextTick,
   onMounted,
   ref,
-  useTemplateRef
+  useTemplateRef,
+  watch
 } from 'vue'
 import type {
   NewSleepPeriod,
@@ -48,7 +50,12 @@ const end = ref(text(props.period?.end))
 const error = ref<string | null>(null)
 const confirming = ref(false)
 const below = ref(false)
+const shift = ref(0)
 const example = formatTime(new Date(2000, 0, 1, 2, 15))
+// The clock's longest time has a two-digit hour, as
+// "10:55 PM" or "22:55": the fields grow up to it.
+const longest =
+  formatTime(new Date(2000, 0, 1, 22, 55)).length
 
 /** The fields' Period, or why they don't make one. */
 const fromFields = (): NewSleepPeriod | string => {
@@ -142,11 +149,30 @@ const onKeydown = (event: KeyboardEvent): void => {
   event.stopPropagation()
 }
 
+const list = (): DOMRect | undefined =>
+  root.value?.closest('.rows')?.getBoundingClientRect()
+
+/** Shifts it sideways back inside the list. */
+const fit = (): void => {
+  const box = root.value?.getBoundingClientRect()
+  const bounds = list()
+  if (!box || !bounds) return
+  const left = box.left - shift.value
+  const right = left + box.width
+  // Past both edges, it keeps to the left one.
+  const over = Math.min(0, bounds.right - right)
+  shift.value = Math.max(bounds.left - left, over)
+}
+
+// Typing and errors change its width.
+watch([start, end, error], () => nextTick(fit))
+
 onMounted(() => {
   const box = root.value?.getBoundingClientRect()
-  const list = root.value?.closest('.rows')
-    ?.getBoundingClientRect()
-  below.value = !!box && !!list && box.top < list.top
+  const bounds = list()
+  below.value = !!box && !!bounds
+    && box.top < bounds.top
+  fit()
   first.value?.focus()
   first.value?.select()
 })
@@ -157,6 +183,10 @@ onMounted(() => {
     ref="root"
     class="sleep-period-editor"
     :class="{ '-below': below }"
+    :style="{
+      '--shift': `${shift}px`,
+      '--time-chars': longest
+    }"
     role="dialog"
     :aria-label="period ? 'Edit period' : 'Add period'"
     @keydown="onKeydown"
@@ -169,7 +199,7 @@ onMounted(() => {
     <input
       ref="first"
       v-model="start"
-      class="part -time"
+      class="part -time -start"
       type="text"
       aria-label="Start"
       autocomplete="off"
@@ -247,7 +277,7 @@ onMounted(() => {
   );
   border-radius: $radius-small;
   box-shadow: 0 rem(2px) rem(8px) rgb(0 0 0 / 30%);
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--shift, 0px)));
 
   &.-below {
     top: space(3);
@@ -266,10 +296,14 @@ onMounted(() => {
     color: var(--color-text-muted);
   }
 
+  // As wide as its time, up to the clock's longest one
+  // while typing. Figma sets "2:15" 12px in and 10px
+  // from its separator, and "11:05" 9px and 8px.
   > .part.-time {
-    width: rem(64px);
+    field-sizing: content;
+    max-width: calc(var(--time-chars) * 1ch + rem(22px));
+    padding-inline: rem(9px) rem(8px);
     font: inherit;
-    text-align: center;
     background: transparent;
     border: 0;
     outline: none;
@@ -277,6 +311,10 @@ onMounted(() => {
     &:focus-visible {
       background: var(--color-surface);
     }
+  }
+
+  > .part.-time.-start {
+    padding-inline: rem(12px) rem(10px);
   }
 
   // After the fields' reset, so they get it too.
