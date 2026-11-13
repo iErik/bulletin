@@ -14,7 +14,7 @@
 // shows while it saves, and a storage error reverts it
 // and shows inline. Clicking a Category chip picks
 // another, or creates one, emitting `category-created`,
-// and saves it the same way. "+ Add new entry", always
+// and saves it the same way. "Add new entry", always
 // last, adds a draft row on the Selected Date, saved
 // through storage and emitted as `created` once it has
 // a description and a Category. Escape, or focus
@@ -420,12 +420,15 @@ const {
                 type="button"
                 @click="startDraft"
               >
-                + Add new entry
+                <Icon class="icon" name="plus" />
+                Add new entry
               </button>
             </td>
           </tr>
         </tbody>
       </table>
+      <!-- Figma's empty rows, down to the Widget's edge. -->
+      <div class="fillers" aria-hidden="true" />
     </div>
     <p v-if="error" class="error" role="alert">
       {{ error }}
@@ -436,9 +439,10 @@ const {
 <style lang="scss">
 @use '@/styles/utils' as *;
 
-// Figma's Variant9 table: a faint block with a fixed
-// header, rows of muted text and values that glow in
-// their Income or Expense colour.
+// Figma's Expenses table (Variant3): 40px bands 2px
+// apart down to the Widget's edge, with a fixed header,
+// rows of muted text and values that glow in their
+// Income or Expense colour.
 .expense-table {
   $tint: color-mix(
     in sRGB,
@@ -454,26 +458,37 @@ const {
   );
 
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-height: 0;
 
+  // Its corners round off whichever rows meet them.
   > .scroller {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     min-height: 0;
     overflow-y: auto;
-    background: $block;
     border-radius: rem(8px);
   }
 
+  // The spacing's outer gaps are pulled in, so the
+  // header meets the top and the fillers' gap follows.
   .table {
+    flex: none;
     width: 100%;
+    margin: rem(-2px) 0;
     table-layout: fixed;
-    border-collapse: collapse;
+    border-spacing: 0 rem(2px);
+    border-collapse: separate;
     @include focus-ring;
 
     // Inside, so the scroller doesn't clip it.
     &:focus-visible { outline-offset: -2px; }
   }
 
+  // Its shadow covers the gap below it, so rows
+  // scroll under it unseen.
   th {
     position: sticky;
     top: 0;
@@ -485,6 +500,7 @@ const {
     text-transform: uppercase;
     color: var(--color-text-muted);
     background: $block;
+    box-shadow: 0 rem(2px) 0 var(--color-surface-raised);
   }
 
   th:nth-child(1) { width: 9%; }
@@ -507,6 +523,16 @@ const {
     font-weight: 500;
     white-space: nowrap;
     color: var(--color-text-muted);
+    background: $block;
+  }
+
+  // As many bands as fit, each 2px below the last.
+  > .scroller > .fillers {
+    flex: 1 0 0;
+    background: repeating-linear-gradient(
+      transparent 0 rem(2px),
+      $block rem(2px) rem(42px)
+    );
   }
 
   .app-tooltip { max-width: 100%; }
@@ -516,15 +542,25 @@ const {
     padding-left: rem(12px);
   }
 
+  .add > td { padding: 0; }
+
+  // Figma's add row: its + 8px in and the label at
+  // 34px, small and uppercase. No hover, as in Figma.
   .add-entry {
-    padding: rem(4px) rem(6px);
-    margin-left: rem(6px);
-    font: inherit;
+    display: flex;
+    gap: rem(9px);
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding-left: rem(8px);
+    font-size: rem(11px);
+    font-weight: 600;
+    text-transform: uppercase;
     color: var(--color-text-muted);
-    border-radius: rem(4px);
     @include focus-ring;
 
-    &:hover { color: var(--color-text); }
+    // Inside, so the scroller doesn't clip it.
+    &:focus-visible { outline-offset: -2px; }
   }
 
   td.index > .delete {
