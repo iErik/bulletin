@@ -1,6 +1,6 @@
 {
   "name": "bulletin",
-  "version": "0.1.36",
+  "version": "0.1.37",
   "private": true,
   "description": "A desktop bullet-journal app",
   "repository": "iErik/bulletin",
