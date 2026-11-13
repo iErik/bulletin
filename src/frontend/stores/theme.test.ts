@@ -10,7 +10,11 @@ import {
 import { createPinia, setActivePinia } from 'pinia'
 import { MOODS } from '@shared/mood'
 import { defaultTheme } from '@/theme/themes'
-import type { Palette, Theme } from '@/theme/types'
+import {
+  SLEEP_COLOURS,
+  type Palette,
+  type Theme
+} from '@/theme/types'
 import { STORAGE_KEYS, useThemeStore } from './theme'
 import { stubBulletin } from '@/testing/bulletin'
 
@@ -18,6 +22,8 @@ import { stubBulletin } from '@/testing/bulletin'
 vi.mock('@/theme/themes', async original => {
   const mod =
     await original<typeof import('@/theme/themes')>()
+  // Mocks are hoisted above the imports.
+  const { SLEEP_COLOURS } = await import('@/theme/types')
   const flat = (colour: string): Palette => {
     const shades = mod.scale(Array(9).fill(colour))
     return {
@@ -32,7 +38,10 @@ vi.mock('@/theme/themes', async original => {
       'widget-title': colour,
       mood: Object.fromEntries(
         MOODS.map(mood => [mood.key, colour])
-      ) as Palette['mood']
+      ) as Palette['mood'],
+      sleep: Object.fromEntries(
+        SLEEP_COLOURS.map(name => [name, colour])
+      ) as Palette['sleep']
     }
   }
   const other: Theme = {
@@ -130,6 +139,24 @@ describe('theme store', () => {
 
     expect(moods()).toEqual(
       MOODS.map(mood => light.mood[mood.key])
+    )
+  })
+
+  it("writes the Sleep Timeline's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const sleep = (): string[] => SLEEP_COLOURS.map(name =>
+      document.documentElement.style
+        .getPropertyValue(`--color-sleep-${name}`))
+
+    expect(sleep()).toEqual(
+      SLEEP_COLOURS.map(name => dark.sleep[name])
+    )
+
+    store.setPreference('light')
+
+    expect(sleep()).toEqual(
+      SLEEP_COLOURS.map(name => light.sleep[name])
     )
   })
 

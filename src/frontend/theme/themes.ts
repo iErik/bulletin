@@ -41,6 +41,21 @@ export const defaultTheme: Theme = {
       tile: 'rgb(217 217 217 / 8%)',
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
+      // Figma's Sleep frame.
+      sleep: {
+        date: '#cbcbcb',
+        caption: 'rgb(255 255 255 / 50%)',
+        hour: 'rgb(255 255 255 / 31%)',
+        half: 'rgb(255 255 255 / 47%)',
+        tick: 'rgb(255 255 255 / 9%)',
+        dot: 'rgb(217 217 217 / 45%)',
+        track: 'rgb(255 255 255 / 4%)',
+        'line-from': '#9c9c9c',
+        'line-to': '#505050',
+        'line-glow': '#cfcfcf',
+        end: '#ffffff',
+        'end-tint': '#67a1d4'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -75,6 +90,22 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
+      // The dark Sleep frame's, mirrored for light
+      // surfaces: dark lines with a soft shadow.
+      sleep: {
+        date: '#3a3a3a',
+        caption: 'rgb(0 0 0 / 50%)',
+        hour: 'rgb(0 0 0 / 40%)',
+        half: 'rgb(0 0 0 / 55%)',
+        tick: 'rgb(0 0 0 / 12%)',
+        dot: 'rgb(38 38 38 / 45%)',
+        track: 'rgb(0 0 0 / 8%)',
+        'line-from': '#5a5a5a',
+        'line-to': '#a0a0a0',
+        'line-glow': '#6a6a6a',
+        end: '#2a2a2a',
+        'end-tint': '#3f6fa0'
+      },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
       mood: {

@@ -82,6 +82,19 @@ describe('format', () => {
   )
 
   it.each([
+    ['en-US', ['1:00', '12:00', '1:00', '12:00']],
+    ['pt-BR', ['1:00', '12:00', '13:00', '24:00']]
+  ])(
+    "writes the Sleep scales' hours on %s's clock",
+    async (tag, hours) => {
+      const { formatHour } = await loadIn(tag)
+
+      expect([1, 12, 13, 24].map(formatHour))
+        .toEqual(hours)
+    }
+  )
+
+  it.each([
     ['en-US', '24,000.5', 'R$24,000.00'],
     ['pt-BR', '24.000,5', 'R$ 24.000,00']
   ])(

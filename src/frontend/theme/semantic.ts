@@ -1,5 +1,10 @@
 import { MOODS, type Mood } from '@shared/mood'
-import type { Palette, Scheme, Shade } from './types'
+import {
+  SLEEP_COLOURS,
+  type Palette,
+  type Scheme,
+  type Shade
+} from './types'
 
 /**
  * The semantic colours components use, each exposed as
@@ -24,7 +29,7 @@ type Single =
   | 'widget-title'
 
 type ScaleRef = readonly [
-  Exclude<keyof Palette, 'mood' | Single>,
+  Exclude<keyof Palette, 'mood' | 'sleep' | Single>,
   Shade
 ]
 
@@ -75,8 +80,8 @@ export const moodColour = (mood: Mood): string =>
 
 /**
  * Writes the semantic custom properties, the danger,
- * Income and Expense colours and the Mood colours for
- * a Palette onto
+ * Income and Expense colours, the Mood colours and the
+ * Sleep Timeline's for a Palette onto
  * `el` (the root element by default).
  */
 export const applyPalette = (
@@ -105,6 +110,12 @@ export const applyPalette = (
     el.style.setProperty(
       `--color-${mood.colour}`,
       palette.mood[mood.key]
+    )
+  }
+  for (const name of SLEEP_COLOURS) {
+    el.style.setProperty(
+      `--color-sleep-${name}`,
+      palette.sleep[name]
     )
   }
   el.style.colorScheme = scheme
