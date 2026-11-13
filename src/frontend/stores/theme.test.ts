@@ -24,7 +24,8 @@ vi.mock('@/theme/themes', async original => {
   const mod =
     await original<typeof import('@/theme/themes')>()
   // Mocks are hoisted above the imports.
-  const { SLEEP_COLOURS } = await import('@/theme/types')
+  const { SLEEP_COLOURS, WEIGHT_LINE_STOPS } =
+    await import('@/theme/types')
   const flat = (colour: string): Palette => {
     const shades = mod.scale(Array(9).fill(colour))
     return {
@@ -53,7 +54,10 @@ vi.mock('@/theme/themes', async original => {
       ) as Palette['mood'],
       sleep: Object.fromEntries(
         SLEEP_COLOURS.map(name => [name, colour])
-      ) as Palette['sleep']
+      ) as Palette['sleep'],
+      weight: Object.fromEntries(
+        WEIGHT_LINE_STOPS.map(name => [name, colour])
+      ) as Palette['weight']
     }
   }
   const other: Theme = {
