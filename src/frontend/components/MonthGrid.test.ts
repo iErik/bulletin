@@ -162,17 +162,35 @@ describe('MonthGrid', () => {
     })
 
     it('paints the colours the Widget gives', () => {
+      const colours = {
+        base: 'red',
+        glow: 'pink',
+        shadow: 'white',
+        tint: 'blue'
+      }
       const wrapper = mountGrid({
-        colour: (day: Date) =>
-          day.getDate() === 4 ? 'red' : undefined
+        pill: (day: Date) =>
+          day.getDate() === 4 ? colours : undefined
       })
 
       expect(pill(wrapper, 4).classes())
         .toContain('-filled')
       expect(pill(wrapper, 4).attributes('style'))
-        .toContain('--pill-colour: red')
+        .toBe('--pill-base: red; --pill-glow: pink; '
+          + '--pill-shadow: white; --pill-tint: blue;')
+      expect(pill(wrapper, 4).find('.glow').exists())
+        .toBe(true)
       expect(pill(wrapper, 5).classes())
         .not.toContain('-filled')
+    })
+
+    it('draws an empty day as the base alone', () => {
+      const wrapper = mountGrid()
+
+      expect(pill(wrapper, 5).find('.base').exists())
+        .toBe(true)
+      expect(pill(wrapper, 5).find('.glow').exists())
+        .toBe(false)
     })
 
     it('emits a clicked day', async () => {

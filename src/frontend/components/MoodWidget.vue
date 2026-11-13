@@ -27,7 +27,8 @@ import MoodPicker from '@/components/MoodPicker.vue'
 import Widget from '@/components/Widget.vue'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
-import { moodColour } from '@/theme/semantic'
+import { dayPill } from '@/theme/semantic'
+import type { PillColours } from '@/theme/types'
 
 const store = useSelectedDateStore()
 
@@ -65,9 +66,9 @@ const moodFor = (day: Date): Mood | undefined => {
 const label = (day: Date): string =>
   moodFor(day)?.label ?? 'No mood'
 
-const colour = (day: Date): string | undefined => {
+const pill = (day: Date): PillColours | undefined => {
   const mood = moodFor(day)
-  return mood && moodColour(mood)
+  return mood && dayPill(mood.key)
 }
 
 /** The day being edited in the picker, if any. */
@@ -150,7 +151,7 @@ watch(
         ref="grid"
         :month="month"
         :label="label"
-        :colour="colour"
+        :pill="pill"
         @activate="editing = $event"
       />
     </Widget>
@@ -170,12 +171,6 @@ watch(
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
-
-  // Figma's glow, in the Mood's own colour.
-  .pill.-filled {
-    box-shadow: 0 0 rem(9px)
-      color-mix(in sRGB, var(--pill-colour) 45%, transparent);
-  }
 
   .error {
     font-size: rem(11px);

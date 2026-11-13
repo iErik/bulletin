@@ -1,4 +1,9 @@
-import type { Scale, Shade, Theme } from './types'
+import type {
+  PillColours,
+  Scale,
+  Shade,
+  Theme
+} from './types'
 
 const SHADES: readonly Shade[] =
   [100, 200, 300, 400, 500, 600, 700, 800, 900]
@@ -8,6 +13,14 @@ export const scale = (colours: readonly string[]): Scale =>
   Object.fromEntries(
     SHADES.map((shade, i) => [shade, colours[i]])
   ) as Record<Shade, string>
+
+/** A Day Pill's colours; shadows default to the glow. */
+const pill = (
+  base: string,
+  glow: string,
+  shadow = glow,
+  tint = shadow
+): PillColours => ({ base, glow, shadow, tint })
 
 /**
  * The built-in Theme. Its scales are placeholders until
@@ -64,6 +77,24 @@ export const defaultTheme: Theme = {
         neutral: '#c8c9ca',
         angry: '#a45f61',
         anxious: '#f8f5ab'
+      },
+      // Figma's Mood and Habits frames. Angry and
+      // anxious have no pill there: their swatch glows
+      // on a darker base.
+      'pill-empty': '#2c2c2c',
+      weekday: 'rgb(165 165 165 / 55%)',
+      pill: {
+        happy: pill('#77ca6e', '#77ca6e'),
+        okay: pill('#6b85be', '#9095f4'),
+        stressed: pill('#f0a77f', '#fbb28b'),
+        neutral: pill(
+          '#a5a5a5', '#d3d3d3', '#ffffff', '#67a1d4'
+        ),
+        angry: pill('#834c4e', '#a45f61'),
+        anxious: pill('#c6c489', '#f8f5ab'),
+        habit: pill(
+          '#a5a5a5', '#d3d3d3', '#ffffff', '#67a1d4'
+        )
       }
     },
     light: {
@@ -115,6 +146,21 @@ export const defaultTheme: Theme = {
         neutral: '#8b8e93',
         angry: '#a23a3f',
         anxious: '#c6ae1c'
+      },
+      // The dark pills', mirrored: lighter bases under
+      // the light Mood colours, and a dark done Habit.
+      'pill-empty': '#e2dfd8',
+      weekday: 'rgb(90 90 90 / 55%)',
+      pill: {
+        happy: pill('#65b25c', '#3f9a36'),
+        okay: pill('#7f86e3', '#5a62d8'),
+        stressed: pill('#ec9566', '#e0763f'),
+        neutral: pill('#adafb3', '#8b8e93'),
+        angry: pill('#bd5f63', '#a23a3f'),
+        anxious: pill('#dac74c', '#c6ae1c'),
+        habit: pill(
+          '#8a8a8a', '#4a4a4a', '#4a4a4a', '#3f6fa0'
+        )
       }
     }
   }
