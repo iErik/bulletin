@@ -72,6 +72,14 @@ export const defaultTheme: Theme = {
         end: '#ffffff',
         'end-tint': '#67a1d4'
       },
+      // Figma's Weight line: faint, brightest past the
+      // middle, fading out on the right.
+      weight: {
+        'line-start': 'rgb(128 128 128 / 9%)',
+        'line-rise': 'rgb(128 128 128 / 50%)',
+        'line-peak': 'rgb(255 255 255 / 75%)',
+        'line-end': 'rgb(64 64 64 / 25%)'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -142,6 +150,14 @@ export const defaultTheme: Theme = {
         'line-glow': '#6a6a6a',
         end: '#2a2a2a',
         'end-tint': '#3f6fa0'
+      },
+      // The dark line's, mirrored: each channel inverted,
+      // so it's darkest past the middle.
+      weight: {
+        'line-start': 'rgb(127 127 127 / 9%)',
+        'line-rise': 'rgb(127 127 127 / 50%)',
+        'line-peak': 'rgb(0 0 0 / 75%)',
+        'line-end': 'rgb(191 191 191 / 25%)'
       },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
