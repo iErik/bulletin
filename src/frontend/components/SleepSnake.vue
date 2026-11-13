@@ -212,21 +212,17 @@ onBeforeUnmount(() => observer?.disconnect())
     >
       <defs>
         <!--
-          Paints in <defs> take custom properties from
-          where they sit, not from what uses them: the
-          broken preview's halo sits in its own red scope.
+          Figma's "Zooommm" on the end circles, as Figma
+          exports it: stdDeviations are half the blurs,
+          and the last blur softens the whole stack. A
+          filter takes custom properties from where it
+          sits, so a broken preview's has a red scope.
         -->
         <g
           v-for="halo in halos"
           :key="halo.id"
           :class="{ '-broken': halo.broken }"
         >
-          <!--
-            Figma's "Zooommm" effect on the end circles, as
-            Figma exports it: each shadow's blur radius is
-            twice its stdDeviation, and the last blur
-            softens the whole stack.
-          -->
           <filter
             :id="elementId(halo.id)"
             x="-400%"
@@ -247,49 +243,29 @@ onBeforeUnmount(() => observer?.disconnect())
               result="spread-blur"
             />
             <feFlood class="glow" flood-opacity="0.12" />
-            <feComposite
-              in2="spread-blur"
-              operator="in"
-              result="spread-glow"
-            />
+            <feComposite in2="spread-blur" operator="in" result="spread-glow" />
             <feGaussianBlur
               in="SourceAlpha"
               stdDeviation="4.6"
               result="near-blur"
             />
             <feFlood class="glow" flood-opacity="0.82" />
-            <feComposite
-              in2="near-blur"
-              operator="in"
-              result="near-glow"
-            />
-            <feOffset
-              in="SourceAlpha"
-              dy="2"
-              result="tint-offset"
-            />
+            <feComposite in2="near-blur" operator="in" result="near-glow" />
+            <feOffset in="SourceAlpha" dy="2" result="tint-offset" />
             <feGaussianBlur
               in="tint-offset"
               stdDeviation="2.5"
               result="tint-blur"
             />
             <feFlood class="tint" flood-opacity="0.35" />
-            <feComposite
-              in2="tint-blur"
-              operator="in"
-              result="tint-glow"
-            />
+            <feComposite in2="tint-blur" operator="in" result="tint-glow" />
             <feGaussianBlur
               in="SourceAlpha"
               stdDeviation="8.75"
               result="far-blur"
             />
             <feFlood class="glow" flood-opacity="0.38" />
-            <feComposite
-              in2="far-blur"
-              operator="in"
-              result="far-glow"
-            />
+            <feComposite in2="far-blur" operator="in" result="far-glow" />
             <feMerge>
               <feMergeNode in="spread-glow" />
               <feMergeNode in="near-glow" />
