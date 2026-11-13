@@ -1,6 +1,6 @@
 {
   "name": "bulletin",
-  "version": "0.1.48",
+  "version": "0.1.50",
   "private": true,
   "description": "A desktop bullet-journal app",
   "desktopName": "bulletin.desktop",
