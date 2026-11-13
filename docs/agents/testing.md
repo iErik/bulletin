@@ -70,6 +70,18 @@ Pass Vitest flags after the script, for example
 
 - A test file sits next to the code it tests, named
   `<file>.test.ts`.
+- Every component lives in its own folder under
+  `src/frontend/components/`, named after it, with
+  its unit tests:
+
+  ```text
+  components/SleepSnake/SleepSnake.vue
+  components/SleepSnake/SleepSnake.test.ts
+  ```
+
+  Import it by its `.vue` file
+  (`@/components/SleepSnake/SleepSnake.vue`). Never
+  put a component directly in `components/`.
 - Import `describe`, `it`, `expect` and `vi` from
   `vitest`. No globals.
 - Test files are covered by `pnpm typecheck`, like any
