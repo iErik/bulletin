@@ -27,6 +27,7 @@ import {
   SNAKE_EDGE,
   SNAKE_TOP,
   snakeLayout,
+  snakePath,
   stretchPath,
   stretchSpan,
   timeAt
@@ -74,17 +75,18 @@ const height = computed(() =>
   2 * SNAKE_TOP + (2 * props.days + 1) * ROW_GAP)
 
 /**
- * A dotted line along every AM and PM row, the day
- * after the last's too, out to the curves' edges.
+ * The dotted track: the whole snake, round its curves,
+ * for the days drawn and the day after. Its two open
+ * ends run on to the curves' edges.
  */
 const track = computed(() => {
-  const { top, gap } = layout.value
-  const to = width.value - SNAKE_EDGE
-  const lines: string[] = []
-  const last = top + (2 * props.days + 1) * gap
-  for (let y = top; y <= last; y += gap)
-    lines.push(`M ${SNAKE_EDGE} ${y} H ${to}`)
-  return lines.join(' ')
+  const snake = snakePath(
+    props.first,
+    props.days + 1,
+    layout.value
+  )
+  return `M ${SNAKE_EDGE} ${layout.value.top} `
+    + `L${snake.slice(1)} H ${SNAKE_EDGE}`
 })
 
 /**

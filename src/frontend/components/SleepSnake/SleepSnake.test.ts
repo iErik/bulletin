@@ -8,6 +8,7 @@ import {
   type Point,
   pointAt,
   snakeLayout,
+  snakePath,
   stretchPath
 } from '@/sleep/snake'
 import SleepSnake from './SleepSnake.vue'
@@ -63,16 +64,29 @@ describe('SleepSnake', () => {
     vi.restoreAllMocks()
   })
 
-  it("dots every row, out to the curves' edges",
+  it('dots the whole snake, round its curves', async () => {
+    const wrapper = await mountSnake()
+
+    const track = wrapper.get('.track').attributes('d')!
+    // One path, from the left curve's edge on the first
+    // row to the same edge on the day after's PM row.
+    expect(track.match(/M /g)).toHaveLength(1)
+    expect(track).toMatch(/^M 10 23 L 24\.25 23 /)
+    expect(track).toMatch(/L 24\.25 222\.5 H 10$/)
+    // Three days and the day after: four right turns,
+    // clockwise, and three left ones between the days.
+    expect(track.match(/ A [\d.]+ [\d.]+ 0 0 1 /g))
+      .toHaveLength(4)
+    expect(track.match(/ A [\d.]+ [\d.]+ 0 0 0 /g))
+      .toHaveLength(3)
+  })
+
+  it('draws the track with the snake the Periods follow',
     async () => {
       const wrapper = await mountSnake()
 
-      const track = wrapper.get('.track').attributes('d')!
-      // Three days and the day after's AM and PM rows.
-      expect(track.match(/M /g)).toHaveLength(4 * 2)
-      expect(track)
-        .toMatch(/^M 10 23 H 590 M 10 51\.5 H 590 /)
-      expect(track.endsWith('M 10 222.5 H 590')).toBe(true)
+      expect(wrapper.get('.track').attributes('d'))
+        .toContain(snakePath(FIRST, 4, LAYOUT).slice(2))
     })
 
   it("holds the day after's PM row, where a Period can end",
