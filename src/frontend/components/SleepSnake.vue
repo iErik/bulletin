@@ -4,9 +4,10 @@
 // Period as a glowing stretch from its Head to its Tail
 // with a circle at each end, the selection's preview,
 // and a time chip on the snake. It knows no rules: it
-// reports the time under the pointer, clicks, and
-// presses on a Period's ends, and its parent decides
-// what they do.
+// reports the time under the pointer, clicks, presses
+// on a Period's ends and Enter on a Period, and its
+// parent decides what they do. Its slot is placed over
+// the snake, to put things at a time on it.
 import {
   computed,
   onBeforeUnmount,
@@ -17,6 +18,7 @@ import {
 } from 'vue'
 import { addDays, startOfDay } from 'date-fns'
 import type { EpochMs, SleepPeriod } from '@shared/sleep'
+import { formatTime } from '@/locale/format'
 import type { End } from '@/sleep/selection'
 import {
   type Point,
@@ -47,12 +49,16 @@ const props = defineProps<{
   editing?: number | null
   /** A time to show on the snake, and its text. */
   hover?: { time: EpochMs; text: string } | null
+  /** The index of the first day to dim and disable. */
+  future?: number | null
 }>()
 
 const emit = defineEmits<{
   /** The time under the pointer, or null once it leaves. */
   point: [time: EpochMs | null]
-  press: [time: EpochMs]
+  press: [time: EpochMs, event: MouseEvent]
+  /** Enter on a Period. */
+  open: [period: SleepPeriod]
   grab: [period: SleepPeriod, end: End]
 }>()
 
@@ -79,6 +85,17 @@ const track = computed(() => {
   for (let y = top; y <= last; y += gap)
     lines.push(`M ${SNAKE_EDGE} ${y} H ${to}`)
   return lines.join(' ')
+})
+
+/**
+ * The days from `future` on, from the middle of their
+ * first curve down, in pixels.
+ */
+const dimmed = computed(() => {
+  if (props.future == null) return null
+  const { top, gap } = layout.value
+  const y = top + 2 * gap * props.future - gap / 2
+  return { y, height: Math.max(0, height.value - y) }
 })
 
 /** A drawn stretch: a Period, or the preview. */
@@ -183,6 +200,19 @@ const elementId = (name: string): string => `${id}-${name}`
 
 const px = (n: number): string => `${n}px`
 
+/** Where `time` is on the snake, as CSS. */
+const place = (time: EpochMs): {
+  left: string
+  top: string
+} => {
+  const { x, y } = pointAt(time, props.first, layout.value)
+  return { left: px(x), top: px(y) }
+}
+
+const label = (period: SleepPeriod): string =>
+  `Period, ${formatTime(new Date(period.start))} `
+  + `to ${formatTime(new Date(period.end))}`
+
 let observer: ResizeObserver | undefined
 
 onMounted(() => {
@@ -208,7 +238,7 @@ onBeforeUnmount(() => observer?.disconnect())
       :height="height"
       @pointermove="emit('point', timeOf($event))"
       @pointerleave="emit('point', null)"
-      @click="emit('press', timeOf($event))"
+      @click="emit('press', timeOf($event), $event)"
     >
       <defs>
         <!--
@@ -285,7 +315,14 @@ onBeforeUnmount(() => observer?.disconnect())
         :class="line.period ? {
           '-editing': editing === line.period.id
         } : ['-preview', { '-broken': broken }]"
-        :data-period="line.period?.id"
+        v-bind="line.period ? {
+          'data-period': line.period.id,
+          tabindex: 0,
+          role: 'button',
+          'aria-label': label(line.period)
+        } : {}"
+        @keydown.enter.stop="
+          line.period && emit('open', line.period)"
       >
         <!-- In the group, so its stops take its colours. -->
         <linearGradient
@@ -328,6 +365,17 @@ onBeforeUnmount(() => observer?.disconnect())
           />
         </template>
       </g>
+      <!-- Covers the days to come, and takes input. -->
+      <rect
+        v-if="dimmed"
+        class="future"
+        x="0"
+        :y="dimmed.y"
+        width="100%"
+        :height="dimmed.height"
+        @pointermove.stop="emit('point', null)"
+        @click.stop
+      />
     </svg>
     <span
       v-if="chip"
@@ -337,6 +385,7 @@ onBeforeUnmount(() => observer?.disconnect())
     >
       {{ chip.text }}
     </span>
+    <slot :place="place" />
   </div>
 </template>
 
@@ -386,13 +435,23 @@ onBeforeUnmount(() => observer?.disconnect())
 
   .period > .end { fill: var(--color-sleep-end); }
 
+  // As dim as the dates beside them: 35% shows through.
+  > .canvas > .future {
+    cursor: default;
+    fill: var(--color-surface-raised);
+    opacity: 0.65;
+  }
+
   .period > .handle {
     cursor: ew-resize;
     fill: transparent;
   }
 
   // Highlighted while its tooltip is open.
-  .period.-editing > .line { stroke-width: 3; }
+  .period.-editing > .line,
+  .period:focus-visible > .line { stroke-width: 3; }
+
+  .period:focus-visible { outline: none; }
 
   .period.-preview {
     opacity: 0.7;
