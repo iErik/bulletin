@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest'
 import {
+  type DOMWrapper,
   enableAutoUnmount,
   mount,
   type VueWrapper
@@ -69,6 +70,15 @@ const hover = (
   clientX: number
 ): Promise<void> =>
   chart.get('svg').trigger('pointermove', { clientX })
+
+// The gradient the line strokes with.
+const lineGradient = (
+  chart: VueWrapper
+): Omit<DOMWrapper<Element>, 'exists'> => {
+  const id = chart.get('.line').attributes('stroke')!
+    .match(/^url\(#(.+)\)$/)![1]
+  return chart.get(`[id="${id}"]`)
+}
 
 // Whether keys pressed in the chart reach the window,
 // where the date header listens.
@@ -255,11 +265,7 @@ describe('WeightChart', () => {
 
   it("shades the line along itself, as Figma's", () => {
     // From Mar 2's centre to Sep 10's, both inside.
-    const chart = mountChart()
-    const id = chart.get('.line').attributes('stroke')!
-      .match(/^url\(#(.+)\)$/)![1]
-
-    const gradient = chart.get(`[id="${id}"]`)
+    const gradient = lineGradient(mountChart())
     expect(gradient.element.tagName).toBe('linearGradient')
     expect(gradient.attributes()).toMatchObject({
       gradientUnits: 'userSpaceOnUse',
@@ -404,9 +410,7 @@ describe('WeightChart', () => {
     expect(chart.get('g').attributes('clip-path'))
       .toMatch(/^url\(#/)
     // Its gradient spans only what the plot shows.
-    const id = chart.get('.line').attributes('stroke')!
-      .slice(5, -1)
-    const gradient = chart.get(`[id="${id}"]`)
+    const gradient = lineGradient(chart)
     expect(gradient.attributes('x1')).toBe(String(LEFT))
     expect(gradient.attributes('x2')).toBe(String(RIGHT))
   })

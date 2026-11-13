@@ -145,12 +145,12 @@ export const defaultTheme: Theme = {
         end: '#2a2a2a',
         'end-tint': '#3f6fa0'
       },
-      // The dark line's, mirrored: darkest past the
-      // middle, fading into the light surface.
+      // The dark line's, mirrored: each channel inverted,
+      // so it's darkest past the middle.
       weight: {
-        'line-start': 'rgb(110 110 110 / 9%)',
-        'line-rise': 'rgb(110 110 110 / 50%)',
-        'line-peak': 'rgb(42 42 42 / 75%)',
+        'line-start': 'rgb(127 127 127 / 9%)',
+        'line-rise': 'rgb(127 127 127 / 50%)',
+        'line-peak': 'rgb(0 0 0 / 75%)',
         'line-end': 'rgb(191 191 191 / 25%)'
       },
       // Deeper than the dark ones, to stay distinct and

@@ -489,7 +489,10 @@ const insets = {
     fill: var(--color-text-muted);
   }
 
-  .line-start { stop-color: var(--color-weight-line-start); }
+  .line-start {
+    stop-color: var(--color-weight-line-start);
+  }
+
   .line-rise { stop-color: var(--color-weight-line-rise); }
   .line-peak { stop-color: var(--color-weight-line-peak); }
   .line-end { stop-color: var(--color-weight-line-end); }

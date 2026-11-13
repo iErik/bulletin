@@ -13,6 +13,7 @@ import { defaultTheme } from '@/theme/themes'
 import {
   PILL_PARTS,
   SLEEP_COLOURS,
+  WEIGHT_LINE_STOPS,
   type Palette,
   type Theme
 } from '@/theme/types'
@@ -183,6 +184,24 @@ describe('theme store', () => {
     store.setPreference('light')
 
     expect(pills()).toEqual(expected(light))
+  })
+
+  it("writes the Weight line's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const weight = (): string[] => WEIGHT_LINE_STOPS.map(
+      name => document.documentElement.style
+        .getPropertyValue(`--color-weight-${name}`))
+
+    expect(weight()).toEqual(
+      WEIGHT_LINE_STOPS.map(name => dark.weight[name])
+    )
+
+    store.setPreference('light')
+
+    expect(weight()).toEqual(
+      WEIGHT_LINE_STOPS.map(name => light.weight[name])
+    )
   })
 
   it("writes the Sleep Timeline's colours", () => {
