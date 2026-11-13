@@ -48,6 +48,10 @@ linux:
   # x64 only. ${arch} would differ per format (x86_64,
   # amd64)
   artifactName: ${productName}-${version}-linux-x64.${ext}
+  # Names the .desktop entry after package.json's
+  # desktopName, which Electron uses as the window's
+  # app_id, so desktops group the window under it
+  syncDesktopName: true
 
 win:
   target: [nsis, portable]

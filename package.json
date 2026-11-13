@@ -3,6 +3,7 @@
   "version": "0.1.40",
   "private": true,
   "description": "A desktop bullet-journal app",
+  "desktopName": "bulletin.desktop",
   "repository": "iErik/bulletin",
   "license": "SEE LICENSE IN LICENSE",
   "author": {
