@@ -18,7 +18,8 @@ import {
   ref,
   useTemplateRef
 } from 'vue'
-// Figma has no edit icon; Lucide's pencil stands in.
+// Figma has no edit icon: BLT-88's design override keeps
+// Lucide's pencil until it draws one.
 import { Pencil } from '@lucide/vue'
 import type { Habit } from '@shared/habits'
 import HabitEditor from '@/components/HabitEditor.vue'
@@ -290,7 +291,7 @@ onMounted(() => {
           @click="openEditor(habits.length)"
           @focus="focused = habits.length"
         >
-          <Icon class="add" name="plus" />
+          <Icon class="add" name="plus-small" />
           <span class="name">Track a new habit…</span>
         </button>
       </li>
