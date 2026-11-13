@@ -146,7 +146,11 @@ Comment on the ticket with each PR's link (with "part N of M" if there's more th
 
 - Install: `pnpm install`, inside the Nix dev shell
   (`nix develop`, or enter the repo with direnv)
-- Dev server: `pnpm dev`
+- Dev server: `pnpm dev`. Vue Devtools runs in the
+  app window: press Option+Shift+D (Alt+Shift+D off
+  macOS), or click the Vue logo at the bottom, to
+  inspect components and the Pinia stores. Builds
+  don't include it.
 - Lint: `pnpm lint` (ESLint and Stylelint; any
   finding fails, warnings included)
 - Fix what lint can fix automatically: `pnpm lint:fix`

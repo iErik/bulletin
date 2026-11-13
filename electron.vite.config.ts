@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
 import { svgIcons } from './svg-icons'
 
 const src = (path: string): string =>
@@ -32,7 +33,8 @@ export default defineConfig({
     resolve: {
       alias: { ...alias, '@': src('frontend') }
     },
-    plugins: [vue(), svgIcons()],
+    // Vue Devtools' overlay runs on the dev server only.
+    plugins: [vue(), svgIcons(), vueDevTools()],
     build: {
       // Never inline fonts as data: URLs, which the
       // Content Security Policy blocks.
