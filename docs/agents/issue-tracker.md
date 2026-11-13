@@ -62,12 +62,14 @@ The test, lint and typecheck items apply only if the project has them. If it doe
 
 ### Commits and PRs
 
-- Commit from inside the Nix dev shell (`nix develop`,
-  or direnv). The pre-commit hook (lefthook, installed
-  by `pnpm install`) runs ESLint and Stylelint through
-  `pnpm` on the staged files, and blocks the commit on
-  any finding. It doesn't fix anything: run
-  `pnpm lint:fix`, then stage the fixes.
+- The pre-commit hook (lefthook, installed by
+  `pnpm install`) runs ESLint and Stylelint on the
+  staged files, and blocks the commit on any finding.
+  It works from any terminal or git client: outside
+  the Nix dev shell, it runs `pnpm` through
+  `nix develop -c`, which takes a few seconds more.
+  It doesn't fix anything: run `pnpm lint:fix`, then
+  stage the fixes.
 - Commit messages and the PR title start with the ticket ID: `BLT-12: Add retry to GraphQL client`.
 - PR description includes: link to the ticket, a
   short summary of the change, how it was verified,
