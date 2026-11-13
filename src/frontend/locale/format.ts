@@ -98,6 +98,28 @@ export const formatTime = (date: Date): string =>
     minute: '2-digit'
   }).format(date)
 
+/**
+ * An hour on the Locale's clock without its AM or PM,
+ * as the Sleep Timeline's scales show it: 13 is "1:00"
+ * in en-US and "13:00" in pt-BR. 24 is the midnight
+ * ending a day: "12:00" on a 12-hour clock and "24:00"
+ * on a 24-hour one.
+ */
+export const formatHour = (hour: number): string => {
+  const parts = new Intl.DateTimeFormat(locale(), {
+    hour: 'numeric',
+    minute: '2-digit'
+  }).formatToParts(new Date(2026, 0, 1, hour % 24))
+  const twelve = parts.some(p => p.type === 'dayPeriod')
+  return parts
+    .filter(p => p.type !== 'dayPeriod')
+    .map(p => p.type === 'hour' && hour === 24 && !twelve
+      ? '24'
+      : p.value)
+    .join('')
+    .trim()
+}
+
 export const formatNumber = (
   value: number,
   options?: Intl.NumberFormatOptions

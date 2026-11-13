@@ -14,6 +14,27 @@ export type SchemePreference = Scheme | 'system'
 export const SCHEME_PREFERENCES: readonly SchemePreference[] =
   ['system', ...SCHEMES]
 
+/** The Sleep Timeline's colours, from Figma's frame. */
+export type SleepColour =
+  | 'date'
+  | 'caption'
+  | 'hour'
+  | 'half'
+  | 'tick'
+  | 'dot'
+  | 'track'
+  | 'line-from'
+  | 'line-to'
+  | 'line-glow'
+  | 'end'
+  | 'end-tint'
+
+export const SLEEP_COLOURS: readonly SleepColour[] = [
+  'date', 'caption', 'hour', 'half', 'tick', 'dot',
+  'track', 'line-from', 'line-to', 'line-glow', 'end',
+  'end-tint'
+]
+
 /** A step in a colour scale, lightest (100) to darkest. */
 export type Shade =
   100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
@@ -39,6 +60,8 @@ export interface Palette {
   readonly 'widget-title': string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
+  /** The Sleep Timeline's, as `--color-sleep-<key>`. */
+  readonly sleep: Readonly<Record<SleepColour, string>>
 }
 
 /** A named visual identity: one Palette per Scheme. */

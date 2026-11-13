@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   periodPath,
   pointAt,
+  snakeLayout,
   snakePath,
   stretchPath,
   timeAt,
@@ -111,4 +112,13 @@ describe('snake', () => {
       expect(path.endsWith('L 100 130')).toBe(true)
       expect(path.match(/ A /g)).toHaveLength(3)
     })
+
+  it('fits the curves inside the width, 10 px in', () => {
+    expect(snakeLayout(600)).toEqual({
+      left: 24.25,
+      right: 575.75,
+      top: 23,
+      gap: 28.5
+    })
+  })
 })

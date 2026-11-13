@@ -36,6 +36,24 @@ export interface SnakeLayout {
   readonly gap: number
 }
 
+/**
+ * Figma's Sleep frame: an AM row 28.5 px above its PM
+ * row, so a day is 57 px tall.
+ */
+export const ROW_GAP = 28.5
+/** Room above the first day's AM row. */
+export const SNAKE_TOP = 23
+/** From each curve's outer edge to the snake's side. */
+const EDGE = 10
+
+/** The layout of a snake `width` px wide. */
+export const snakeLayout = (width: number): SnakeLayout => ({
+  left: EDGE + ROW_GAP / 2,
+  right: width - EDGE - ROW_GAP / 2,
+  top: SNAKE_TOP,
+  gap: ROW_GAP
+})
+
 export interface Point {
   readonly x: number
   readonly y: number
