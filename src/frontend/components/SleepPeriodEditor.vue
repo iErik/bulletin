@@ -54,7 +54,7 @@ const shift = ref(0)
 const example = formatTime(new Date(2000, 0, 1, 2, 15))
 // The clock's longest time has a two-digit hour, as
 // "10:55 PM" or "22:55": the fields grow up to it.
-const longest =
+const longestChars =
   formatTime(new Date(2000, 0, 1, 22, 55)).length
 
 /** The fields' Period, or why they don't make one. */
@@ -149,19 +149,38 @@ const onKeydown = (event: KeyboardEvent): void => {
   event.stopPropagation()
 }
 
-const list = (): DOMRect | undefined =>
-  root.value?.closest('.rows')?.getBoundingClientRect()
+/**
+ * The list's visible area, inside its border and left
+ * of its scrollbar gutter, which would clip the tooltip.
+ */
+const listView = (): {
+  left: number
+  right: number
+  top: number
+} | undefined => {
+  const list = root.value?.closest<HTMLElement>('.rows')
+  if (!list) return undefined
+  const box = list.getBoundingClientRect()
+  const left = box.left + list.clientLeft
+  return {
+    left,
+    right: left + list.clientWidth,
+    top: box.top
+  }
+}
 
 /** Shifts it sideways back inside the list. */
 const fit = (): void => {
   const box = root.value?.getBoundingClientRect()
-  const bounds = list()
-  if (!box || !bounds) return
+  const view = listView()
+  if (!box || !view) return
   const left = box.left - shift.value
   const right = left + box.width
-  // Past both edges, it keeps to the left one.
-  const over = Math.min(0, bounds.right - right)
-  shift.value = Math.max(bounds.left - left, over)
+  // Leftwards by its overflow on the right, if any;
+  // past both edges, it keeps to the left one.
+  const fromRight = Math.min(0, view.right - right)
+  const fromLeft = view.left - left
+  shift.value = Math.max(fromLeft, fromRight)
 }
 
 // Typing and errors change its width.
@@ -169,9 +188,9 @@ watch([start, end, error], () => nextTick(fit))
 
 onMounted(() => {
   const box = root.value?.getBoundingClientRect()
-  const bounds = list()
-  below.value = !!box && !!bounds
-    && box.top < bounds.top
+  const view = listView()
+  below.value = !!box && !!view
+    && box.top < view.top
   fit()
   first.value?.focus()
   first.value?.select()
@@ -185,7 +204,7 @@ onMounted(() => {
     :class="{ '-below': below }"
     :style="{
       '--shift': `${shift}px`,
-      '--time-chars': longest
+      '--time-chars': longestChars
     }"
     role="dialog"
     :aria-label="period ? 'Edit period' : 'Add period'"
