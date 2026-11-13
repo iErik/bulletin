@@ -87,7 +87,6 @@ describe('useRowDeleteConfirm', () => {
     wrapper?.unmount()
     wrapper = undefined
     document.body.innerHTML = ''
-    vi.restoreAllMocks()
   })
 
   it('asks about one row, focusing ✓', async () => {
@@ -102,9 +101,15 @@ describe('useRowDeleteConfirm', () => {
     expect(document.activeElement).toBe(confirmButton())
   })
 
-  it('deletes, focusing the row that took its place',
-    async () => {
-      const { confirm, remove, deleted, refocus } = setup()
+  it.each([
+    ['deletes', { ok: true, value: null }],
+    ['treats a row already gone as deleted', {
+      ok: false, error: { code: 'not-found' }
+    }]
+  ] as const)('%s, focusing the next row',
+    async (_, result) => {
+      const { confirm, remove, deleted, refocus } =
+        setup(result)
 
       await confirm.ask(2)
       await confirm.confirm(ROWS[1])
@@ -112,6 +117,7 @@ describe('useRowDeleteConfirm', () => {
       expect(remove).toHaveBeenCalledWith(ROWS[1])
       expect(deleted).toHaveBeenCalledWith(ROWS[1])
       expect(confirm.asking.value).toBeNull()
+      expect(confirm.error.value).toBeNull()
       expect(refocus).toHaveBeenCalledWith(ROWS[2])
     })
 
@@ -125,18 +131,6 @@ describe('useRowDeleteConfirm', () => {
 
       expect(refocus).toHaveBeenCalledWith(undefined)
     })
-
-  it('treats a row already gone as deleted', async () => {
-    const { confirm, deleted } = setup(
-      { ok: false, error: { code: 'not-found' } }
-    )
-
-    await confirm.ask(1)
-    await confirm.confirm(ROWS[0])
-
-    expect(deleted).toHaveBeenCalledWith(ROWS[0])
-    expect(confirm.error.value).toBeNull()
-  })
 
   it('keeps asking, refocusing ✓, if it fails',
     async () => {
@@ -217,8 +211,6 @@ describe('useRowDeleteConfirm', () => {
   })
 
   it('stops listening once unmounted', async () => {
-    const remove = vi.spyOn(
-      document, 'removeEventListener')
     const { confirm } = setup()
 
     await confirm.ask(1)
@@ -226,11 +218,9 @@ describe('useRowDeleteConfirm', () => {
     wrapper = undefined
 
     for (const name of ['pointerdown', 'focusin']) {
-      expect(remove).toHaveBeenCalledWith(
-        name, expect.any(Function))
+      document.body.dispatchEvent(
+        new Event(name, { bubbles: true }))
     }
-    document.body.dispatchEvent(
-      new Event('pointerdown', { bubbles: true }))
     expect(confirm.asking.value).toBe(1)
   })
 })

@@ -84,9 +84,7 @@ export const useRowDeleteConfirm = <
     focusConfirm()
   }
 
-  const cancel = async (
-    again: boolean
-  ): Promise<void> => {
+  const cancel = async (again: boolean): Promise<void> => {
     if (busy.value || asking.value === null) return
     const id = asking.value
     asking.value = null
@@ -160,12 +158,6 @@ export const useRowDeleteConfirm = <
   })
 
   return {
-    asking,
-    busy,
-    error,
-    ask,
-    cancel,
-    confirm,
-    onKeydown
+    asking, busy, error, ask, cancel, confirm, onKeydown
   }
 }
