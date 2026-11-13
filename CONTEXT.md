@@ -86,9 +86,13 @@ going to bed at 1 AM on the 8th counts as the 8th.
 _Avoid_: Night, session
 
 **Timeline**:
-The Sleep Widget's per-day track: one row per day, read left to
-right from noon on that day to noon the next, on which Periods
-are drawn.
+The Sleep Widget's track, on which Periods are drawn: one
+continuous line that snakes down the days, two rows per day.
+The AM row reads left to right from 1:00 to noon, a curve on the
+right holds noon to 13:00, the PM row reads right to left to
+midnight, and a curve on the left holds 0:00 to 1:00, into the
+next day's AM row. A Period runs along it from its Head to its
+Tail, round the curves.
 _Avoid_: Chart, axis
 
 **Mood**:

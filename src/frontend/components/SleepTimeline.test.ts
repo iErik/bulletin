@@ -128,8 +128,8 @@ describe('SleepTimeline', () => {
     await mountTimeline()
 
     expect(api.sleep.list).toHaveBeenCalledWith({
-      from: '2026-09-30',
-      to: '2026-12-01'
+      from: '2026-10-01',
+      to: '2026-11-30'
     })
     expect(keys()[0]).toBe('2026-10-01')
     expect(keys().at(-1)).toBe('2026-11-30')
@@ -225,8 +225,8 @@ describe('SleepTimeline', () => {
     await settle()
 
     expect(api.sleep.list).toHaveBeenLastCalledWith({
-      from: '2025-11-30',
-      to: '2026-03-01'
+      from: '2025-12-01',
+      to: '2026-02-28'
     })
     expect(keys()[0]).toBe('2025-12-01')
     expect(list.scrollTop)
@@ -243,8 +243,8 @@ describe('SleepTimeline', () => {
 
     expect(window.bulletin.sleep.list)
       .toHaveBeenLastCalledWith({
-        from: '2026-08-31',
-        to: '2026-10-01'
+        from: '2026-09-01',
+        to: '2026-09-30'
       })
     expect(keys()[0]).toBe('2026-09-01')
     expect(list.scrollTop).toBe(10 + 30 * ROW)
@@ -320,9 +320,9 @@ const fakeTrack = (): void => {
 }
 
 /**
- * Minutes from noon on a day: `h` counted from noon,
- * as the noon-to-noon rows had it, so `fromNoon(24 + 6)` is
- * 6 AM the next day.
+ * Minutes from noon to `h:m`, `h` counted from the
+ * day's midnight: `fromNoon(24 + 6)` is 6 AM the next
+ * day.
  */
 const fromNoon = (h: number, m = 0): number =>
   (h - 12) * 60 + m
@@ -855,10 +855,13 @@ describe('SleepTimeline, editing', () => {
     document.body.click()
     await settle()
 
+    // On the Period's own day, so it ends the next one.
     expect(window.bulletin.sleep.update)
-      .toHaveBeenCalledWith(
-        { ...period, start: at(10, 7, 23, 30) }
-      )
+      .toHaveBeenCalledWith({
+        ...period,
+        start: at(10, 8, 23, 30),
+        end: at(10, 9, 9)
+      })
     expect(timeline!.find('.-preview').exists())
       .toBe(false)
   })
@@ -1090,10 +1093,10 @@ describe('SleepTimeline, editing', () => {
     await type('End', '1:00')
     await press(tooltip().get('input'), 'Enter')
 
-    // After midnight on the 7th's row, for 24 hours.
+    // On the 7th itself, for 24 hours.
     expect(api.sleep.create).toHaveBeenCalledWith({
-      start: at(10, 8, 1),
-      end: at(10, 9, 1)
+      start: at(10, 7, 1),
+      end: at(10, 8, 1)
     })
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { endFrom, parseClock, startIn } from './clock'
+import { endFrom, parseClock, startOn } from './clock'
 
 describe('parseClock', () => {
   it.each([
@@ -31,17 +31,15 @@ const at = (
 ): number =>
   new Date(2026, 10, day, hour, minute).getTime()
 
-describe('startIn', () => {
+describe('startOn', () => {
   const day = new Date(2026, 10, 7)
 
-  it('puts the afternoon on the same day', () => {
-    expect(startIn(day, { hours: 23, minutes: 10 }))
-      .toBe(at(7, 23, 10))
-  })
-
-  it('puts the morning on the next day', () => {
-    expect(startIn(day, { hours: 2, minutes: 15 }))
-      .toBe(at(8, 2, 15))
+  it.each([
+    ['the morning', 2, 15],
+    ['the evening', 23, 10]
+  ])('puts %s on the day itself', (_, hours, minutes) => {
+    expect(startOn(day, { hours, minutes }))
+      .toBe(at(7, hours, minutes))
   })
 })
 
