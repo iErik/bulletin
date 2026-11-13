@@ -124,7 +124,8 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
-      'habit-pill': '#e6e3dc',
+      // Each dark channel inverted, as the header's are.
+      'habit-pill': '#d7d7d7',
       'habit-pill-text': 'rgb(90 90 90 / 92%)',
       // The dark Sleep frame's, mirrored for light
       // surfaces: dark lines with a soft shadow.
