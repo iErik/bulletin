@@ -82,9 +82,9 @@ Pass Vitest flags after the script, for example
   ```
 
   Import it by its `.vue` file
-  (`@/components/SleepSnake/SleepSnake.vue`). Never
-  put a component's `.vue` file directly in
-  `components/`, `views/` or any other directory.
+  (`@/components/SleepSnake/SleepSnake.vue`).
+  `App.vue` is the only `.vue` file that isn't in a
+  folder of its own.
 - Import `describe`, `it`, `expect` and `vi` from
   `vitest`. No globals.
 - Test files are covered by `pnpm typecheck`, like any
