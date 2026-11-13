@@ -1,16 +1,19 @@
 <script setup lang="ts">
 // The Month Grid (see `CONTEXT.md`): one month's Day
 // Pills in weeks starting on the Locale's first day.
-// The using Widget decides each Day Pill's colour and
+// The using Widget decides each Day Pill's colours and
 // label, and what activating it does; the grid owns
 // the layout, the states, the tooltip and the
 // keyboard. Days after today, and any the Widget
 // disables, are dimmed and inert; the Selected Date's
-// Day Pill is outlined.
+// Day Pill is outlined. A filled Day Pill is Figma's
+// "Mood Indicator": a blurred base under a glowing
+// inner pill; an empty one is the base alone.
 import { computed, nextTick, ref, watch } from 'vue'
 import { isAfter, isSameDay, isSameMonth } from 'date-fns'
 import { monthWeeks, weekdays } from '@/month-grid/layout'
 import { firstDayOfWeek, formatDate } from '@/locale/format'
+import type { PillColours } from '@/theme/types'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
 
@@ -19,8 +22,8 @@ const props = defineProps<{
   month: Date
   /** What the tooltip says after the date. */
   label: (day: Date) => string
-  /** A CSS colour, or none for the placeholder. */
-  colour?: (day: Date) => string | undefined
+  /** A filled Day Pill's colours; none when empty. */
+  pill?: (day: Date) => PillColours | undefined
   /** Days to dim and ignore, besides future ones. */
   disabled?: (day: Date) => boolean
 }>()
@@ -142,8 +145,11 @@ const tooltip = computed(() => {
 const pillStyle = (
   day: Date
 ): Record<string, string> => {
-  const colour = props.colour?.(day)
-  return colour ? { '--pill-colour': colour } : {}
+  const colours = props.pill?.(day)
+  return colours
+    ? Object.fromEntries(Object.entries(colours).map(
+        ([part, colour]) => [`--pill-${part}`, colour]))
+    : {}
 }
 </script>
 
@@ -170,7 +176,7 @@ const pillStyle = (
           :ref="el => register(day, el)"
           class="pill"
           :class="{
-            '-filled': colour?.(day) !== undefined,
+            '-filled': pill?.(day) !== undefined,
             '-selected': isSameDay(day, store.day),
             '-disabled': isDisabled(day)
           }"
@@ -185,7 +191,10 @@ const pillStyle = (
           @pointerleave="hovered = null"
           @focus="focusedPill = day"
           @blur="focusedPill = null"
-        />
+        >
+          <span class="base" />
+          <span v-if="pill?.(day)" class="glow" />
+        </button>
       </template>
     </template>
     <span
@@ -202,43 +211,61 @@ const pillStyle = (
 <style lang="scss">
 @use '@/styles/utils' as *;
 
-// Seven columns; the weekday headers, then one row per
-// week, whose Day Pills share the remaining height.
+@function glow($colour, $alpha) {
+  @return color-mix(in sRGB, #{$colour} $alpha, transparent);
+}
+
+// Seven columns; the weekday headers, then one 12px
+// row per week, as Figma's frames place them.
 .month-grid {
   position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-template-rows:
-    auto repeat(var(--weeks), minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--weeks), rem(12px));
   gap: rem(7px) rem(8px);
+  align-content: start;
   height: 100%;
+  padding: 0 rem(4px);
 
+  // Figma's first week is 19px below the weekdays.
   > .weekday {
-    padding-bottom: space(1);
+    margin-bottom: rem(12px);
     font-size: rem(11px);
+    line-height: rem(13px);
     font-weight: 700;
     text-align: center;
-    color: var(--color-text-muted);
+    color: var(--color-weekday);
   }
 
-  // The placeholder, or the using Widget's colour. A
-  // Widget adds any further styling, such as a glow.
   > .pill {
+    position: relative;
     align-self: center;
-    height: 100%;
-    max-height: rem(14px);
-    min-height: rem(6px);
-    background: var(--color-border);
-    border-radius: $radius-small;
-    @include colour-transition(
-      background-color,
-      opacity
-    );
+    height: rem(12px);
+    border-radius: rem(4px);
+    @include colour-transition(opacity);
     @include focus-ring;
   }
 
-  > .pill.-filled {
-    background: var(--pill-colour);
+  > .pill > .base {
+    position: absolute;
+    inset: 0;
+    background: var(--pill-base, var(--color-pill-empty));
+    filter: blur(1.5px);
+    border-radius: rem(4px);
+    @include colour-transition(background-color);
+  }
+
+  > .pill > .glow {
+    position: absolute;
+    inset: 25% 7.5%;
+    background: var(--pill-glow);
+    filter: blur(1.75px);
+    border-radius: rem(6px);
+    box-shadow:
+      0 0 17.5px glow(var(--pill-shadow), 38%),
+      0 2px 5px glow(var(--pill-tint), 35%),
+      0 0 9.2px glow(var(--pill-shadow), 82%),
+      0 0 13.4px 7px glow(var(--pill-shadow), 12%);
   }
 
   > .pill.-selected {

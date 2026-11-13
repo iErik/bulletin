@@ -1,7 +1,10 @@
 import { MOODS, type Mood } from '@shared/mood'
 import {
+  PILL_PARTS,
   SLEEP_COLOURS,
   type Palette,
+  type PillColours,
+  type PillKey,
   type Scheme,
   type Shade
 } from './types'
@@ -27,9 +30,11 @@ type Single =
   | 'tile'
   | 'tile-icon'
   | 'widget-title'
+  | 'pill-empty'
+  | 'weekday'
 
 type ScaleRef = readonly [
-  Exclude<keyof Palette, 'mood' | 'sleep' | Single>,
+  Exclude<keyof Palette, 'mood' | 'pill' | 'sleep' | Single>,
   Shade
 ]
 
@@ -78,10 +83,16 @@ export const resolveSemantic = (
 export const moodColour = (mood: Mood): string =>
   `var(--color-${mood.colour})`
 
+/** A filled Day Pill's colours, as CSS values. */
+export const dayPill = (key: PillKey): PillColours =>
+  Object.fromEntries(PILL_PARTS.map(part =>
+    [part, `var(--color-pill-${key}-${part})`])
+  ) as unknown as PillColours
+
 /**
  * Writes the semantic custom properties, the danger,
- * Income and Expense colours, the Mood colours and the
- * Sleep Timeline's for a Palette onto
+ * Income and Expense colours, the Mood and Day Pill
+ * colours and the Sleep Timeline's for a Palette onto
  * `el` (the root element by default).
  */
 export const applyPalette = (
@@ -102,7 +113,9 @@ export const applyPalette = (
     'expense',
     'tile',
     'tile-icon',
-    'widget-title'
+    'widget-title',
+    'pill-empty',
+    'weekday'
   ]
   for (const name of singles)
     el.style.setProperty(`--color-${name}`, palette[name])
@@ -111,6 +124,14 @@ export const applyPalette = (
       `--color-${mood.colour}`,
       palette.mood[mood.key]
     )
+  }
+  for (const [key, colours] of Object.entries(palette.pill)) {
+    for (const part of PILL_PARTS) {
+      el.style.setProperty(
+        `--color-pill-${key}-${part}`,
+        colours[part]
+      )
+    }
   }
   for (const name of SLEEP_COLOURS) {
     el.style.setProperty(

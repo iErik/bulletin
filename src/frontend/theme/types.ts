@@ -35,6 +35,25 @@ export const SLEEP_COLOURS: readonly SleepColour[] = [
   'end-tint'
 ]
 
+/** Whose Day Pill colours: a Mood's, or a done Habit's. */
+export type PillKey = MoodKey | 'habit'
+
+/**
+ * A filled Day Pill's colours, from Figma's "Mood
+ * Indicator": the blurred `base`, the inner `glow`,
+ * its shadows' colour, and the `tint` of the one that
+ * drops below it.
+ */
+export interface PillColours {
+  readonly base: string
+  readonly glow: string
+  readonly shadow: string
+  readonly tint: string
+}
+
+export const PILL_PARTS: readonly (keyof PillColours)[] =
+  ['base', 'glow', 'shadow', 'tint']
+
 /** A step in a colour scale, lightest (100) to darkest. */
 export type Shade =
   100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
@@ -60,6 +79,12 @@ export interface Palette {
   readonly 'widget-title': string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
+  /** An empty Day Pill, as `--color-pill-empty`. */
+  readonly 'pill-empty': string
+  /** Month Grid weekdays, as `--color-weekday`. */
+  readonly weekday: string
+  /** Filled Day Pills', as `--color-pill-<key>-<part>`. */
+  readonly pill: Readonly<Record<PillKey, PillColours>>
   /** The Sleep Timeline's, as `--color-sleep-<key>`. */
   readonly sleep: Readonly<Record<SleepColour, string>>
 }

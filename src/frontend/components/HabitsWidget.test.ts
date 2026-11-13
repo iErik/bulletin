@@ -141,6 +141,8 @@ describe('HabitsWidget', () => {
     expect(name(wrapper)).toBe('Reading')
     expect(label(wrapper, 3)).toBe('Nov 3 · Done')
     expect(pill(wrapper, 3).classes()).toContain('-filled')
+    expect(pill(wrapper, 3).attributes('style'))
+      .toContain('var(--color-pill-habit-glow)')
     expect(label(wrapper, 5)).toBe('Nov 5 · Not done')
     expect(pill(wrapper, 5).classes())
       .not.toContain('-filled')

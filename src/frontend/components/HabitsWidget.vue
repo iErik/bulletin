@@ -36,6 +36,8 @@ import {
 } from '@/habits/current-habit'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
+import { dayPill } from '@/theme/semantic'
+import type { PillColours } from '@/theme/types'
 
 const store = useSelectedDateStore()
 
@@ -123,8 +125,8 @@ const isDone = (day: Date): boolean => {
 const label = (day: Date): string =>
   isDone(day) ? 'Done' : 'Not done'
 
-const colour = (day: Date): string | undefined =>
-  isDone(day) ? 'var(--color-text)' : undefined
+const pill = (day: Date): PillColours | undefined =>
+  isDone(day) ? dayPill('habit') : undefined
 
 const beforeCreation = (day: Date): boolean =>
   current.value !== null
@@ -336,7 +338,7 @@ watch(
       <MonthGrid
         :month="month"
         :label="label"
-        :colour="colour"
+        :pill="pill"
         :disabled="beforeCreation"
         @activate="toggle"
       />
@@ -396,12 +398,6 @@ watch(
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     height: 100%;
-  }
-
-  // Figma's glow around a done Day Pill.
-  .pill.-filled {
-    box-shadow: 0 0 rem(9px)
-      color-mix(in sRGB, var(--pill-colour) 60%, transparent);
   }
 
   .message {

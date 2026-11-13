@@ -11,6 +11,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { MOODS } from '@shared/mood'
 import { defaultTheme } from '@/theme/themes'
 import {
+  PILL_PARTS,
   SLEEP_COLOURS,
   type Palette,
   type Theme
@@ -36,6 +37,17 @@ vi.mock('@/theme/themes', async original => {
       tile: colour,
       'tile-icon': colour,
       'widget-title': colour,
+      'pill-empty': colour,
+      weekday: colour,
+      pill: Object.fromEntries(
+        [...MOODS.map(mood => mood.key), 'habit'].map(
+          key => [key, {
+            base: colour,
+            glow: colour,
+            shadow: colour,
+            tint: colour
+          }])
+      ) as Palette['pill'],
       mood: Object.fromEntries(
         MOODS.map(mood => [mood.key, colour])
       ) as Palette['mood'],
@@ -140,6 +152,33 @@ describe('theme store', () => {
     expect(moods()).toEqual(
       MOODS.map(mood => light.mood[mood.key])
     )
+  })
+
+  it("writes the Day Pills' colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const keys = [...MOODS.map(mood => mood.key), 'habit']
+    const read = (name: string): string =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`)
+    const pills = (): string[] => [
+      read('pill-empty'),
+      read('weekday'),
+      ...keys.flatMap(key => PILL_PARTS.map(part =>
+        read(`pill-${key}-${part}`)))
+    ]
+    const expected = (palette: Palette): string[] => [
+      palette['pill-empty'],
+      palette.weekday,
+      ...keys.flatMap(key => PILL_PARTS.map(part =>
+        palette.pill[key as keyof Palette['pill']][part]))
+    ]
+
+    expect(pills()).toEqual(expected(dark))
+
+    store.setPreference('light')
+
+    expect(pills()).toEqual(expected(light))
   })
 
   it("writes the Sleep Timeline's colours", () => {
