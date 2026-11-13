@@ -397,15 +397,19 @@ const insets = {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+
+  // Clipped, but with room for the focus ring, which
+  // sits just outside: clear of the month labels and
+  // the header.
+  overflow: clip;
+  overflow-clip-margin: 3px;
 
   > .plot {
     display: block;
     border-radius: $radius-small;
     @include focus-ring;
 
-    // Inside, as the chart clips its overflow.
-    &:focus-visible { outline-offset: -2px; }
+    &:focus-visible { outline-offset: 1px; }
   }
 
   > .plot > .tick,
