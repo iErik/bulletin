@@ -31,6 +31,16 @@ describe('Icon', () => {
     expect(svg.attributes('aria-hidden')).toBeUndefined()
   })
 
+  // Without it, an icon with a width and height is
+  // drawn unscaled in its box's top-left corner.
+  it('keeps the SVG\'s viewBox, at its own size', () => {
+    const icon = mount(Icon, { props: { name: 'check' } })
+
+    const svg = icon.get('svg')
+    expect(svg.attributes('viewBox')).toBe('0 0 11 7.888')
+    expect(svg.attributes('width')).toBe('11')
+  })
+
   it('renders nothing for an unknown name', () => {
     const icon = mount(Icon, { props: { name: 'nope' } })
 

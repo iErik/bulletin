@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
-import svgLoader from 'vite-svg-loader'
+import { svgIcons } from './svg-icons'
 
 const src = (path: string): string =>
   resolve(__dirname, 'src', path)
@@ -32,7 +32,7 @@ export default defineConfig({
     resolve: {
       alias: { ...alias, '@': src('frontend') }
     },
-    plugins: [vue(), svgLoader()],
+    plugins: [vue(), svgIcons()],
     build: {
       // Never inline fonts as data: URLs, which the
       // Content Security Policy blocks.
