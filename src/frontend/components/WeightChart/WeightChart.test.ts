@@ -6,10 +6,12 @@ import {
   vi
 } from 'vitest'
 import {
+  type DOMWrapper,
   enableAutoUnmount,
   mount,
   type VueWrapper
 } from '@vue/test-utils'
+import { h } from 'vue'
 import type { WeightEntry } from '@shared/weight'
 import { useFixedToday } from '@/testing/clock'
 import WeightChart from './WeightChart.vue'
@@ -68,6 +70,15 @@ const hover = (
   clientX: number
 ): Promise<void> =>
   chart.get('svg').trigger('pointermove', { clientX })
+
+// The gradient the line strokes with.
+const lineGradient = (
+  chart: VueWrapper
+): Omit<DOMWrapper<Element>, 'exists'> => {
+  const id = chart.get('.line').attributes('stroke')!
+    .match(/^url\(#(.+)\)$/)![1]
+  return chart.get(`[id="${id}"]`)
+}
 
 // Whether keys pressed in the chart reach the window,
 // where the date header listens.
@@ -252,6 +263,42 @@ describe('WeightChart', () => {
     })
   })
 
+  it("shades the line along itself, as Figma's", () => {
+    // From Mar 2's centre to Sep 10's, both inside.
+    const gradient = lineGradient(mountChart())
+    expect(gradient.element.tagName).toBe('linearGradient')
+    expect(gradient.attributes()).toMatchObject({
+      gradientUnits: 'userSpaceOnUse',
+      x1: String(LEFT + 29.5),
+      x2: String(LEFT + 221.5)
+    })
+    expect(gradient.findAll('stop').map(stop => [
+      stop.classes()[0], stop.attributes('offset')
+    ])).toEqual([
+      ['line-start', '0'],
+      ['line-rise', '0.394231'],
+      ['line-peak', '0.716346'],
+      ['line-end', '0.894231']
+    ])
+  })
+
+  it("keeps each chart's line gradient its own", () => {
+    // Ids are unique within an app: two charts in one.
+    const props = {
+      day: new Date(2026, 6, 14),
+      entries: ENTRIES
+    }
+    const page = mount(
+      () => [h(WeightChart, props), h(WeightChart, props)],
+      { attachTo: document.body }
+    )
+
+    const strokes = page.findAll('.line')
+      .map(line => line.attributes('stroke'))
+    expect(strokes).toHaveLength(2)
+    expect(strokes[0]).not.toBe(strokes[1])
+  })
+
   describe('the glow', () => {
     it('sits on the Selected Date\'s Entry', () => {
       const glow = mountChart({ day: new Date(2026, 6, 2) })
@@ -362,6 +409,10 @@ describe('WeightChart', () => {
       .not.toBe('')
     expect(chart.get('g').attributes('clip-path'))
       .toMatch(/^url\(#/)
+    // Its gradient spans only what the plot shows.
+    const gradient = lineGradient(chart)
+    expect(gradient.attributes('x1')).toBe(String(LEFT))
+    expect(gradient.attributes('x2')).toBe(String(RIGHT))
   })
 
   it('says when loading failed', () => {

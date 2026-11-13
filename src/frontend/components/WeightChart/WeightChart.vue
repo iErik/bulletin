@@ -110,6 +110,17 @@ const curve = computed(() => {
   }
 })
 
+// Figma's line gradient spans the line itself, as
+// drawn: the plot clips a curve that runs past it.
+const lineSpan = computed(() => {
+  const all = points.value.curve
+  if (all.length < 2) return { x1: 0, x2: 1 }
+  const { left, right } = plot.value
+  const x1 = Math.max(left, x.value(all[0].x))
+  const x2 = Math.min(right, x.value(all.at(-1)!.x))
+  return { x1, x2: Math.max(x2, x1 + 1) }
+})
+
 // A lone Entry has no curve to draw, so it gets a dot.
 // One just outside the window would be clipped away.
 const dot = computed(() => {
@@ -251,6 +262,7 @@ const ids = {
   clip: useId(),
   fill: useId(),
   glow: useId(),
+  line: useId(),
   under: useId()
 }
 const url = (id: string): string => `url(#${id})`
@@ -297,6 +309,18 @@ const insets = {
         >
           <stop class="fill-top" offset="0" />
           <stop class="fill-bottom" offset="1" />
+        </linearGradient>
+        <!-- Figma's line, left to right along it. -->
+        <linearGradient
+          :id="ids.line"
+          gradientUnits="userSpaceOnUse"
+          :x1="lineSpan.x1"
+          :x2="lineSpan.x2"
+        >
+          <stop class="line-start" offset="0" />
+          <stop class="line-rise" offset="0.394231" />
+          <stop class="line-peak" offset="0.716346" />
+          <stop class="line-end" offset="0.894231" />
         </linearGradient>
         <radialGradient :id="ids.glow">
           <stop class="glow-centre" offset="0" />
@@ -347,7 +371,11 @@ const insets = {
           :fill="url(ids.glow)"
           :clip-path="dot ? undefined : url(ids.under)"
         />
-        <path class="line" :d="curve.line" />
+        <path
+          class="line"
+          :d="curve.line"
+          :stroke="url(ids.line)"
+        />
         <circle
           v-if="dot"
           class="dot"
@@ -461,9 +489,16 @@ const insets = {
     fill: var(--color-text-muted);
   }
 
+  .line-start {
+    stop-color: var(--color-weight-line-start);
+  }
+
+  .line-rise { stop-color: var(--color-weight-line-rise); }
+  .line-peak { stop-color: var(--color-weight-line-peak); }
+  .line-end { stop-color: var(--color-weight-line-end); }
+
   .line {
     fill: none;
-    stroke: var(--color-text-muted);
     stroke-width: 1.5;
   }
 

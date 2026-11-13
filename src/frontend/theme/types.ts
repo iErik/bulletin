@@ -35,6 +35,19 @@ export const SLEEP_COLOURS: readonly SleepColour[] = [
   'end-tint'
 ]
 
+/**
+ * The Weight chart line's gradient stops, left to
+ * right, from Figma's Weight frame.
+ */
+export type WeightLineStop =
+  | 'line-start'
+  | 'line-rise'
+  | 'line-peak'
+  | 'line-end'
+
+export const WEIGHT_LINE_STOPS: readonly WeightLineStop[] =
+  ['line-start', 'line-rise', 'line-peak', 'line-end']
+
 /** Whose Day Pill colours: a Mood's, or a done Habit's. */
 export type PillKey = MoodKey | 'habit'
 
@@ -77,6 +90,10 @@ export interface Palette {
   readonly 'tile-icon': string
   /** A Widget's title, as `--color-widget-title`. */
   readonly 'widget-title': string
+  /** The Habit name's open pill, `--color-habit-pill`. */
+  readonly 'habit-pill': string
+  /** That pill's text, as `--color-habit-pill-text`. */
+  readonly 'habit-pill-text': string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
   /** An empty Day Pill, as `--color-pill-empty`. */
@@ -87,6 +104,8 @@ export interface Palette {
   readonly pill: Readonly<Record<PillKey, PillColours>>
   /** The Sleep Timeline's, as `--color-sleep-<key>`. */
   readonly sleep: Readonly<Record<SleepColour, string>>
+  /** The Weight chart's, as `--color-weight-<key>`. */
+  readonly weight: Readonly<Record<WeightLineStop, string>>
 }
 
 /** A named visual identity: one Palette per Scheme. */

@@ -2,6 +2,7 @@ import { MOODS, type Mood } from '@shared/mood'
 import {
   PILL_PARTS,
   SLEEP_COLOURS,
+  WEIGHT_LINE_STOPS,
   type Palette,
   type PillColours,
   type PillKey,
@@ -30,11 +31,16 @@ type Single =
   | 'tile'
   | 'tile-icon'
   | 'widget-title'
+  | 'habit-pill'
+  | 'habit-pill-text'
   | 'pill-empty'
   | 'weekday'
 
 type ScaleRef = readonly [
-  Exclude<keyof Palette, 'mood' | 'pill' | 'sleep' | Single>,
+  Exclude<
+    keyof Palette,
+    'mood' | 'pill' | 'sleep' | 'weight' | Single
+  >,
   Shade
 ]
 
@@ -114,6 +120,8 @@ export const applyPalette = (
     'tile',
     'tile-icon',
     'widget-title',
+    'habit-pill',
+    'habit-pill-text',
     'pill-empty',
     'weekday'
   ]
@@ -137,6 +145,12 @@ export const applyPalette = (
     el.style.setProperty(
       `--color-sleep-${name}`,
       palette.sleep[name]
+    )
+  }
+  for (const name of WEIGHT_LINE_STOPS) {
+    el.style.setProperty(
+      `--color-weight-${name}`,
+      palette.weight[name]
     )
   }
   el.style.colorScheme = scheme
