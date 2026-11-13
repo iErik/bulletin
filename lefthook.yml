@@ -1,17 +1,21 @@
 # Lints the staged files before each commit, with no
 # autofix: any finding blocks the commit. The jobs run
-# pnpm, so commit from inside the Nix shell. Typecheck
-# and tests are left to CI.
+# pnpm through scripts/pnpm-or-nix.sh, which goes
+# through the Nix dev shell when pnpm isn't on the
+# PATH, so commits work from outside the shell too.
+# Typecheck and tests are left to CI.
 pre-commit:
   parallel: true
   jobs:
     - name: eslint
       glob: '*.{ts,mts,js,mjs,vue}'
       run: >-
-        pnpm exec eslint --max-warnings 0
-        --no-warn-ignored {staged_files}
+        scripts/pnpm-or-nix.sh exec eslint
+        --max-warnings 0 --no-warn-ignored
+        {staged_files}
     - name: stylelint
       glob: '*.{scss,vue}'
       run: >-
-        pnpm exec stylelint --max-warnings 0
-        --allow-empty-input {staged_files}
+        scripts/pnpm-or-nix.sh exec stylelint
+        --max-warnings 0 --allow-empty-input
+        {staged_files}
