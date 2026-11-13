@@ -30,8 +30,8 @@ See `docs/agents/design.md`.
 
 Vitest, with a `renderer` and a `main` project, a
 shared `window.bulletin` fake and written conventions,
-including that every component lives in its own
-folder with its unit tests.
+including that every component but `App.vue` lives
+in its own folder with its unit tests.
 See `docs/agents/testing.md`.
 
 ### Releases
