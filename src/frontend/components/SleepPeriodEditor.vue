@@ -9,12 +9,14 @@
 // inline error instead. A blank "Add period" closes
 // on a click away, but not on Enter. Escape cancels
 // "Delete?", then closes. It sits above its point, or
-// below when there's no room.
+// below when there's no room, shifted sideways to stay
+// inside the list.
 import {
   nextTick,
   onMounted,
   ref,
-  useTemplateRef
+  useTemplateRef,
+  watch
 } from 'vue'
 import type {
   NewSleepPeriod,
@@ -48,7 +50,12 @@ const end = ref(text(props.period?.end))
 const error = ref<string | null>(null)
 const confirming = ref(false)
 const below = ref(false)
+const shift = ref(0)
 const example = formatTime(new Date(2000, 0, 1, 2, 15))
+// The clock's longest time has a two-digit hour, as
+// "10:55 PM" or "22:55": the fields grow up to it.
+const longestChars =
+  formatTime(new Date(2000, 0, 1, 22, 55)).length
 
 /** The fields' Period, or why they don't make one. */
 const fromFields = (): NewSleepPeriod | string => {
@@ -142,11 +149,49 @@ const onKeydown = (event: KeyboardEvent): void => {
   event.stopPropagation()
 }
 
+/**
+ * The list's visible area, inside its border and left
+ * of its scrollbar gutter, which would clip the tooltip.
+ */
+const listView = (): {
+  left: number
+  right: number
+  top: number
+} | undefined => {
+  const list = root.value?.closest<HTMLElement>('.rows')
+  if (!list) return undefined
+  const box = list.getBoundingClientRect()
+  const left = box.left + list.clientLeft
+  return {
+    left,
+    right: left + list.clientWidth,
+    top: box.top
+  }
+}
+
+/** Shifts it sideways back inside the list. */
+const fit = (): void => {
+  const box = root.value?.getBoundingClientRect()
+  const view = listView()
+  if (!box || !view) return
+  const left = box.left - shift.value
+  const right = left + box.width
+  // Leftwards by its overflow on the right, if any;
+  // past both edges, it keeps to the left one.
+  const fromRight = Math.min(0, view.right - right)
+  const fromLeft = view.left - left
+  shift.value = Math.max(fromLeft, fromRight)
+}
+
+// Typing and errors change its width.
+watch([start, end, error], () => nextTick(fit))
+
 onMounted(() => {
   const box = root.value?.getBoundingClientRect()
-  const list = root.value?.closest('.rows')
-    ?.getBoundingClientRect()
-  below.value = !!box && !!list && box.top < list.top
+  const view = listView()
+  below.value = !!box && !!view
+    && box.top < view.top
+  fit()
   first.value?.focus()
   first.value?.select()
 })
@@ -157,6 +202,10 @@ onMounted(() => {
     ref="root"
     class="sleep-period-editor"
     :class="{ '-below': below }"
+    :style="{
+      '--shift': `${shift}px`,
+      '--time-chars': longestChars
+    }"
     role="dialog"
     :aria-label="period ? 'Edit period' : 'Add period'"
     @keydown="onKeydown"
@@ -247,7 +296,7 @@ onMounted(() => {
   );
   border-radius: $radius-small;
   box-shadow: 0 rem(2px) rem(8px) rgb(0 0 0 / 30%);
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--shift, 0px)));
 
   &.-below {
     top: space(3);
@@ -266,10 +315,14 @@ onMounted(() => {
     color: var(--color-text-muted);
   }
 
+  // As wide as its time, up to the clock's longest one
+  // while typing. Figma's padding is uneven (12/10px
+  // and 9/8px); the maintainer chose 10px each side.
   > .part.-time {
-    width: rem(64px);
+    field-sizing: content;
+    max-width: calc(var(--time-chars) * 1ch + rem(20px));
+    padding-inline: rem(10px);
     font: inherit;
-    text-align: center;
     background: transparent;
     border: 0;
     outline: none;
