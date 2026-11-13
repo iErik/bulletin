@@ -255,6 +255,12 @@ export const stretchPath = (
   return parts.join(' ')
 }
 
+/** A horizontal extent, in pixels. */
+export interface Span {
+  readonly left: number
+  readonly right: number
+}
+
 /**
  * The leftmost and rightmost x from `from` to `to`
  * along the snake, to the nearest five minutes.
@@ -264,7 +270,7 @@ export const stretchSpan = (
   to: EpochMs,
   first: Date,
   layout: SnakeLayout
-): { left: number; right: number } => {
+): Span => {
   const step = 5 * 60_000
   let left = Infinity
   let right = -Infinity

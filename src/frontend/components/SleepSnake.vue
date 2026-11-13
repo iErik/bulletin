@@ -90,6 +90,8 @@ interface Drawn {
   readonly x1: number
   readonly x2: number
   readonly ends: readonly { end: End; at: Point }[]
+  /** The id of its end circles' halo. */
+  readonly halo: string
 }
 
 /**
@@ -114,7 +116,8 @@ const draw = (key: string, stretch: Stretch): Drawn => {
     ends: [
       { end: 'start', at: head },
       { end: 'end', at: tail }
-    ]
+    ],
+    halo: 'end'
   }
 }
 
@@ -126,7 +129,10 @@ const drawn = computed((): Drawn[] => {
     period
   }))
   return props.preview
-    ? [...periods, draw('preview', props.preview)]
+    ? [...periods, {
+        ...draw('preview', props.preview),
+        halo: 'preview-end'
+      }]
     : periods
 })
 
@@ -160,6 +166,17 @@ const timeOf = (event: MouseEvent): EpochMs => {
   const { from, to } = range.value
   return Math.min(to, Math.max(from, time))
 }
+
+/**
+ * The end circles' halos: the preview's own, red
+ * while it's broken.
+ */
+const halos = computed(() => [
+  { id: 'end', broken: false },
+  ...props.preview
+    ? [{ id: 'preview-end', broken: props.broken }]
+    : []
+])
 
 /** An element id in this snake. */
 const elementId = (name: string): string => `${id}-${name}`
@@ -195,94 +212,94 @@ onBeforeUnmount(() => observer?.disconnect())
     >
       <defs>
         <!--
-          Figma's "Zooommm" effect on the end circles, as
-          Figma exports it: each shadow's blur radius is
-          twice its stdDeviation, and the last blur
-          softens the whole stack.
+          Paints in <defs> take custom properties from
+          where they sit, not from what uses them: the
+          broken preview's halo sits in its own red scope.
         -->
-        <filter
-          :id="elementId('end')"
-          x="-400%"
-          y="-400%"
-          width="900%"
-          height="900%"
-          color-interpolation-filters="sRGB"
+        <g
+          v-for="halo in halos"
+          :key="halo.id"
+          :class="{ '-broken': halo.broken }"
         >
-          <feMorphology
-            in="SourceAlpha"
-            operator="dilate"
-            radius="7"
-            result="spread"
-          />
-          <feGaussianBlur
-            in="spread"
-            stdDeviation="6.7"
-            result="spread-blur"
-          />
-          <feFlood class="glow" flood-opacity="0.12" />
-          <feComposite
-            in2="spread-blur"
-            operator="in"
-            result="spread-glow"
-          />
-          <feGaussianBlur
-            in="SourceAlpha"
-            stdDeviation="4.6"
-            result="near-blur"
-          />
-          <feFlood class="glow" flood-opacity="0.82" />
-          <feComposite
-            in2="near-blur"
-            operator="in"
-            result="near-glow"
-          />
-          <feOffset
-            in="SourceAlpha"
-            dy="2"
-            result="tint-offset"
-          />
-          <feGaussianBlur
-            in="tint-offset"
-            stdDeviation="2.5"
-            result="tint-blur"
-          />
-          <feFlood class="tint" flood-opacity="0.35" />
-          <feComposite
-            in2="tint-blur"
-            operator="in"
-            result="tint-glow"
-          />
-          <feGaussianBlur
-            in="SourceAlpha"
-            stdDeviation="8.75"
-            result="far-blur"
-          />
-          <feFlood class="glow" flood-opacity="0.38" />
-          <feComposite
-            in2="far-blur"
-            operator="in"
-            result="far-glow"
-          />
-          <feMerge>
-            <feMergeNode in="spread-glow" />
-            <feMergeNode in="near-glow" />
-            <feMergeNode in="tint-glow" />
-            <feMergeNode in="far-glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-          <feGaussianBlur stdDeviation="1.75" />
-        </filter>
-        <linearGradient
-          v-for="line in drawn"
-          :id="elementId(line.key)"
-          :key="line.key"
-          gradientUnits="userSpaceOnUse"
-          :x1="line.x1"
-          :x2="line.x2"
-        >
-          <stop class="from" />
-          <stop class="to" offset="1" />
-        </linearGradient>
+          <!--
+            Figma's "Zooommm" effect on the end circles, as
+            Figma exports it: each shadow's blur radius is
+            twice its stdDeviation, and the last blur
+            softens the whole stack.
+          -->
+          <filter
+            :id="elementId(halo.id)"
+            x="-400%"
+            y="-400%"
+            width="900%"
+            height="900%"
+            color-interpolation-filters="sRGB"
+          >
+            <feMorphology
+              in="SourceAlpha"
+              operator="dilate"
+              radius="7"
+              result="spread"
+            />
+            <feGaussianBlur
+              in="spread"
+              stdDeviation="6.7"
+              result="spread-blur"
+            />
+            <feFlood class="glow" flood-opacity="0.12" />
+            <feComposite
+              in2="spread-blur"
+              operator="in"
+              result="spread-glow"
+            />
+            <feGaussianBlur
+              in="SourceAlpha"
+              stdDeviation="4.6"
+              result="near-blur"
+            />
+            <feFlood class="glow" flood-opacity="0.82" />
+            <feComposite
+              in2="near-blur"
+              operator="in"
+              result="near-glow"
+            />
+            <feOffset
+              in="SourceAlpha"
+              dy="2"
+              result="tint-offset"
+            />
+            <feGaussianBlur
+              in="tint-offset"
+              stdDeviation="2.5"
+              result="tint-blur"
+            />
+            <feFlood class="tint" flood-opacity="0.35" />
+            <feComposite
+              in2="tint-blur"
+              operator="in"
+              result="tint-glow"
+            />
+            <feGaussianBlur
+              in="SourceAlpha"
+              stdDeviation="8.75"
+              result="far-blur"
+            />
+            <feFlood class="glow" flood-opacity="0.38" />
+            <feComposite
+              in2="far-blur"
+              operator="in"
+              result="far-glow"
+            />
+            <feMerge>
+              <feMergeNode in="spread-glow" />
+              <feMergeNode in="near-glow" />
+              <feMergeNode in="tint-glow" />
+              <feMergeNode in="far-glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+            <feGaussianBlur stdDeviation="1.75" />
+          </filter>
+        </g>
       </defs>
       <path class="track" :d="track" />
       <g
@@ -294,6 +311,16 @@ onBeforeUnmount(() => observer?.disconnect())
         } : ['-preview', { '-broken': broken }]"
         :data-period="line.period?.id"
       >
+        <!-- In the group, so its stops take its colours. -->
+        <linearGradient
+          :id="elementId(line.key)"
+          gradientUnits="userSpaceOnUse"
+          :x1="line.x1"
+          :x2="line.x2"
+        >
+          <stop class="from" />
+          <stop class="to" offset="1" />
+        </linearGradient>
         <path
           class="line"
           :d="line.path"
@@ -307,7 +334,7 @@ onBeforeUnmount(() => observer?.disconnect())
           :cx="at.x"
           :cy="at.y"
           r="3.5"
-          :filter="`url(#${elementId('end')})`"
+          :filter="`url(#${elementId(line.halo)})`"
         />
         <!-- Wider targets for dragging an end. -->
         <template v-if="line.period">
@@ -397,7 +424,7 @@ onBeforeUnmount(() => observer?.disconnect())
   }
 
   // The line, its glow and its ends take it from here.
-  .period.-broken {
+  .-broken {
     --color-sleep-line-from: var(--color-danger);
     --color-sleep-line-to: var(--color-danger);
     --color-sleep-line-glow: var(--color-danger);

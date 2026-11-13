@@ -155,8 +155,16 @@ describe('SleepSnake', () => {
         .not.toContain('-broken')
 
       await wrapper.setProps({ broken: true })
-      expect(wrapper.get('.-preview').classes())
-        .toContain('-broken')
+      const preview = wrapper.get('.-preview')
+      expect(preview.classes()).toContain('-broken')
+      // Its stops and halo take the red from a scope
+      // around them, not from what uses them.
+      expect(preview.find('linearGradient stop').exists())
+        .toBe(true)
+      const halo = preview.get('.end').attributes('filter')!
+        .match(/#(.+)\)/)![1]
+      expect(wrapper.get(`.-broken > [id="${halo}"]`)
+        .element.tagName).toBe('filter')
     })
 
   it('reports the time under the pointer', async () => {
