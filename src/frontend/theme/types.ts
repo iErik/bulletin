@@ -77,6 +77,10 @@ export interface Palette {
   readonly 'tile-icon': string
   /** A Widget's title, as `--color-widget-title`. */
   readonly 'widget-title': string
+  /** The Habit name's open pill, `--color-habit-pill`. */
+  readonly 'habit-pill': string
+  /** That pill's text, as `--color-habit-pill-text`. */
+  readonly 'habit-pill-text': string
   /** Each Mood's colour, as `--color-mood-<key>`. */
   readonly mood: Readonly<Record<MoodKey, string>>
   /** An empty Day Pill, as `--color-pill-empty`. */

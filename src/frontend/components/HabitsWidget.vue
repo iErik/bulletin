@@ -356,11 +356,15 @@ watch(
 .widget-frame.habits-widget { --widget-gap: #{rem(17px)}; }
 
 .habits-widget {
+  // Figma's closed name sits 15 px from the Widget's
+  // edge, its open pill 10 px, in a 16 px text box.
   > .header > .actions > .name {
+    margin-right: rem(5px);
     font-size: rem(13px);
     font-weight: 700;
+    line-height: rem(16px);
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-widget-title);
     border-radius: rem(7px);
     @include colour-transition;
     @include focus-ring;
@@ -368,13 +372,10 @@ watch(
 
   // Figma's open list puts the name on a pill.
   > .header > .actions > .name.-open {
-    padding: rem(6px) space(2);
+    padding: rem(6px) space(4);
     margin: rem(-6px) 0;
-    background: color-mix(
-      in sRGB,
-      var(--color-text) 8%,
-      transparent
-    );
+    color: var(--color-habit-pill-text);
+    background: var(--color-habit-pill);
   }
 
   .empty {

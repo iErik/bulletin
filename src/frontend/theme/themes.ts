@@ -54,6 +54,9 @@ export const defaultTheme: Theme = {
       tile: 'rgb(217 217 217 / 8%)',
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
+      // Figma's Habits header, with the Habit list open.
+      'habit-pill': '#282828',
+      'habit-pill-text': 'rgb(165 165 165 / 92%)',
       // Figma's Sleep frame.
       sleep: {
         date: '#cbcbcb',
@@ -121,6 +124,8 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
+      'habit-pill': '#e6e3dc',
+      'habit-pill-text': 'rgb(90 90 90 / 92%)',
       // The dark Sleep frame's, mirrored for light
       // surfaces: dark lines with a soft shadow.
       sleep: {
