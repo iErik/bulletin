@@ -556,7 +556,7 @@ const {
     font-size: rem(11px);
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-expense-add);
     @include focus-ring;
 
     // Inside, so the scroller doesn't clip it.

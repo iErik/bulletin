@@ -39,6 +39,7 @@ vi.mock('@/theme/themes', async original => {
       tile: colour,
       'tile-icon': colour,
       'widget-title': colour,
+      'expense-add': colour,
       'habit-pill': colour,
       'habit-pill-text': colour,
       'pill-empty': colour,
@@ -186,6 +187,19 @@ describe('theme store', () => {
     store.setPreference('light')
 
     expect(pills()).toEqual(expected(light))
+  })
+
+  it("writes the Expenses add row's colour", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const read = (): string => document.documentElement
+      .style.getPropertyValue('--color-expense-add')
+
+    expect(read()).toBe(dark['expense-add'])
+
+    store.setPreference('light')
+
+    expect(read()).toBe(light['expense-add'])
   })
 
   it("writes the Habits header's colours", () => {
