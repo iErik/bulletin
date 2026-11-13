@@ -22,13 +22,13 @@ import type {
 } from '@shared/sleep'
 import Icon from '@/components/Icon.vue'
 import { formatTime } from '@/locale/format'
-import { endFrom, parseClock, startIn } from '@/sleep/clock'
+import { endFrom, parseClock, startOn } from '@/sleep/clock'
 import { breaks, reason } from '@/sleep/selection'
 
 const props = defineProps<{
   /** The Period edited; none to add one. */
   period?: SleepPeriod
-  /** The row whose window the start is typed in. */
+  /** The day the start is typed on. */
   day: Date
   /** The loaded Periods, for the rules. */
   periods: readonly SleepPeriod[]
@@ -55,7 +55,7 @@ const fromFields = (): NewSleepPeriod | string => {
   const from = parseClock(start.value)
   const to = parseClock(end.value)
   if (!from || !to) return `Enter times like ${example}`
-  const begin = startIn(props.day, from)
+  const begin = startOn(props.day, from)
   const period = { start: begin, end: endFrom(begin, to) }
   const others = props.periods
     .filter(p => p.id !== props.period?.id)

@@ -30,7 +30,12 @@ import {
   useTemplateRef,
   watch
 } from 'vue'
-import { addDays, isAfter, isSameDay } from 'date-fns'
+import {
+  addDays,
+  isAfter,
+  isSameDay,
+  startOfDay
+} from 'date-fns'
 import type {
   EpochMs,
   NewSleepPeriod,
@@ -52,9 +57,6 @@ import {
   snap,
   type End
 } from '@/sleep/selection'
-// The tooltip still reads typed times in a noon-to-noon
-// row until BLT-84.
-import { rowOf } from '@/sleep/timeline'
 import { useSleepMonths } from '@/sleep/use-sleep-months'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
@@ -76,7 +78,7 @@ const saving = ref(false)
 const editing = shallowRef<{
   /** The day focused when it closes without a Period. */
   key: string
-  /** The row it reads typed times in. */
+  /** The day it reads typed times on. */
   day: Date
   period?: SleepPeriod
   /** Where on the snake it points. */
@@ -319,7 +321,7 @@ const open = (
 const edit = (period: SleepPeriod, event?: Event): void => {
   open({
     key: localDate(new Date(period.start)),
-    day: rowOf(period.start),
+    day: startOfDay(period.start),
     period,
     at: (period.start + period.end) / 2
   }, event)
