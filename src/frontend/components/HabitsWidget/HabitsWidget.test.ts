@@ -167,7 +167,7 @@ describe('HabitsWidget', () => {
         .toBe('1')
     })
 
-  it('disables days before the Habit was created',
+  it('marks days before the Habit was created',
     async () => {
       localStorage.setItem(CURRENT_HABIT_KEY, '2')
       const { wrapper, api } = await mountWidget()
@@ -175,13 +175,23 @@ describe('HabitsWidget', () => {
       await pill(wrapper, 3).trigger('click')
 
       expect(pill(wrapper, 3).attributes('aria-disabled'))
-        .toBe('true')
-      expect(pill(wrapper, 4).attributes('aria-disabled'))
         .toBeUndefined()
-      expect(pill(wrapper, 10).attributes('aria-disabled'))
-        .toBe('true')
-      expect(api.habits.createEntry).not.toHaveBeenCalled()
+      expect(label(wrapper, 3)).toBe('Nov 3 · Done')
+      expect(api.habits.createEntry).toHaveBeenCalledWith({
+        habitId: 2,
+        date: '2026-11-03'
+      })
     })
+
+  it('keeps future days disabled', async () => {
+    const { wrapper, api } = await mountWidget()
+
+    await pill(wrapper, 10).trigger('click')
+
+    expect(pill(wrapper, 10).attributes('aria-disabled'))
+      .toBe('true')
+    expect(api.habits.createEntry).not.toHaveBeenCalled()
+  })
 
   it('marks a day done at once', async () => {
     const { wrapper, api } = await mountWidget()
