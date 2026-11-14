@@ -32,28 +32,45 @@ export const defaultTheme: Theme = {
   palettes: {
     dark: {
       background: scale([
-        '#e4e6eb', '#c3c7d0', '#9ba1ae', '#6f7685',
-        '#4b5160', '#333333', '#262a33', '#191919',
-        '#131313'
+        '#e4e6eb', // 100
+        '#c3c7d0', // 200
+        '#9ba1ae', // 300
+        '#6f7685', // 400
+        '#4b5160', // 500
+        '#333333', // 600
+        '#262a33', // 700
+        '#191919', // 800
+        '#131313', // 900
       ]),
       foreground: scale([
-        '#f5f6f8', '#e2e5ea', '#c8ccd4', '#a6acb8',
-        '#858c9a', '#666d7b', '#4b515d', '#33383f',
-        '#1d2025'
+        '#f5f6f8', // 100
+        '#e2e5ea', // 200
+        '#c8ccd4', // 300
+        '#a6acb8', // 400
+        '#858c9a', // 500
+        '#666d7b', // 600
+        '#4b515d', // 700
+        '#33383f', // 800
+        '#1d2025', // 900
       ]),
       accent: scale([
-        '#e0e7ff', '#c3cffd', '#a1b2fa', '#8197f5',
-        '#6680ee', '#4f69dc', '#3f55bb', '#324497',
-        '#263372'
+        '#e0e7ff', // 100
+        '#c3cffd', // 200
+        '#a1b2fa', // 300
+        '#8197f5', // 400
+        '#6680ee', // 500
+        '#4f69dc', // 600
+        '#3f55bb', // 700
+        '#324497', // 800
+        '#263372', // 900
       ]),
       danger: '#f07a7c',
-      // Figma's Income and Expense FG.
       income: '#b5e9a7',
       expense: '#b47575',
-      // Figma's Widget header: icon tile, icon, title.
       tile: 'rgb(217 217 217 / 8%)',
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
+
       // Figma's Sleep frame.
       sleep: {
         date: '#cbcbcb',
@@ -69,6 +86,7 @@ export const defaultTheme: Theme = {
         end: '#ffffff',
         'end-tint': '#67a1d4'
       },
+
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -78,6 +96,7 @@ export const defaultTheme: Theme = {
         angry: '#a45f61',
         anxious: '#f8f5ab'
       },
+
       // Figma's Mood and Habits frames. Angry and
       // anxious have no pill there: their swatch glows
       // on a darker base.
