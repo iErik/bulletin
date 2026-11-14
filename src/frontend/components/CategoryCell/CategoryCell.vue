@@ -254,6 +254,7 @@ const label = (choice: CategoryChoice): string =>
     font-size: rem(12px);
     color: var(--color-text);
     background: $tint;
+    border: 0;
     border-radius: rem(4px);
     @include focus-ring;
   }
