@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
-import DashboardView from './views/DashboardView.vue'
+import DashboardView
+  from './views/DashboardView/DashboardView.vue'
 
 /** A top-level screen, with its Sidebar button. */
 export interface Page {

@@ -29,7 +29,9 @@ See `docs/agents/design.md`.
 ### Testing
 
 Vitest, with a `renderer` and a `main` project, a
-shared `window.bulletin` fake and written conventions.
+shared `window.bulletin` fake and written conventions,
+including that every component but `App.vue` lives
+in its own folder with its unit tests.
 See `docs/agents/testing.md`.
 
 ### Releases
