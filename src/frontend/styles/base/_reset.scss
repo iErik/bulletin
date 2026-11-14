@@ -53,3 +53,11 @@ button {
   border: 0;
   cursor: pointer;
 }
+
+// Chromium rings a clicked focusable SVG, such as the
+// Weight chart, even when :focus-visible doesn't
+// match. Only keyboard focus shows a ring, from the
+// focus-ring mixin.
+:focus:not(:focus-visible) {
+  outline: none;
+}
