@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // The Habits Widget: the current Habit's days in the
 // Selected Date's month, on a Month Grid. Done Day
-// Pills glow; days before the Habit was created are
+// Pills glow; any day up to today, even before the
+// Habit was created, can be marked. Future days are
 // disabled. Activating a Day Pill toggles it and saves
 // at once; if storage fails, it reverts and an inline
 // error shows. The current Habit is remembered per
@@ -127,10 +128,6 @@ const label = (day: Date): string =>
 
 const pill = (day: Date): PillColours | undefined =>
   isDone(day) ? dayPill('habit') : undefined
-
-const beforeCreation = (day: Date): boolean =>
-  current.value !== null
-  && localDate(day) < current.value.created
 
 const setDone = (key: string, value: boolean): void => {
   const next = new Set(done.value)
@@ -339,7 +336,6 @@ watch(
         :month="month"
         :label="label"
         :pill="pill"
-        :disabled="beforeCreation"
         @activate="toggle"
       />
       <p v-if="error" class="message" role="alert">
