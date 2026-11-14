@@ -4,7 +4,8 @@ import {
   type RouteRecordRaw
 } from 'vue-router'
 import { PAGES } from './pages'
-import PlaceholderView from './views/PlaceholderView.vue'
+import PlaceholderView
+  from './views/PlaceholderView/PlaceholderView.vue'
 
 /** One route per Page, from the Page list. */
 export const routes: RouteRecordRaw[] = PAGES.map(

@@ -70,6 +70,21 @@ Pass Vitest flags after the script, for example
 
 - A test file sits next to the code it tests, named
   `<file>.test.ts`.
+- Every Vue component, except `App.vue`, lives in its
+  own folder named after it, with its unit tests. The
+  folder sits where the component belongs:
+  `components/`, `views/` or any other directory.
+
+  ```text
+  components/SleepSnake/SleepSnake.vue
+  components/SleepSnake/SleepSnake.test.ts
+  views/DashboardView/DashboardView.vue
+  ```
+
+  Import it by its `.vue` file
+  (`@/components/SleepSnake/SleepSnake.vue`).
+  `App.vue` is the only `.vue` file that isn't in a
+  folder of its own.
 - Import `describe`, `it`, `expect` and `vi` from
   `vitest`. No globals.
 - Test files are covered by `pnpm typecheck`, like any

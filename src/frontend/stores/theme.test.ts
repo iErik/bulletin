@@ -13,6 +13,7 @@ import { defaultTheme } from '@/theme/themes'
 import {
   PILL_PARTS,
   SLEEP_COLOURS,
+  WEIGHT_LINE_STOPS,
   type Palette,
   type Theme
 } from '@/theme/types'
@@ -24,7 +25,8 @@ vi.mock('@/theme/themes', async original => {
   const mod =
     await original<typeof import('@/theme/themes')>()
   // Mocks are hoisted above the imports.
-  const { SLEEP_COLOURS } = await import('@/theme/types')
+  const { SLEEP_COLOURS, WEIGHT_LINE_STOPS } =
+    await import('@/theme/types')
   const flat = (colour: string): Palette => {
     const shades = mod.scale(Array(9).fill(colour))
     return {
@@ -37,6 +39,9 @@ vi.mock('@/theme/themes', async original => {
       tile: colour,
       'tile-icon': colour,
       'widget-title': colour,
+      'expense-add': colour,
+      'habit-pill': colour,
+      'habit-pill-text': colour,
       'pill-empty': colour,
       weekday: colour,
       pill: Object.fromEntries(
@@ -53,7 +58,10 @@ vi.mock('@/theme/themes', async original => {
       ) as Palette['mood'],
       sleep: Object.fromEntries(
         SLEEP_COLOURS.map(name => [name, colour])
-      ) as Palette['sleep']
+      ) as Palette['sleep'],
+      weight: Object.fromEntries(
+        WEIGHT_LINE_STOPS.map(name => [name, colour])
+      ) as Palette['weight']
     }
   }
   const other: Theme = {
@@ -179,6 +187,52 @@ describe('theme store', () => {
     store.setPreference('light')
 
     expect(pills()).toEqual(expected(light))
+  })
+
+  it("writes the Expenses add row's colour", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const read = (): string => document.documentElement
+      .style.getPropertyValue('--color-expense-add')
+
+    expect(read()).toBe(dark['expense-add'])
+
+    store.setPreference('light')
+
+    expect(read()).toBe(light['expense-add'])
+  })
+
+  it("writes the Habits header's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const names = ['habit-pill', 'habit-pill-text'] as const
+    const read = (): string[] => names.map(name =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`))
+
+    expect(read()).toEqual(names.map(name => dark[name]))
+
+    store.setPreference('light')
+
+    expect(read()).toEqual(names.map(name => light[name]))
+  })
+
+  it("writes the Weight line's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const weight = (): string[] => WEIGHT_LINE_STOPS.map(
+      name => document.documentElement.style
+        .getPropertyValue(`--color-weight-${name}`))
+
+    expect(weight()).toEqual(
+      WEIGHT_LINE_STOPS.map(name => dark.weight[name])
+    )
+
+    store.setPreference('light')
+
+    expect(weight()).toEqual(
+      WEIGHT_LINE_STOPS.map(name => light.weight[name])
+    )
   })
 
   it("writes the Sleep Timeline's colours", () => {

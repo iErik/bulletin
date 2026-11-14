@@ -71,6 +71,11 @@ export const defaultTheme: Theme = {
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
 
+      // Figma's Expenses table add row.
+      'expense-add': '#a5a5a5',
+      // Figma's Habits header, with the Habit list open.
+      'habit-pill': '#282828',
+      'habit-pill-text': 'rgb(165 165 165 / 92%)',
       // Figma's Sleep frame.
       sleep: {
         date: '#cbcbcb',
@@ -87,6 +92,14 @@ export const defaultTheme: Theme = {
         'end-tint': '#67a1d4'
       },
 
+      // Figma's Weight line: faint, brightest past the
+      // middle, fading out on the right.
+      weight: {
+        'line-start': 'rgb(128 128 128 / 9%)',
+        'line-rise': 'rgb(128 128 128 / 50%)',
+        'line-peak': 'rgb(255 255 255 / 75%)',
+        'line-end': 'rgb(64 64 64 / 25%)'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -140,6 +153,10 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
+      'expense-add': '#5a5a5a',
+      // Each dark channel inverted, as the header's are.
+      'habit-pill': '#d7d7d7',
+      'habit-pill-text': 'rgb(90 90 90 / 92%)',
       // The dark Sleep frame's, mirrored for light
       // surfaces: dark lines with a soft shadow.
       sleep: {
@@ -155,6 +172,14 @@ export const defaultTheme: Theme = {
         'line-glow': '#6a6a6a',
         end: '#2a2a2a',
         'end-tint': '#3f6fa0'
+      },
+      // The dark line's, mirrored: each channel inverted,
+      // so it's darkest past the middle.
+      weight: {
+        'line-start': 'rgb(127 127 127 / 9%)',
+        'line-rise': 'rgb(127 127 127 / 50%)',
+        'line-peak': 'rgb(0 0 0 / 75%)',
+        'line-end': 'rgb(191 191 191 / 25%)'
       },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
