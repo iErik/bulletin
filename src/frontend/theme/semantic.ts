@@ -31,6 +31,7 @@ type Single =
   | 'tile'
   | 'tile-icon'
   | 'widget-title'
+  | 'expense-add'
   | 'habit-pill'
   | 'habit-pill-text'
   | 'pill-empty'
@@ -120,6 +121,7 @@ export const applyPalette = (
     'tile',
     'tile-icon',
     'widget-title',
+    'expense-add',
     'habit-pill',
     'habit-pill-text',
     'pill-empty',

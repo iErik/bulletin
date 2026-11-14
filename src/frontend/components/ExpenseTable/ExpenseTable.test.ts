@@ -302,11 +302,24 @@ describe('ExpenseTable', () => {
     )
   })
 
-  it('ends with “+ Add new entry”', () => {
+  it('ends with “Add new entry”, and its +', () => {
     const wrapper = mountTable()
 
-    expect(wrapper.findAll('tbody > tr').at(-1)?.text())
-      .toBe('+ Add new entry')
+    const last = wrapper.findAll('tbody > tr').at(-1)!
+    expect(last.text()).toBe('Add new entry')
+    // The row is the button, with Figma's + in it.
+    expect(last.get('td').attributes('colspan')).toBe('5')
+    expect(last.find('.add-entry svg.app-icon').exists())
+      .toBe(true)
+  })
+
+  it('fills the rest with blank rows, out of reach', () => {
+    const fillers = mountTable([]).get('.scroller > .fillers')
+
+    expect(fillers.attributes('aria-hidden')).toBe('true')
+    expect(fillers.text()).toBe('')
+    expect(fillers.find('button, input, [tabindex]').exists())
+      .toBe(false)
   })
 
   it('adds a draft on the Selected Date', async () => {

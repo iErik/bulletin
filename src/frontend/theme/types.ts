@@ -90,6 +90,8 @@ export interface Palette {
   readonly 'tile-icon': string
   /** A Widget's title, as `--color-widget-title`. */
   readonly 'widget-title': string
+  /** The Expenses add row, as `--color-expense-add`. */
+  readonly 'expense-add': string
   /** The Habit name's open pill, `--color-habit-pill`. */
   readonly 'habit-pill': string
   /** That pill's text, as `--color-habit-pill-text`. */

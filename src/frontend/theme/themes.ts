@@ -54,6 +54,8 @@ export const defaultTheme: Theme = {
       tile: 'rgb(217 217 217 / 8%)',
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
+      // Figma's Expenses table add row.
+      'expense-add': '#a5a5a5',
       // Figma's Habits header, with the Habit list open.
       'habit-pill': '#282828',
       'habit-pill-text': 'rgb(165 165 165 / 92%)',
@@ -132,6 +134,7 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
+      'expense-add': '#5a5a5a',
       // Each dark channel inverted, as the header's are.
       'habit-pill': '#d7d7d7',
       'habit-pill-text': 'rgb(90 90 90 / 92%)',
