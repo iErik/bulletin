@@ -142,19 +142,20 @@ const onInput = (): void => {
     @include focus-ring;
   }
 
+  // Sits where the value's text sits, unmarked: the
+  // caret shows where focus is, so no ring or border.
   &.-field {
     width: 100%;
-    padding: rem(4px) rem(6px);
+    padding: 0;
     font: inherit;
     color: var(--color-text);
     text-align: inherit;
-    background: color-mix(
-      in sRGB,
-      var(--color-text) 8%,
-      transparent
-    );
+    background: none;
+    border: 0;
     border-radius: rem(4px);
-    @include focus-ring;
+    outline: none;
+
+    &::placeholder { color: var(--color-text-muted); }
 
     &[aria-invalid='true'] {
       outline: 1px solid var(--color-danger);
