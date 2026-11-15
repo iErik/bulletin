@@ -2,12 +2,18 @@
   description = "Bulletin development environment";
 
   inputs = {
-    # 26.05 is the last release supporting x86_64-darwin.
+    # 26.05 is the last release supporting x86_64-darwin,
+    # so macOS stays on it.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Electron on Linux follows what current NixOS hosts
+    # run: it loads host libraries (mesa from
+    # /run/opengl-driver, alsa through LD_LIBRARY_PATH),
+    # which fail to link against an older glibc.
+    nixpkgs-linux.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { nixpkgs, flake-utils, ... }:
+  outputs = { nixpkgs, nixpkgs-linux, flake-utils, ... }:
     let
       # Electron major shared by nixpkgs (Linux binary)
       # and package.json (types, macOS binary). Bump both
@@ -31,7 +37,11 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         inherit (pkgs) lib stdenv;
-        electron = pkgs."electron_${electronMajor}";
+        # Only Electron comes from nixpkgs-linux: Node and
+        # pnpm stay on 26.05, which matches package.json's
+        # packageManager pin.
+        electron = nixpkgs-linux.legacyPackages.${system}
+          ."electron_${electronMajor}";
 
         # The npm prebuilt Electron does not run on NixOS,
         # so Linux uses the nixpkgs binary instead.
