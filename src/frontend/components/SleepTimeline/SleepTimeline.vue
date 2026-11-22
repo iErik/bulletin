@@ -42,6 +42,8 @@ import type {
   SleepPeriod
 } from '@shared/sleep'
 import { localDate } from '@shared/dates'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import SleepHours
   from '@/components/SleepHours/SleepHours.vue'
 import SleepPeriodEditor
@@ -548,6 +550,7 @@ watch(() => store.today, today => {
           </template>
         </SleepSnake>
       </div>
+      <OverlayScrollbar :target="scroller" />
     </div>
     <SleepHours class="hours" />
   </div>
@@ -613,7 +616,7 @@ $day: 57px;
     height: 100%;
     overflow-y: auto;
     overflow-anchor: none; // We keep the position
-    scrollbar-gutter: stable;
+    @include hide-native-scrollbar;
   }
 
   .rows > .days {
@@ -632,22 +635,17 @@ $day: 57px;
 
   // The tooltip sits above this point on the snake, as
   // wide as it needs: the point has no width to fill.
+  // It's over the scrollbar too.
   .rows > .snake > .anchor {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
   }
 
   .rows > .snake > .anchor > .sleep-period-editor {
     width: max-content;
   }
 
-  // The same gutter as the days' scrollbar, so the
-  // hours line up where scrollbars take up space.
-  > .hours {
-    padding-top: space(2);
-    overflow-y: hidden;
-    scrollbar-gutter: stable;
-  }
+  > .hours { padding-top: space(2); }
 }
 
 .day-row {

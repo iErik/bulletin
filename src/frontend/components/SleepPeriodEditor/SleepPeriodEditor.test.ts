@@ -13,11 +13,9 @@ import { today, useFixedToday } from '@/testing/clock'
 import SleepPeriodEditor from './SleepPeriodEditor.vue'
 
 // happy-dom has no layout: the list spans x 100 to
-// 500, less a `gutter` for its scrollbar, and the
-// tooltip is WIDTH wide at `left`.
+// 500, and the tooltip is WIDTH wide at `left`.
 const WIDTH = 180
 let left = 200
-let gutter = 0
 
 const fakeLayout = (): void => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect')
@@ -36,9 +34,7 @@ const fakeLayout = (): void => {
     })
   vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get')
     .mockImplementation(function (this: HTMLElement) {
-      return this.classList.contains('rows')
-        ? 400 - gutter
-        : WIDTH
+      return this.classList.contains('rows') ? 400 : WIDTH
     })
   vi.spyOn(HTMLElement.prototype, 'clientLeft', 'get')
     .mockReturnValue(0)
@@ -73,7 +69,6 @@ describe('SleepPeriodEditor', () => {
 
   beforeEach(() => {
     left = 200
-    gutter = 0
     fakeLayout()
   })
 
@@ -120,14 +115,6 @@ describe('SleepPeriodEditor', () => {
     await mountEditor()
 
     expect(style('--shift')).toBe('40px')
-  })
-
-  it('keeps clear of the list\'s scrollbar', async () => {
-    left = 400
-    gutter = 15
-    await mountEditor()
-
-    expect(style('--shift')).toBe('-95px')
   })
 
   it('fits again when its fields change', async () => {
