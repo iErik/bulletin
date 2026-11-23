@@ -136,6 +136,20 @@ A Transaction with a positive amount.
 **Expense**:
 A Transaction with a negative amount.
 
+**Large Expense**:
+An Expense of at least a quarter of its month's Budget, such as
+a new laptop. It is left out of the month's typical daily spend
+so one purchase doesn't skew it. A month without a Budget has
+none.
+_Avoid_: Outlier, splurge, one-off
+
+**Recurring Expense**:
+An Expense whose description, ignoring case, appears in each of
+the last three consecutive months, such as a subscription or a
+monthly tax. It is detected, never entered: there is no way to
+mark one by hand. Monthly only, for now.
+_Avoid_: Subscription, fixed expense, bill
+
 **Budget**:
 How much the user plans to spend in a month, compared against
 that month's Expenses. Not an Entry. A month without its own
