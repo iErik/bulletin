@@ -64,15 +64,18 @@ Selected Date.
 _Avoid_: Home, overview
 
 **Widget**:
-A Tracker's panel on the Dashboard. Each Widget decides how the
-Selected Date maps to the range of Entries it shows.
+A panel on a Page showing one Tracker's Entries. The Dashboard
+has one per Tracker; a Tracker's own Page has several. Each
+Widget decides how the Selected Date maps to the range of
+Entries it shows.
 _Avoid_: Card, tile, panel
 
 **Selected Date**:
-The day the Dashboard is focused on. It opens on today, is
-never in the future, and is not remembered between launches.
-Only the date header changes it; Widgets read it but never set
-it.
+The day the whole app is focused on, shared by every Page, so
+changing it moves every Widget back or forward in time. It
+opens on today, is never in the future, and is not remembered
+between launches. Only the date header changes it; Widgets
+read it but never set it.
 _Avoid_: Current date, active date
 
 ### Trackers
@@ -83,7 +86,7 @@ its Tail (end). A day can have several Periods (naps, broken
 sleep), a Period can cross midnight, and Periods never overlap.
 A Period belongs to its Head's calendar day, local time, so
 going to bed at 1 AM on the 8th counts as the 8th.
-_Avoid_: Night, session
+_Avoid_: Session
 
 **Timeline**:
 The Sleep Widget's track, on which Periods are drawn: one
@@ -95,6 +98,30 @@ next day's AM row. A Period runs along it from its Head to its
 Tail, round the curves.
 _Avoid_: Chart, axis
 
+**Wake-up**:
+A gap of an hour or less between two consecutive Periods.
+Periods joined by Wake-ups form one stretch of sleep.
+_Avoid_: Interruption, awakening
+
+**Night**:
+A day's longest stretch of sleep: one Period, or several joined
+by Wake-ups. It belongs to its first Period's day, and its
+length counts only the time asleep, not the Wake-ups.
+_Avoid_: Main sleep
+
+**Nap**:
+Any stretch of sleep in a day other than its Night.
+
+**Sleep Goal**:
+How long the user wants each Night to last. One value, set by
+the user, not an Entry.
+_Avoid_: Target
+
+**Sleep Quality**:
+How well the user slept, rated after waking on a five-step
+scale from Poor to Great. A day has at most one rating, or none.
+_Avoid_: Score, rest rating
+
 **Mood**:
 One of a fixed set of feelings a day can be marked with. A
 Mood Entry assigns one Mood to one day, or the day has none.
@@ -102,8 +129,8 @@ The set can't be edited yet.
 
 **Month Grid**:
 A calendar-shaped view of one month's days, with weeks as rows
-starting on the Locale's first day of the week. The Mood and
-Habits Widgets use it.
+starting on the Locale's first day of the week. The Mood,
+Habits and Sleep Quality Widgets use it.
 _Avoid_: Calendar, heatmap
 
 **Day Pill**:
