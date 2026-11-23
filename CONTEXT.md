@@ -98,7 +98,17 @@ _Avoid_: Chart, axis
 **Mood**:
 One of a fixed set of feelings a day can be marked with. A
 Mood Entry assigns one Mood to one day, or the day has none.
-The set can't be edited yet.
+Every Mood is a Good Mood, a Hard Mood, or neither. The set
+can't be edited yet; once it can, the user picks which of the
+three a new Mood is.
+
+**Good Mood**:
+A Mood that counts as a good day: Happy and Okay.
+
+**Hard Mood**:
+A Mood that counts as a hard day: Stressed, Anxious and Angry.
+Neutral is neither Good nor Hard.
+_Avoid_: Bad mood, negative mood
 
 **Month Grid**:
 A calendar-shaped view of one month's days, with weeks as rows
