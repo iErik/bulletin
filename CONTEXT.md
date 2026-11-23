@@ -105,8 +105,9 @@ _Avoid_: Interruption, awakening
 
 **Night**:
 A day's longest stretch of sleep: one Period, or several joined
-by Wake-ups. It belongs to its first Period's day, and its
-length counts only the time asleep, not the Wake-ups.
+by Wake-ups. A stretch belongs to the day it ends on, so a day's
+Night is the sleep you woke from that day. Its length counts only
+the time asleep, not the Wake-ups.
 _Avoid_: Main sleep
 
 **Nap**:
