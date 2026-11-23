@@ -115,8 +115,42 @@ Something the user wants to do regularly, tracked day by day
 in the Habits Tracker. It has a name, unique among all Habits
 including archived ones, and an icon. Deleting a Habit archives it: it leaves
 the list, but its Entries are kept. Creating a Habit with an
-archived Habit's name restores that Habit.
+archived Habit's name restores that Habit. A Habit counts from
+the day it was created, except during its Archive Periods.
 _Avoid_: Goal, routine
+
+**Archive Period**:
+A stretch of days during which a Habit was archived. It starts
+on the day the Habit is archived and ends the day before it is
+restored; a Habit still archived has one with no end. Its days
+are never missed, can't be ticked, and are skipped over by a
+Streak rather than breaking it.
+
+**Streak**:
+How many days in a row a Habit was done, counting back from the
+Selected Date, or from the day before if the Selected Date isn't
+done yet. A Habit's best Streak is its longest ever, up to the
+Selected Date.
+_Avoid_: Chain, run
+
+**Completion Rate**:
+The share of days a Habit was done, out of the days it counted
+in a span. For several Habits, all their done days out of all
+their counted days.
+_Avoid_: Score, percentage
+
+**Slipping**:
+Said of a Habit whose Completion Rate over the last 14 days is
+at least 20 points below its rate over the 14 days before.
+
+**Perfect Day**:
+A day on which every Habit that counted was done.
+
+**Habit Goal**:
+The weekly Completion Rate the user aims for, from 10% to 100%
+in steps of 5%. One value for all Habits, set by dragging; not
+an Entry.
+_Avoid_: Target
 
 **Category**:
 A user-defined label grouping Transactions, such as
