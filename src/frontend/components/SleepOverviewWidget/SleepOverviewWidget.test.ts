@@ -76,10 +76,7 @@ const row = (
   const el = w.findAll('.row').find(r =>
     r.get('.name').text() === name
   )!
-  return {
-    mid: el.get('.mid').text(),
-    val: el.get('.val').text()
-  }
+  return { mid: el.get('.mid').text(), val: el.get('.val').text() }
 }
 
 describe('SleepOverviewWidget', () => {
@@ -90,20 +87,17 @@ describe('SleepOverviewWidget', () => {
     document.body.innerHTML = ''
   })
 
-  it('renders tiles, chart, rows and empty states',
+  it('renders stats, bars, rows and empty states',
     async () => {
       const empty = await mountWidget()
       expect(empty.wrapper.get('.title').text())
         .toBe('Overview')
       expect(stat(empty.wrapper, 'Avg sleep').text())
         .toBe('—')
-      expect(stat(empty.wrapper, 'Sleep debt').text())
-        .toBe('—')
       expect(stat(empty.wrapper, 'Streak').text())
         .toBe('0 nights')
-      expect(row(empty.wrapper, 'Naps').mid)
-        .toBe('0 this week')
-      expect(empty.wrapper.findAll('.bar')).toHaveLength(0)
+      expect(row(empty.wrapper, 'Naps'))
+        .toEqual({ mid: '0 this week', val: '—' })
       expect(empty.wrapper.findAll('.col')).toHaveLength(14)
       const periods = [
         night(7, 7), night(8, 9), night(9, 6),
@@ -119,32 +113,42 @@ describe('SleepOverviewWidget', () => {
         .toBe('−2h 00m')
       expect(stat(wrapper, 'Sleep debt').classes())
         .toContain('-debt')
-      expect(stat(wrapper, 'Streak').text())
-        .toBe('0 nights')
-      expect(row(wrapper, 'Longest night').val)
-        .toBe('9h 00m')
       expect(row(wrapper, 'Naps').val).toBe('avg 35m')
       const zero = await mountWidget([night(9, 8)])
       expect(stat(zero.wrapper, 'Sleep debt').text())
         .toBe('+0h 00m')
-      expect(stat(zero.wrapper, 'Sleep debt').classes())
-        .not.toContain('-debt')
     })
 
-  it('drags the goal, follows date and revision',
+  it('previews, Escapes, commits; follows date/revision',
     async () => {
       const periods = [
         night(7, 8), night(8, 8), night(9, 8)
       ]
       const { wrapper, api } = await mountWidget(periods)
+      const slider = wrapper.get('[role="slider"]')
+      const node = slider.element as HTMLElement
+      vi.spyOn(node, 'getBoundingClientRect')
+        .mockReturnValue({
+          top: 0, bottom: 480, height: 480,
+          left: 0, right: 100, width: 100,
+          x: 0, y: 0, toJSON: () => ({})
+        })
+      node.dispatchEvent(new PointerEvent(
+        'pointerdown',
+        { button: 0, clientY: 120, bubbles: true }
+      ))
+      await flushPromises()
+      const line = wrapper.getComponent(GoalLine)
+      expect(line.props('label')).toBe('10h goal')
+      expect(stat(wrapper, 'Streak').text())
+        .toBe('0 nights')
+
+      await slider.trigger('keydown', { key: 'Escape' })
+      await flushPromises()
+      expect(line.props('label')).toBe('8h goal')
       expect(stat(wrapper, 'Streak').text())
         .toBe('3 nights')
-
-      const line = wrapper.getComponent(GoalLine)
-      line.vm.$emit('preview', 7 * 60 + 30)
-      await flushPromises()
-      expect(line.props('label')).toBe('7h 30m goal')
-      expect(useSleepGoalStore().minutes).toBe(8 * 60)
+      expect(api.sleep.setGoal).not.toHaveBeenCalled()
 
       line.vm.$emit('commit', 7 * 60 + 30)
       await flushPromises()

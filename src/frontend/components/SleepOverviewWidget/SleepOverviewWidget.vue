@@ -85,13 +85,12 @@ watch(
   m => { draftGoal.value = m }
 )
 
-const goal = computed(() => draftGoal.value)
 const bars = computed(() =>
-  nightBars(days.value, date.value, goal.value))
+  nightBars(days.value, date.value, draftGoal.value))
 const nightCount = computed(() =>
-  streak(days.value, date.value, goal.value))
+  streak(days.value, date.value, draftGoal.value))
 const debt = computed(() =>
-  sleepDebtMs(days.value, date.value, goal.value))
+  sleepDebtMs(days.value, date.value, draftGoal.value))
 const napStat = computed(() =>
   naps(days.value, date.value, firstDayOfWeek()))
 const wakeUps = computed(() =>
@@ -170,10 +169,10 @@ const rows = computed(() => {
   ]
 })
 
-const goalLabel = computed(() => formatGoalLabel(goal.value))
+const goalLabel = computed(() => formatGoalLabel(draftGoal.value))
 const goalAria = computed(() => {
-  const h = Math.floor(goal.value / 60)
-  const m = goal.value % 60
+  const h = Math.floor(draftGoal.value / 60)
+  const m = draftGoal.value % 60
   return m === 0
     ? `${h} hours`
     : `${h} hours ${m} minutes`
@@ -270,7 +269,7 @@ const barStyle = (bar: NightBar): Record<string, string> =>
               </div>
             </div>
             <GoalLine
-              :value="goal"
+              :value="goalStore.minutes"
               :min="SLEEP_GOAL_MIN_MINUTES"
               :max="SLEEP_GOAL_MAX_MINUTES"
               :step="GOAL_STEP"
@@ -401,6 +400,7 @@ const barStyle = (bar: NightBar): Record<string, string> =>
 .sleep-overview .plot {
   position: relative;
   height: var(--chart-h);
+  margin-bottom: rem(14px);
 }
 
 .sleep-overview .grid {
@@ -422,7 +422,7 @@ const barStyle = (bar: NightBar): Record<string, string> =>
 
 .sleep-overview .bars {
   position: absolute;
-  inset: 0 0 rem(14px);
+  inset: 0;
   display: flex;
   gap: rem(12.5px);
   align-items: flex-end;
