@@ -9,6 +9,7 @@ import {
   uniqueIndex
 } from 'drizzle-orm/sqlite-core'
 // Relative: `pnpm db:generate` can't resolve `@shared`.
+import { HABIT_GOAL } from '../../shared/habits'
 import {
   SLEEP_GOAL_MAX_MINUTES,
   SLEEP_GOAL_MIN_MINUTES
@@ -219,6 +220,38 @@ export const sleepGoal = sqliteTable(
       )} AND ${sql.raw(
         String(SLEEP_GOAL_MAX_MINUTES)
       )}`
+    )
+  ]
+)
+
+/**
+ * The Habit Goal: one row, the weekly Completion Rate
+ * the user aims for, in percent. Not an Entry. The
+ * checks back up the rules main validates: only row
+ * 1, 10 to 100 in steps of 5.
+ */
+export const habitGoal = sqliteTable(
+  'habit_goal',
+  {
+    id: integer().primaryKey(),
+    percent: integer().notNull()
+  },
+  table => [
+    check(
+      'habit_goal_one_row',
+      sql`${table.id} = ${sql.raw('1')}`
+    ),
+    check(
+      'habit_goal_percent_range',
+      sql`${table.percent} BETWEEN ${sql.raw(
+        String(HABIT_GOAL.min)
+      )} AND ${sql.raw(String(HABIT_GOAL.max))}`
+    ),
+    check(
+      'habit_goal_percent_step',
+      sql`${table.percent} % ${sql.raw(
+        String(HABIT_GOAL.step)
+      )} = ${sql.raw('0')}`
     )
   ]
 )
