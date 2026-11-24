@@ -124,6 +124,10 @@ export interface Palette {
   readonly 'tile-icon': string
   /** A Widget's title, as `--color-widget-title`. */
   readonly 'widget-title': string
+  /** A stat's plain value, as `--color-stat-value`. */
+  readonly 'stat-value': string
+  /** A change for the better, `--color-improvement`. */
+  readonly improvement: string
   /** The Sidebar's strip, as `--color-sidebar`. */
   readonly sidebar: string
   /** The current Page's button, `--color-sidebar-active`. */
