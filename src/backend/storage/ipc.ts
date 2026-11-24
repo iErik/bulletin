@@ -5,6 +5,9 @@ import { EXPENSES_CHANNELS } from '@shared/expenses'
 import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
+import {
+  SLEEP_QUALITY_CHANNELS
+} from '@shared/sleep-quality'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import { getBudget, setBudget } from './budget'
 import type { Database } from './database'
@@ -41,6 +44,11 @@ import {
   updateSleep
 } from './sleep'
 import { getSleepGoal, setSleepGoal } from './sleep-goal'
+import {
+  createSleepQuality,
+  deleteSleepQuality,
+  listSleepQuality
+} from './sleep-quality'
 import {
   createWeight,
   deleteWeight,
@@ -85,6 +93,10 @@ const OPERATIONS: Record<string, Operation> = {
   [SLEEP_CHANNELS.delete]: deleteSleep,
   [SLEEP_CHANNELS.getGoal]: getSleepGoal,
   [SLEEP_CHANNELS.setGoal]: setSleepGoal,
+  [SLEEP_QUALITY_CHANNELS.list]: listSleepQuality,
+  [SLEEP_QUALITY_CHANNELS.create]: (db, p) =>
+    createSleepQuality(db, p),
+  [SLEEP_QUALITY_CHANNELS.delete]: deleteSleepQuality,
   [MOOD_CHANNELS.list]: listMood,
   [MOOD_CHANNELS.create]: (db, p) => createMood(db, p),
   [MOOD_CHANNELS.update]: (db, p) => updateMood(db, p),

@@ -3,6 +3,9 @@ import { EXPENSES_CHANNELS } from '@shared/expenses'
 import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
 import { SLEEP_CHANNELS } from '@shared/sleep'
+import {
+  SLEEP_QUALITY_CHANNELS
+} from '@shared/sleep-quality'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import { logError } from '../electron/log'
 import { StorageFailure } from './errors'
@@ -130,6 +133,24 @@ describe('handleStorage', () => {
     })).toEqual({ ok: true, value: [entry] })
     expect(await call(MOOD_CHANNELS.delete, entry.date))
       .toEqual({ ok: true, value: null })
+  })
+
+  it('handles every Sleep Quality channel', async () => {
+    const call = serve()
+    const entry = { date: '2026-01-01', rating: 4 }
+
+    expect(await call(
+      SLEEP_QUALITY_CHANNELS.create,
+      entry
+    )).toEqual({ ok: true, value: entry })
+    expect(await call(SLEEP_QUALITY_CHANNELS.list, {
+      from: '2026-01-01',
+      to: '2026-01-01'
+    })).toEqual({ ok: true, value: [entry] })
+    expect(await call(
+      SLEEP_QUALITY_CHANNELS.delete,
+      entry.date
+    )).toEqual({ ok: true, value: null })
   })
 
   it('handles every Habits channel', async () => {

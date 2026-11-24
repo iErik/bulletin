@@ -2,6 +2,7 @@ import type { ExpensesApi } from './expenses'
 import type { HabitsApi } from './habits'
 import type { MoodApi } from './mood'
 import type { SleepApi } from './sleep'
+import type { SleepQualityApi } from './sleep-quality'
 import type { WeightApi } from './weight'
 
 /**
@@ -34,6 +35,8 @@ export interface BulletinApi {
   readonly weight: WeightApi
   /** The Sleep Tracker's Periods. */
   readonly sleep: SleepApi
+  /** Sleep Quality ratings, one per day. */
+  readonly sleepQuality: SleepQualityApi
   /** The Mood Tracker's Entries. */
   readonly mood: MoodApi
   /** The Habits Tracker's Habits and Entries. */
