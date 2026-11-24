@@ -1,6 +1,8 @@
 import type { Component } from 'vue'
 import DashboardView
   from './views/DashboardView/DashboardView.vue'
+import ExpensesView
+  from './views/ExpensesView/ExpensesView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
 
 /** A top-level screen, with its Sidebar button. */
@@ -55,7 +57,8 @@ export const PAGES: readonly Page[] = [
     name: 'expenses',
     path: '/expenses',
     label: 'Expenses',
-    icon: 'dollar'
+    icon: 'dollar',
+    view: ExpensesView
   },
   {
     name: 'notes',
