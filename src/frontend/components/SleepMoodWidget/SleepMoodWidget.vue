@@ -3,12 +3,15 @@
 // Mood shares by asleep length. Night.day ↔ Mood
 // (ADR 0004). `revision` reloads after Timeline edits.
 import { computed, ref, shallowRef, watch } from 'vue'
-import { MOODS, type MoodKey } from '@shared/mood'
+import {
+  MOODS,
+  MOOD_DISPLAY_ORDER,
+  type MoodKey
+} from '@shared/mood'
 import { localDate } from '@shared/dates'
 import Widget from '@/components/Widget/Widget.vue'
 import { moodColour } from '@/theme/semantic'
 import {
-  SLEEP_MOOD_LEGEND,
   sleepMood,
   type SleepMoodHeadline,
   type SleepMoodView
@@ -65,7 +68,7 @@ const headlineText = computed((): string | null => {
     : null
 })
 
-const legend = SLEEP_MOOD_LEGEND.map(k =>
+const legend = MOOD_DISPLAY_ORDER.map(k =>
   MOODS.find(m => m.key === k)!)
 
 const winning = (

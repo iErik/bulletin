@@ -119,6 +119,9 @@ export const defaultTheme: Theme = {
       // anxious have no pill there: their swatch glows
       // on a darker base.
       'pill-empty': '#2c2c2c',
+      // Figma's Year in Mood: flat compact pills.
+      'pill-flat-empty': 'rgb(255 255 255 / 5%)',
+      'pill-outline': '#fff',
       weekday: 'rgb(165 165 165 / 55%)',
       pill: {
         happy: pill('#77ca6e', '#77ca6e'),
@@ -204,6 +207,8 @@ export const defaultTheme: Theme = {
       // The dark pills', mirrored: lighter bases under
       // the light Mood colours, and a dark done Habit.
       'pill-empty': '#e2dfd8',
+      'pill-flat-empty': 'rgb(0 0 0 / 5%)',
+      'pill-outline': '#1a1a1a',
       weekday: 'rgb(90 90 90 / 55%)',
       pill: {
         happy: pill('#65b25c', '#3f9a36'),

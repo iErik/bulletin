@@ -203,6 +203,58 @@ describe('MonthGrid', () => {
     })
   })
 
+  describe('compact', () => {
+    const colours = {
+      base: 'red',
+      glow: 'pink',
+      shadow: 'white',
+      tint: 'blue'
+    }
+
+    it('has no weekday headers', () => {
+      const wrapper = mountGrid({ compact: true })
+
+      expect(wrapper.classes()).toContain('-compact')
+      expect(wrapper.findAll('.weekday')).toHaveLength(0)
+      expect(slots(wrapper).slice(0, 7))
+        .toEqual([1, 2, 3, 4, 5, 6, 7])
+    })
+
+    it('draws a filled day as a flat base', () => {
+      const wrapper = mountGrid({
+        compact: true,
+        pill: (day: Date) =>
+          day.getDate() === 4 ? colours : undefined
+      })
+
+      expect(pill(wrapper, 4).classes())
+        .toContain('-filled')
+      expect(pill(wrapper, 4).attributes('style'))
+        .toContain('--pill-base: red;')
+      expect(pill(wrapper, 4).find('.base').exists())
+        .toBe(true)
+      expect(pill(wrapper, 4).find('.glow').exists())
+        .toBe(false)
+    })
+
+    it('keeps the Selected Date and disabled states',
+      () => {
+        const wrapper = mountGrid({ compact: true })
+
+        expect(pill(wrapper, 9).classes())
+          .toContain('-selected')
+        expect(pill(wrapper, 10).classes())
+          .toContain('-disabled')
+      })
+
+    it('leaves the default grid unchanged', () => {
+      const wrapper = mountGrid()
+
+      expect(wrapper.classes()).not.toContain('-compact')
+      expect(wrapper.findAll('.weekday')).toHaveLength(7)
+    })
+  })
+
   describe('tooltip', () => {
     const label = (day: Date): string =>
       day.getDate() === 4 ? 'Happy' : 'No mood'
