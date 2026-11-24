@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import DashboardView
   from './views/DashboardView/DashboardView.vue'
+import SleepView from './views/SleepView/SleepView.vue'
 
 /** A top-level screen, with its Sidebar button. */
 export interface Page {
@@ -35,7 +36,8 @@ export const PAGES: readonly Page[] = [
     name: 'sleep',
     path: '/sleep',
     label: 'Sleep',
-    icon: 'moon'
+    icon: 'moon',
+    view: SleepView
   },
   {
     name: 'mood',
