@@ -4,6 +4,9 @@ import { logError } from '../electron/log'
 import { EXPENSES_CHANNELS } from '@shared/expenses'
 import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
+import {
+  RECURRING_TASKS_CHANNELS
+} from '@shared/recurring-tasks'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import {
   SLEEP_QUALITY_CHANNELS
@@ -38,6 +41,13 @@ import {
   listMood,
   updateMood
 } from './mood'
+import {
+  createRecurringTask,
+  deleteRecurringTask,
+  listOccurrences,
+  listRecurringTasks,
+  stopRecurringTask
+} from './recurring-tasks'
 import {
   createSleep,
   deleteSleep,
@@ -136,7 +146,15 @@ const OPERATIONS: Record<string, Operation> = {
   [TASKS_CHANNELS.create]: (db, p) => createTask(db, p),
   [TASKS_CHANNELS.update]: updateTask,
   [TASKS_CHANNELS.setDone]: (db, p) => setTaskDone(db, p),
-  [TASKS_CHANNELS.delete]: deleteTask
+  [TASKS_CHANNELS.delete]: deleteTask,
+  [RECURRING_TASKS_CHANNELS.list]: listRecurringTasks,
+  [RECURRING_TASKS_CHANNELS.create]: (db, p) =>
+    createRecurringTask(db, p),
+  [RECURRING_TASKS_CHANNELS.stop]: (db, p) =>
+    stopRecurringTask(db, p),
+  [RECURRING_TASKS_CHANNELS.delete]: deleteRecurringTask,
+  [RECURRING_TASKS_CHANNELS.listOccurrences]:
+    listOccurrences
 }
 
 /** Registers one `ipc.handle` per storage operation. */

@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { EXPENSES_CHANNELS } from '@shared/expenses'
 import { HABITS_CHANNELS } from '@shared/habits'
 import { MOOD_CHANNELS } from '@shared/mood'
+import {
+  RECURRING_TASKS_CHANNELS
+} from '@shared/recurring-tasks'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import {
   SLEEP_QUALITY_CHANNELS
@@ -291,6 +294,33 @@ describe('handleStorage', () => {
       .toMatchObject(ok([{ id: 1 }]))
     expect(await call(TASKS_CHANNELS.delete, 1))
       .toEqual(ok(null))
+  })
+
+  it('handles every Recurring Tasks channel', async () => {
+    const call = serve()
+    const rule = {
+      title: 'Gym',
+      time: '07:30',
+      schedule: { kind: 'weekly', weekdays: [1, 4] },
+      firstDay: '2026-11-23'
+    }
+    const ok = (value: unknown): object => ({ ok: true, value })
+    const ch = RECURRING_TASKS_CHANNELS
+
+    expect(await call(ch.create, rule))
+      .toMatchObject(ok({ id: 1, ...rule, lastDay: null }))
+    expect(await call(ch.list, undefined))
+      .toMatchObject(ok([{ id: 1 }]))
+    expect(await call(ch.listOccurrences, {
+      from: '2026-11-23', to: '2026-11-26'
+    })).toMatchObject(ok([
+      { ruleId: 1, scheduled: '2026-11-23' },
+      { ruleId: 1, scheduled: '2026-11-26' }
+    ]))
+    expect(await call(ch.stop, 1)).toMatchObject(ok({
+      id: 1, lastDay: expect.any(String) as string
+    }))
+    expect(await call(ch.delete, 1)).toEqual(ok(null))
   })
 
   it('rejects invalid payloads', async () => {

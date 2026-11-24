@@ -334,3 +334,55 @@ export const tasks = sqliteTable(
     )
   ]
 )
+
+/**
+ * Recurring Tasks: rules, never stored as copies.
+ * `weekdays` is a bitmask (bit 0 = Sunday .. bit 6 =
+ * Saturday). `last_day` is null until stopped. Checks
+ * back up a non-blank title and each kind's columns.
+ */
+export const recurringTasks = sqliteTable(
+  'recurring_tasks',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    title: text().notNull(),
+    time: text(),
+    kind: text().notNull(),
+    every: integer(),
+    weekdays: integer(),
+    month: integer(),
+    monthDay: integer('month_day'),
+    firstDay: text('first_day').notNull(),
+    lastDay: text('last_day'),
+    created: integer().notNull()
+  },
+  table => [
+    check(
+      'recurring_tasks_title_not_blank',
+      sql`trim(${table.title}) <> ''`
+    ),
+    check(
+      'recurring_tasks_schedule',
+      sql`(${table.kind} = 'days'
+        AND ${table.every} IS NOT NULL AND ${table.every} >= 1
+        AND ${table.weekdays} IS NULL
+        AND ${table.month} IS NULL AND ${table.monthDay} IS NULL)
+      OR (${table.kind} = 'weekly'
+        AND ${table.weekdays} IS NOT NULL
+        AND ${table.weekdays} BETWEEN 1 AND 127
+        AND ${table.every} IS NULL
+        AND ${table.month} IS NULL AND ${table.monthDay} IS NULL)
+      OR (${table.kind} = 'monthly'
+        AND ${table.monthDay} IS NOT NULL
+        AND ${table.monthDay} BETWEEN 1 AND 31
+        AND ${table.every} IS NULL
+        AND ${table.weekdays} IS NULL AND ${table.month} IS NULL)
+      OR (${table.kind} = 'yearly'
+        AND ${table.month} IS NOT NULL
+        AND ${table.month} BETWEEN 1 AND 12
+        AND ${table.monthDay} IS NOT NULL
+        AND ${table.monthDay} BETWEEN 1 AND 31
+        AND ${table.every} IS NULL AND ${table.weekdays} IS NULL)`
+    )
+  ]
+)
