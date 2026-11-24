@@ -7,6 +7,8 @@ import {
 } from '@vue/test-utils'
 import type { Transaction } from '@shared/expenses'
 import { stubBulletin } from '@/testing/bulletin'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import ExpenseTable from './ExpenseTable.vue'
 
 let table: VueWrapper | undefined
@@ -78,6 +80,21 @@ describe('ExpenseTable', () => {
     table?.unmount()
     table = undefined
   })
+
+  it('draws an overlay scrollbar on its scroller',
+    async () => {
+      const wrapper = mountTable()
+      await flushPromises()
+      const bar = wrapper.getComponent(OverlayScrollbar)
+
+      expect(bar.props('target')).toBe(
+        wrapper.get('.scroller').element
+      )
+      expect(wrapper.find('.view .scroller').exists())
+        .toBe(true)
+      expect(wrapper.find('.view .overlay-scrollbar')
+        .exists()).toBe(true)
+    })
 
   it('has the columns, with no TYPE', () => {
     const wrapper = mountTable()
@@ -536,6 +553,8 @@ describe('ExpenseTable', () => {
 
     expect(wrapper.get('[role="alert"]').text())
       .toBe('Couldn’t delete the Transaction. Try again.')
+    expect(wrapper.find('.view [role="alert"]').exists())
+      .toBe(false)
     expect(asking(wrapper)).toEqual(['Delete Salary?'])
     expect(wrapper.emitted('deleted')).toBeUndefined()
   })

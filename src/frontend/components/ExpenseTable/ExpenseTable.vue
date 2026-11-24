@@ -38,6 +38,8 @@ import CategoryCell
   from '@/components/CategoryCell/CategoryCell.vue'
 import DateCell from '@/components/DateCell/DateCell.vue'
 import Icon from '@/components/Icon/Icon.vue'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import { amountText, parseAmount } from '@/expenses/amount'
 import type { CategoryChoice } from '@/expenses/categories'
 import { formatAmount } from '@/expenses/money'
@@ -221,6 +223,7 @@ const onDraftFocusout = (event: FocusEvent): void => {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+const scroller = useTemplateRef<HTMLElement>('scroller')
 
 /** The first element in DOM order matching `selector`. */
 const find = (selector: string): HTMLElement | null =>
@@ -252,7 +255,9 @@ const {
 
 <template>
   <div ref="root" class="expense-table" @keydown="onKeydown">
-    <div class="scroller">
+    <!-- eslint-disable vue/html-indent -->
+    <div class="view">
+    <div ref="scroller" class="scroller">
       <table class="table" tabindex="-1">
         <thead>
           <tr>
@@ -430,6 +435,9 @@ const {
       <!-- Figma's empty rows, down to the Widget's edge. -->
       <div class="fillers" aria-hidden="true" />
     </div>
+    <OverlayScrollbar :target="scroller" />
+    </div>
+    <!-- eslint-enable vue/html-indent -->
     <p v-if="error" class="error" role="alert">
       {{ error }}
     </p>
@@ -462,14 +470,24 @@ const {
   flex-direction: column;
   min-height: 0;
 
-  // Its corners round off whichever rows meet them.
-  > .scroller {
+  // The frame is the scroller's box, so the bar
+  // stops at the corners and above the error.
+  > .view {
+    position: relative;
     display: flex;
     flex: 1;
     flex-direction: column;
     min-height: 0;
-    overflow-y: auto;
+  }
+
+  // Its corners round off whichever rows meet them.
+  > .view > .scroller {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
     border-radius: rem(8px);
+    @include scroller(y);
   }
 
   // The spacing's outer gaps are pulled in, so the
@@ -527,7 +545,7 @@ const {
   }
 
   // As many bands as fit, each 2px below the last.
-  > .scroller > .fillers {
+  > .view > .scroller > .fillers {
     flex: 1 0 0;
     background: repeating-linear-gradient(
       transparent 0 rem(2px),

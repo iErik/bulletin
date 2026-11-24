@@ -6,7 +6,16 @@ export default {
   extends: ['stylelint-config-standard-scss'],
   plugins: ['@stylistic/stylelint-plugin'],
   overrides: [
-    { files: ['**/*.vue'], customSyntax: 'postcss-html' }
+    { files: ['**/*.vue'], customSyntax: 'postcss-html' },
+    // The scroller mixin is the one place overflow
+    // may scroll. No disable comment, so
+    // reportNeedlessDisables stays quiet.
+    {
+      files: ['**/styles/utils/_mixins.scss'],
+      rules: {
+        'declaration-property-value-disallowed-list': null
+      }
+    }
   ],
   ignoreFiles: ['out/**', 'release/**', 'coverage/**'],
   reportNeedlessDisables: true,
@@ -37,6 +46,17 @@ export default {
     'selector-class-pattern': [
       '^-?[a-z][a-z0-9]*(-[a-z0-9]+)*$',
       { message: 'Expected an RSCSS class name' }
+    ],
+    // A native scrollbar. Use the scroller mixin and
+    // OverlayScrollbar instead.
+    'declaration-property-value-disallowed-list': [
+      {
+        '/^overflow(-[xy])?$/': ['/\\b(auto|scroll)\\b/']
+      },
+      {
+        message: 'Use the scroller mixin and'
+          + ' OverlayScrollbar (%s: %s)'
+      }
     ]
   }
 }

@@ -631,9 +631,8 @@ $day: 57px;
   .rows {
     position: relative; // Days' offsetTop is from here
     height: 100%;
-    overflow-y: auto;
     overflow-anchor: none; // We keep the position
-    @include hide-native-scrollbar;
+    @include scroller(y);
   }
 
   .rows > .days {

@@ -1,0 +1,8 @@
+// No element shows the platform scrollbar. A scroll
+// container uses the scroller mixin, and
+// OverlayScrollbar draws the bar.
+* {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}

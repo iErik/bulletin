@@ -37,7 +37,8 @@ export default defineConfig({
             'src/backend/**/*.test.ts',
             'src/shared/**/*.test.ts',
             'scripts/**/*.test.ts',
-            'eslint-rules/**/*.test.mjs'
+            'eslint-rules/**/*.test.mjs',
+            'stylelint.config.test.mjs'
           ]
         }
       }
