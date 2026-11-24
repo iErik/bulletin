@@ -136,8 +136,7 @@ _Avoid_: Chain, run
 **Completion Rate**:
 The share of the days a Habit counted in a span on which it was
 done; for several Habits, all their done days out of all their
-counted days. A span with
-no counted days has none.
+counted days. A span with no counted days has none.
 _Avoid_: Score, percentage
 
 **Slipping**:
