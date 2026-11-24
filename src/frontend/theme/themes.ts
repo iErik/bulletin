@@ -70,6 +70,11 @@ export const defaultTheme: Theme = {
       tile: 'rgb(217 217 217 / 8%)',
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
+      // Figma's Sidebar.
+      sidebar: 'rgb(226 226 226 / 6%)',
+      'sidebar-active': 'rgb(217 217 217 / 11%)',
+      'sidebar-icon': '#a5a5a5',
+      'sidebar-icon-active': '#eeeeee',
 
       // Figma's Expenses table add row.
       'expense-add': '#a5a5a5',
@@ -153,6 +158,11 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
+      // The dark Sidebar's, each channel inverted.
+      sidebar: 'rgb(29 29 29 / 6%)',
+      'sidebar-active': 'rgb(38 38 38 / 11%)',
+      'sidebar-icon': '#5a5a5a',
+      'sidebar-icon-active': '#111111',
       'expense-add': '#5a5a5a',
       // Each dark channel inverted, as the header's are.
       'habit-pill': '#d7d7d7',

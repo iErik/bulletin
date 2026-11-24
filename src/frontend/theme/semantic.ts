@@ -31,6 +31,10 @@ type Single =
   | 'tile'
   | 'tile-icon'
   | 'widget-title'
+  | 'sidebar'
+  | 'sidebar-active'
+  | 'sidebar-icon'
+  | 'sidebar-icon-active'
   | 'expense-add'
   | 'habit-pill'
   | 'habit-pill-text'
@@ -121,6 +125,10 @@ export const applyPalette = (
     'tile',
     'tile-icon',
     'widget-title',
+    'sidebar',
+    'sidebar-active',
+    'sidebar-icon',
+    'sidebar-icon-active',
     'expense-add',
     'habit-pill',
     'habit-pill-text',

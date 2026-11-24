@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // The Sidebar: one icon link per Page, in the Page
 // list's order, with the current Page highlighted.
+// Colours, blur and icons are the Figma Sidebar's.
 import { useRoute } from 'vue-router'
 import Icon from '@/components/Icon/Icon.vue'
 import Tooltip from '@/components/Tooltip/Tooltip.vue'
@@ -45,8 +46,9 @@ const route = useRoute()
 // Sizes and spacing are the Figma Sidebar frame's.
 .app-sidebar {
   padding-block: rem(7px);
-  background: var(--color-surface-raised);
+  background: var(--color-sidebar);
   border-radius: rem(14px);
+  backdrop-filter: blur(rem(4.95px));
   @include colour-transition;
 
   > .items {
@@ -63,23 +65,24 @@ const route = useRoute()
     width: rem(36px);
     height: rem(36px);
     font-size: rem(24px);
-    color: var(--color-text-muted);
+    color: var(--color-sidebar-icon);
     border-radius: rem(6px);
     @include colour-transition;
     @include focus-ring;
 
+    // Figma draws no hover: half the current Page's.
     &:hover {
-      color: var(--color-text);
+      color: var(--color-sidebar-icon-active);
       background: color-mix(
         in sRGB,
-        var(--color-border) 50%,
+        var(--color-sidebar-active) 50%,
         transparent
       );
     }
 
     &[aria-current='page'] {
-      color: var(--color-text);
-      background: var(--color-border);
+      color: var(--color-sidebar-icon-active);
+      background: var(--color-sidebar-active);
     }
   }
 }

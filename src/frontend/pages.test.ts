@@ -3,6 +3,7 @@ import ExpensesView
   from './views/ExpensesView/ExpensesView.vue'
 import MoodView from './views/MoodView/MoodView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
+import TasksView from './views/TasksView/TasksView.vue'
 import { isPageActive, PAGES, type Page } from './pages'
 
 const page = (name: string): Page => {
@@ -12,14 +13,27 @@ const page = (name: string): Page => {
 }
 
 describe('PAGES', () => {
-  it('lists the six Pages in Sidebar order', () => {
+  it('lists the seven Pages in Sidebar order', () => {
     expect(PAGES.map(p => [p.label, p.path])).toEqual([
       ['Dashboard', '/'],
       ['Sleep', '/sleep'],
+      ['Expenses', '/expenses'],
+      ['Habits', '/habits'],
       ['Mood', '/mood'],
       ['Tasks', '/tasks'],
-      ['Expenses', '/expenses'],
       ['Notes', '/notes']
+    ])
+  })
+
+  it('gives each Page the Figma Sidebar\'s icon', () => {
+    expect(PAGES.map(p => p.icon)).toEqual([
+      'home',
+      'moon',
+      'dollar',
+      'weight',
+      'mood',
+      'checklist',
+      'book'
     ])
   })
 
@@ -34,6 +48,10 @@ describe('PAGES', () => {
   it('gives the Expenses Page its view', () => {
     expect(page('expenses').view).toBe(ExpensesView)
   })
+
+  it('gives the Tasks Page its view', () => {
+    expect(page('tasks').view).toBe(TasksView)
+  })
 })
 
 describe('isPageActive', () => {
@@ -45,7 +63,14 @@ describe('isPageActive', () => {
     expect(isPageActive(dashboard, '/x')).toBe(false)
   })
 
-  it.each(['sleep', 'mood', 'tasks', 'expenses', 'notes'])(
+  it.each([
+    'sleep',
+    'expenses',
+    'habits',
+    'mood',
+    'tasks',
+    'notes'
+  ])(
     'makes %s active on its path and below it',
     name => {
       const { path } = page(name)

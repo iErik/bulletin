@@ -5,6 +5,7 @@ import ExpensesView
   from './views/ExpensesView/ExpensesView.vue'
 import MoodView from './views/MoodView/MoodView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
+import TasksView from './views/TasksView/TasksView.vue'
 
 /** A top-level screen, with its Sidebar button. */
 export interface Page {
@@ -23,9 +24,9 @@ export interface Page {
 }
 
 /**
- * Every Page, in Sidebar order. The router and the
- * Sidebar both read this list, so a Page is added in
- * one place.
+ * Every Page, in the Figma Sidebar's order. The
+ * router and the Sidebar both read this list, so a
+ * Page is added in one place.
  */
 export const PAGES: readonly Page[] = [
   {
@@ -43,6 +44,19 @@ export const PAGES: readonly Page[] = [
     view: SleepView
   },
   {
+    name: 'expenses',
+    path: '/expenses',
+    label: 'Expenses',
+    icon: 'dollar',
+    view: ExpensesView
+  },
+  {
+    name: 'habits',
+    path: '/habits',
+    label: 'Habits',
+    icon: 'weight'
+  },
+  {
     name: 'mood',
     path: '/mood',
     label: 'Mood',
@@ -53,14 +67,8 @@ export const PAGES: readonly Page[] = [
     name: 'tasks',
     path: '/tasks',
     label: 'Tasks',
-    icon: 'checklist'
-  },
-  {
-    name: 'expenses',
-    path: '/expenses',
-    label: 'Expenses',
-    icon: 'dollar',
-    view: ExpensesView
+    icon: 'checklist',
+    view: TasksView
   },
   {
     name: 'notes',
