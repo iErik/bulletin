@@ -9,11 +9,9 @@ but wasn't done lowers its Completion Rate and breaks
 its Streak. An archived Habit was only a flag, so
 nothing said when it was archived, and its past could
 not be shown or counted fairly. We keep every Archive
-Period instead: archiving starts one on that day, and
-restoring ends it the day before. A Habit counts from
-the day it was created, except on the days of its
-Archive Periods, which are never missed, can't be
-ticked, and are skipped over by a Streak.
+Period instead: archiving starts one on that day and
+restoring ends it the day before, so the days in
+between are never counted as missed.
 
 ## Considered Options
 

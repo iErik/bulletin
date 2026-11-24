@@ -115,8 +115,9 @@ Something the user wants to do regularly, tracked day by day
 in the Habits Tracker. It has a name, unique among all Habits
 including archived ones, and an icon. Deleting a Habit archives it: it leaves
 the list, but its Entries are kept. Creating a Habit with an
-archived Habit's name restores that Habit. A Habit counts from
-the day it was created, except during its Archive Periods.
+archived Habit's name restores that Habit. Archiving starts an
+Archive Period and restoring ends it; the Habit counts on every
+other day from its creation up to the Selected Date.
 _Avoid_: Goal, routine
 
 **Archive Period**:
@@ -133,12 +134,14 @@ _Avoid_: Chain, run
 
 **Completion Rate**:
 The share of the days a Habit counted in a span on which it was
-done; for several Habits, of all their counted days.
+done; for several Habits, of all their counted days. A span with
+no counted days has none.
 _Avoid_: Score, percentage
 
 **Slipping**:
-Said of a Habit whose Completion Rate over the last 14 days is
-at least 20 points below its rate over the 14 days before.
+Said of a Habit whose Completion Rate over the 14 days ending on
+the Selected Date is at least 20 points below its rate over the
+14 days before.
 
 **Perfect Day**:
 A day on which every Habit that counted was done.
