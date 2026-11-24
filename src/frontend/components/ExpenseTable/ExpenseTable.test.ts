@@ -90,6 +90,10 @@ describe('ExpenseTable', () => {
       expect(bar.props('target')).toBe(
         wrapper.get('.scroller').element
       )
+      expect(wrapper.find('.view .scroller').exists())
+        .toBe(true)
+      expect(wrapper.find('.view .overlay-scrollbar')
+        .exists()).toBe(true)
     })
 
   it('has the columns, with no TYPE', () => {
@@ -549,6 +553,8 @@ describe('ExpenseTable', () => {
 
     expect(wrapper.get('[role="alert"]').text())
       .toBe('Couldn’t delete the Transaction. Try again.')
+    expect(wrapper.find('.view [role="alert"]').exists())
+      .toBe(false)
     expect(asking(wrapper)).toEqual(['Delete Salary?'])
     expect(wrapper.emitted('deleted')).toBeUndefined()
   })

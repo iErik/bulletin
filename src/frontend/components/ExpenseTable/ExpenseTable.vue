@@ -255,6 +255,8 @@ const {
 
 <template>
   <div ref="root" class="expense-table" @keydown="onKeydown">
+    <!-- eslint-disable vue/html-indent -->
+    <div class="view">
     <div ref="scroller" class="scroller">
       <table class="table" tabindex="-1">
         <thead>
@@ -434,6 +436,8 @@ const {
       <div class="fillers" aria-hidden="true" />
     </div>
     <OverlayScrollbar :target="scroller" />
+    </div>
+    <!-- eslint-enable vue/html-indent -->
     <p v-if="error" class="error" role="alert">
       {{ error }}
     </p>
@@ -461,26 +465,30 @@ const {
     var(--color-surface-raised)
   );
 
-  // The bar shares the scroller's cell, so its box
-  // is the scroller's. The error sits in the row
-  // beneath.
-  position: relative;
-  display: grid;
+  display: flex;
   flex: 1;
-  grid-template-rows: minmax(0, 1fr) auto;
+  flex-direction: column;
   min-height: 0;
 
-  // Its corners round off whichever rows meet them.
-  > .scroller {
+  // The frame is the scroller's box, so the bar
+  // stops at the corners and above the error.
+  > .view {
+    position: relative;
     display: flex;
-    grid-area: 1 / 1;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  // Its corners round off whichever rows meet them.
+  > .view > .scroller {
+    display: flex;
+    flex: 1;
     flex-direction: column;
     min-height: 0;
     border-radius: rem(8px);
     @include scroller(y);
   }
-
-  > .overlay-scrollbar { grid-area: 1 / 1; }
 
   // The spacing's outer gaps are pulled in, so the
   // header meets the top and the fillers' gap follows.
@@ -537,7 +545,7 @@ const {
   }
 
   // As many bands as fit, each 2px below the last.
-  > .scroller > .fillers {
+  > .view > .scroller > .fillers {
     flex: 1 0 0;
     background: repeating-linear-gradient(
       transparent 0 rem(2px),
@@ -648,7 +656,6 @@ const {
   }
 
   > .error {
-    grid-row: 2;
     margin-top: space(1);
     font-size: rem(11px);
     color: var(--color-danger);

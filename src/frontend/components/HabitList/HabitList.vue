@@ -188,119 +188,121 @@ onMounted(() => {
 
 <template>
   <div ref="root" class="habit-list" @keydown="onKeydown">
-    <ul ref="scroller" class="rows" aria-label="Habits">
-      <li
-        v-for="(habit, i) in habits"
-        :key="habit.id"
-        class="row"
-        :class="{ '-current': habit.id === current }"
-        :data-id="habit.id"
-        @keydown="onRowKeydown($event, i)"
-      >
-        <HabitEditor
-          v-if="isActive('edit', habit.id)"
-          v-model:busy="busy"
-          :habit="habit"
-          @saved="onUpdated"
-          @cancel="closeEditor"
-        />
-        <button
-          v-else
-          class="choose"
-          type="button"
-          :tabindex="i === focused ? 0 : -1"
-          :aria-current="habit.id === current"
-          @click="emit('choose', habit)"
-          @focus="focused = i"
+    <div class="view">
+      <ul ref="scroller" class="rows" aria-label="Habits">
+        <li
+          v-for="(habit, i) in habits"
+          :key="habit.id"
+          class="row"
+          :class="{ '-current': habit.id === current }"
+          :data-id="habit.id"
+          @keydown="onRowKeydown($event, i)"
         >
-          <component
-            :is="HABIT_ICON_COMPONENTS[habit.icon]"
-            class="icon"
-            aria-hidden="true"
+          <HabitEditor
+            v-if="isActive('edit', habit.id)"
+            v-model:busy="busy"
+            :habit="habit"
+            @saved="onUpdated"
+            @cancel="closeEditor"
           />
-          <span class="name">{{ habit.name }}</span>
-          <span class="count">{{ count(habit) }}</span>
-        </button>
-        <div
-          v-if="isActive('delete', habit.id)"
-          class="controls"
-          role="group"
-          :aria-label="`Delete ${habit.name}?`"
-        >
-          <span class="question">Delete?</span>
           <button
-            class="control -confirm"
-            type="button"
-            aria-label="Delete"
-            :disabled="busy"
-            @click="archive(habit)"
-          >
-            <Icon name="check" />
-          </button>
-          <button
-            class="control"
-            type="button"
-            aria-label="Don’t delete"
-            :disabled="busy"
-            @click="cancelDelete(true)"
-          >
-            <Icon name="close" />
-          </button>
-        </div>
-        <div
-          v-else-if="!isActive('edit', habit.id)"
-          class="controls"
-        >
-          <button
-            class="control"
+            v-else
+            class="choose"
             type="button"
             :tabindex="i === focused ? 0 : -1"
-            :aria-label="`Edit ${habit.name}`"
-            @click="openEditor(i)"
+            :aria-current="habit.id === current"
+            @click="emit('choose', habit)"
+            @focus="focused = i"
           >
-            <Pencil class="icon" aria-hidden="true" />
+            <component
+              :is="HABIT_ICON_COMPONENTS[habit.icon]"
+              class="icon"
+              aria-hidden="true"
+            />
+            <span class="name">{{ habit.name }}</span>
+            <span class="count">{{ count(habit) }}</span>
           </button>
-          <button
-            class="control"
-            type="button"
-            :tabindex="i === focused ? 0 : -1"
-            :aria-label="`Delete ${habit.name}`"
-            @click="askDelete(i)"
+          <div
+            v-if="isActive('delete', habit.id)"
+            class="controls"
+            role="group"
+            :aria-label="`Delete ${habit.name}?`"
           >
-            <Icon name="minus" />
-          </button>
-          <Icon
-            v-if="habit.id === current"
-            class="current"
-            name="check"
-          />
-        </div>
-      </li>
-      <li
-        class="row -new"
-        data-id="new"
-        @keydown="onRowKeydown($event, habits.length)"
-      >
-        <HabitEditor
-          v-if="isActive('edit', 'new')"
-          v-model:busy="busy"
-          @saved="emit('created', $event)"
-          @cancel="closeEditor"
-        />
-        <button
-          v-else
-          class="choose"
-          type="button"
-          :tabindex="habits.length === focused ? 0 : -1"
-          @click="openEditor(habits.length)"
-          @focus="focused = habits.length"
+            <span class="question">Delete?</span>
+            <button
+              class="control -confirm"
+              type="button"
+              aria-label="Delete"
+              :disabled="busy"
+              @click="archive(habit)"
+            >
+              <Icon name="check" />
+            </button>
+            <button
+              class="control"
+              type="button"
+              aria-label="Don’t delete"
+              :disabled="busy"
+              @click="cancelDelete(true)"
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+          <div
+            v-else-if="!isActive('edit', habit.id)"
+            class="controls"
+          >
+            <button
+              class="control"
+              type="button"
+              :tabindex="i === focused ? 0 : -1"
+              :aria-label="`Edit ${habit.name}`"
+              @click="openEditor(i)"
+            >
+              <Pencil class="icon" aria-hidden="true" />
+            </button>
+            <button
+              class="control"
+              type="button"
+              :tabindex="i === focused ? 0 : -1"
+              :aria-label="`Delete ${habit.name}`"
+              @click="askDelete(i)"
+            >
+              <Icon name="minus" />
+            </button>
+            <Icon
+              v-if="habit.id === current"
+              class="current"
+              name="check"
+            />
+          </div>
+        </li>
+        <li
+          class="row -new"
+          data-id="new"
+          @keydown="onRowKeydown($event, habits.length)"
         >
-          <Icon class="add" name="plus-small" />
-          <span class="name">Track a new habit…</span>
-        </button>
-      </li>
-    </ul>
-    <OverlayScrollbar :target="scroller" />
+          <HabitEditor
+            v-if="isActive('edit', 'new')"
+            v-model:busy="busy"
+            @saved="emit('created', $event)"
+            @cancel="closeEditor"
+          />
+          <button
+            v-else
+            class="choose"
+            type="button"
+            :tabindex="habits.length === focused ? 0 : -1"
+            @click="openEditor(habits.length)"
+            @focus="focused = habits.length"
+          >
+            <Icon class="add" name="plus-small" />
+            <span class="name">Track a new habit…</span>
+          </button>
+        </li>
+      </ul>
+      <OverlayScrollbar :target="scroller" />
+    </div>
     <p v-if="error" class="error" role="alert">
       {{ error }}
     </p>
@@ -319,23 +321,26 @@ onMounted(() => {
     transparent
   );
 
-  // The bar shares the list's cell. The list
-  // shrinks and scrolls, and doesn't grow.
-  position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, auto) auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
 
-  > .rows {
+  // The frame is the list's box. The list shrinks
+  // and scrolls, and the bar stops above the error.
+  > .view {
+    position: relative;
     display: flex;
-    grid-area: 1 / 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  > .view > .rows {
+    display: flex;
     flex-direction: column;
     gap: rem(4px);
     min-height: 0;
     @include scroller(y);
   }
-
-  > .overlay-scrollbar { grid-area: 1 / 1; }
 
   .row {
     display: flex;
@@ -430,7 +435,6 @@ onMounted(() => {
   .row.-new > .choose > .add { grid-row: auto; }
 
   > .error {
-    grid-row: 2;
     margin-top: space(1);
     font-size: rem(11px);
     color: var(--color-text);

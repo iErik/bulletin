@@ -87,6 +87,9 @@ describe('HabitList', () => {
     expect(bar.props('target')).toBe(
       wrapper.get('.rows').element
     )
+    expect(wrapper.find('.view .rows').exists()).toBe(true)
+    expect(wrapper.find('.view .overlay-scrollbar')
+      .exists()).toBe(true)
   })
 
   it('shows each Habit with its icon and count', () => {
@@ -187,6 +190,8 @@ describe('HabitList', () => {
 
     expect(wrapper.get('[role="alert"]').text())
       .toBe('Couldn’t delete the Habit. Try again.')
+    expect(wrapper.find('.view [role="alert"]').exists())
+      .toBe(false)
     expect(wrapper.text()).toContain('Delete?')
     expect(document.activeElement)
       .toBe(button(wrapper, 'Delete').element)
