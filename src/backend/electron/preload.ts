@@ -22,6 +22,10 @@ import {
   type SleepQualityApi
 } from '@shared/sleep-quality'
 import {
+  TASKS_CHANNELS,
+  type TasksApi
+} from '@shared/tasks'
+import {
   WEIGHT_CHANNELS,
   type WeightApi
 } from '@shared/weight'
@@ -54,7 +58,8 @@ const api: BulletinApi = {
   ),
   mood: invoker<MoodApi>(MOOD_CHANNELS),
   habits: invoker<HabitsApi>(HABITS_CHANNELS),
-  expenses: invoker<ExpensesApi>(EXPENSES_CHANNELS)
+  expenses: invoker<ExpensesApi>(EXPENSES_CHANNELS),
+  tasks: invoker<TasksApi>(TASKS_CHANNELS)
 }
 
 contextBridge.exposeInMainWorld(BRIDGE_KEY, api)

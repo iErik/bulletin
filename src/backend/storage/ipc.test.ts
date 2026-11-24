@@ -6,6 +6,7 @@ import { SLEEP_CHANNELS } from '@shared/sleep'
 import {
   SLEEP_QUALITY_CHANNELS
 } from '@shared/sleep-quality'
+import { TASKS_CHANNELS } from '@shared/tasks'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import { logError } from '../electron/log'
 import { StorageFailure } from './errors'
@@ -254,6 +255,42 @@ describe('handleStorage', () => {
       EXPENSES_CHANNELS.getBudget,
       '2026-03'
     )).toEqual({ ok: true, value: budget })
+  })
+
+  it('handles every Tasks channel', async () => {
+    const call = serve()
+    const task = {
+      title: 'Buy milk',
+      day: '2026-01-01',
+      time: '09:00'
+    }
+    const ok = (value: unknown): object =>
+      ({ ok: true, value })
+
+    expect(await call(TASKS_CHANNELS.create, task))
+      .toMatchObject(ok({ id: 1, ...task, moves: 0 }))
+    expect(await call(TASKS_CHANNELS.update, {
+      id: 1,
+      day: '2026-01-03'
+    })).toMatchObject(ok({ day: '2026-01-03', moves: 1 }))
+    expect(await call(TASKS_CHANNELS.setDone, {
+      id: 1,
+      done: true
+    })).toMatchObject(ok({
+      doneAt: expect.any(Number) as number
+    }))
+    expect(await call(TASKS_CHANNELS.list, {
+      from: '2026-01-01',
+      to: '2026-01-03'
+    })).toMatchObject(ok([{ id: 1 }]))
+    expect(await call(TASKS_CHANNELS.update, {
+      id: 1,
+      day: null
+    })).toMatchObject(ok({ day: null, moves: 1 }))
+    expect(await call(TASKS_CHANNELS.listSomeday, undefined))
+      .toMatchObject(ok([{ id: 1 }]))
+    expect(await call(TASKS_CHANNELS.delete, 1))
+      .toEqual(ok(null))
   })
 
   it('rejects invalid payloads', async () => {

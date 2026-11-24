@@ -3,6 +3,7 @@ import type { HabitsApi } from './habits'
 import type { MoodApi } from './mood'
 import type { SleepApi } from './sleep'
 import type { SleepQualityApi } from './sleep-quality'
+import type { TasksApi } from './tasks'
 import type { WeightApi } from './weight'
 
 /**
@@ -46,6 +47,8 @@ export interface BulletinApi {
    * and Budgets.
    */
   readonly expenses: ExpensesApi
+  /** One-off Tasks. */
+  readonly tasks: TasksApi
 }
 
 export const BRIDGE_KEY = 'bulletin'

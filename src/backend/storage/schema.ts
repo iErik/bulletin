@@ -305,3 +305,32 @@ export const habitGoal = sqliteTable(
     )
   ]
 )
+
+/**
+ * One-off Tasks. `day` null is Someday; `time` is
+ * optional. `done_at` null means not done. Checks back
+ * up a non-blank title and non-negative `moves`.
+ */
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    title: text().notNull(),
+    day: text(),
+    time: text(),
+    doneAt: integer('done_at'),
+    created: integer().notNull(),
+    moves: integer().notNull().default(0)
+  },
+  table => [
+    index('tasks_day').on(table.day),
+    check(
+      'tasks_title_not_blank',
+      sql`trim(${table.title}) <> ''`
+    ),
+    check(
+      'tasks_moves_not_negative',
+      sql`${table.moves} >= 0`
+    )
+  ]
+)
