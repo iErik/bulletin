@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import ExpensesView
   from './views/ExpensesView/ExpensesView.vue'
+import MoodView from './views/MoodView/MoodView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
 import { isPageActive, PAGES, type Page } from './pages'
 
@@ -24,6 +25,10 @@ describe('PAGES', () => {
 
   it('gives the Sleep Page its view', () => {
     expect(page('sleep').view).toBe(SleepView)
+  })
+
+  it('gives the Mood Page its view', () => {
+    expect(page('mood').view).toBe(MoodView)
   })
 
   it('gives the Expenses Page its view', () => {

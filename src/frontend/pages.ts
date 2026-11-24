@@ -3,6 +3,7 @@ import DashboardView
   from './views/DashboardView/DashboardView.vue'
 import ExpensesView
   from './views/ExpensesView/ExpensesView.vue'
+import MoodView from './views/MoodView/MoodView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
 
 /** A top-level screen, with its Sidebar button. */
@@ -45,7 +46,8 @@ export const PAGES: readonly Page[] = [
     name: 'mood',
     path: '/mood',
     label: 'Mood',
-    icon: 'mood'
+    icon: 'mood',
+    view: MoodView
   },
   {
     name: 'tasks',
