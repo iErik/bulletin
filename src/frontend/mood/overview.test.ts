@@ -44,12 +44,12 @@ describe('mostCommon', () => {
       [e('2025-12-31', 'happy'), e('2026-06-16', 'happy')], '2026-06-15'
     )).toBeNull()
 
-    const items = [
+    const entries = [
       e('2025-12-31', 'anxious'), e('2026-01-01', 'okay'),
       e('2026-01-02', 'happy'), e('2026-01-03', 'happy'),
       e('2026-01-04', 'stressed'), e('2026-01-05', 'anxious')
     ]
-    expect(mostCommon(items, '2026-01-04'))
+    expect(mostCommon(entries, '2026-01-04'))
       .toEqual({ mood: 'happy', count: 2, share: 0.5 })
 
     const tied = [
@@ -62,13 +62,13 @@ describe('mostCommon', () => {
 
 describe('goodStreak', () => {
   it('runs across Dec 31 (7 days on Jan 3) and ignores future', () => {
-    const items = [
+    const entries = [
       e('2025-12-27', 'stressed'),
       ...run('2025-12-28', 4, 'happy'),
       ...run('2026-01-01', 3, 'okay'),
       e('2026-01-04', 'happy')
     ]
-    expect(goodStreak(items, '2026-01-03')).toBe(7)
+    expect(goodStreak(entries, '2026-01-03')).toBe(7)
   })
 
   it('handles empty, Neutral/Hard today, gaps and Feb 29', () => {
@@ -137,20 +137,21 @@ describe('moodMix', () => {
 describe('bestWeekday', () => {
   // 2026-11-21 is Saturday; 90-day window starts 2026-08-24.
   it('picks highest Happy share, breaks ties by week order', () => {
-    const items = [
+    const entries = [
       e('2026-08-23', 'happy'), e('2026-11-08', 'stressed'),
       e('2026-11-09', 'happy'), e('2026-11-16', 'okay'),
       e('2026-11-14', 'happy'), e('2026-11-21', 'happy'),
       e('2026-11-22', 'happy')
     ]
-    expect(bestWeekday(items, '2026-11-21', 0))
+    expect(bestWeekday(entries, '2026-11-21', 0))
       .toEqual({ weekday: 6, mood: 'happy', share: 1 })
 
     const tied = [e('2026-11-08', 'happy'), e('2026-11-09', 'happy')]
     expect(bestWeekday(tied, '2026-11-21', 0)?.weekday).toBe(0)
     expect(bestWeekday(tied, '2026-11-21', 1)?.weekday).toBe(1)
     expect(bestWeekday([], '2026-11-21', 0)).toBeNull()
-    expect(bestWeekday([e('2026-11-09', 'okay')], '2026-11-21')).toBeNull()
+    expect(bestWeekday([e('2026-11-09', 'okay')], '2026-11-21', 0))
+      .toBeNull()
   })
 })
 
@@ -161,12 +162,12 @@ describe('toughestWeekday', () => {
       e('2026-11-10', 'okay')
     ], '2026-11-21', 0)).toBeNull()
 
-    const items = [
+    const entries = [
       e('2026-11-02', 'happy'), e('2026-11-09', 'stressed'),
       e('2026-11-16', 'stressed'), e('2026-11-10', 'anxious'),
       e('2026-11-17', 'happy')
     ]
-    expect(toughestWeekday(items, '2026-11-21', 1))
+    expect(toughestWeekday(entries, '2026-11-21', 1))
       .toEqual({ weekday: 1, mood: 'stressed', share: 2 / 3 })
 
     const cross = [e('2026-11-08', 'anxious'), e('2026-11-09', 'stressed')]
@@ -263,5 +264,10 @@ describe('mostImproved', () => {
     expect(mostImproved(
       [e('2026-04-01', 'neutral'), e('2026-05-01', 'neutral')], '2026-05-10'
     )).toBeNull()
+    // Sub-1-point shift (1/21 vs 1/20 = +0.24pp) floors to 0, so hide.
+    expect(mostImproved([
+      e('2026-04-01', 'happy'), ...run('2026-04-02', 20, 'neutral'),
+      e('2026-05-01', 'happy'), ...run('2026-05-02', 19, 'neutral')
+    ], '2026-05-21')).toBeNull()
   })
 })

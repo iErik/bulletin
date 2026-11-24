@@ -129,10 +129,10 @@ export const mostCommon = (
   if (total === 0) return null
   let mood: MoodKey = MOODS[0].key
   let count = 0
-  for (const item of MOODS) {
-    const n = counts.get(item.key) ?? 0
+  for (const { key } of MOODS) {
+    const n = counts.get(key) ?? 0
     if (n > count) {
-      mood = item.key
+      mood = key
       count = n
     }
   }
@@ -145,8 +145,8 @@ export const mostCommon = (
  */
 export const goodStreak = (entries: Entries, date: LocalDate): number => {
   const byDate = new Map<LocalDate, MoodKey>()
-  for (const item of entries)
-    if (item.date <= date) byDate.set(item.date, item.mood)
+  for (const entry of entries)
+    if (entry.date <= date) byDate.set(entry.date, entry.mood)
   let day = byDate.has(date) ? date : shiftDay(date, -1)
   let streak = 0
   while (true) {
@@ -226,7 +226,7 @@ const topWeekdayMood = (
 export const bestWeekday = (
   entries: Entries,
   date: LocalDate,
-  weekStartsOn = 0
+  weekStartsOn: number
 ): WeekdayMood | null =>
   topWeekdayMood(entries, date, ['happy'], weekStartsOn)
 
@@ -234,7 +234,7 @@ export const bestWeekday = (
 export const toughestWeekday = (
   entries: Entries,
   date: LocalDate,
-  weekStartsOn = 0
+  weekStartsOn: number
 ): WeekdayMood | null => topWeekdayMood(
   entries, date, MOODS.filter(isHardMood).map(m => m.key), weekStartsOn
 )
@@ -302,5 +302,5 @@ export const mostImproved = (
       }
     }
   }
-  return best
+  return best && wholePercent(best.delta) !== 0 ? best : null
 }
