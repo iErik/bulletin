@@ -1,16 +1,25 @@
 <script setup lang="ts">
-// The Sleep Page. The Timeline fills the wide cell,
-// without the bottom fade. Overview, Schedule, Quality
-// and Sleep & Mood fill the other cells later.
+// Sleep Page: Timeline in #wide, Sleep & Mood in #right.
+import { ref } from 'vue'
 import PageGrid from '@/components/PageGrid/PageGrid.vue'
+import SleepMoodWidget
+  from '@/components/SleepMoodWidget/SleepMoodWidget.vue'
 import SleepWidget
   from '@/components/SleepWidget/SleepWidget.vue'
+
+const revision = ref(0)
 </script>
 
 <template>
   <PageGrid>
     <template #wide>
-      <SleepWidget :fade="false" />
+      <SleepWidget
+        :fade="false"
+        @change="revision += 1"
+      />
+    </template>
+    <template #right>
+      <SleepMoodWidget :revision="revision" />
     </template>
   </PageGrid>
 </template>
