@@ -1,5 +1,6 @@
 import { MOODS, type Mood } from '@shared/mood'
 import {
+  MONTH_PACE_COLOURS,
   PILL_PARTS,
   SLEEP_COLOURS,
   WEIGHT_LINE_STOPS,
@@ -46,7 +47,12 @@ type Single =
 type ScaleRef = readonly [
   Exclude<
     keyof Palette,
-    'mood' | 'pill' | 'sleep' | 'weight' | Single
+    | 'mood'
+    | 'pill'
+    | 'sleep'
+    | 'weight'
+    | 'month-pace'
+    | Single
   >,
   Shade
 ]
@@ -105,7 +111,8 @@ export const dayPill = (key: PillKey): PillColours =>
 /**
  * Writes the semantic custom properties, the danger,
  * Income and Expense colours, the Mood and Day Pill
- * colours and the Sleep Timeline's for a Palette onto
+ * colours, the Sleep Timeline's, the Weight chart's
+ * and Month Pace's for a Palette onto
  * `el` (the root element by default).
  */
 export const applyPalette = (
@@ -165,6 +172,12 @@ export const applyPalette = (
     el.style.setProperty(
       `--color-weight-${name}`,
       palette.weight[name]
+    )
+  }
+  for (const name of MONTH_PACE_COLOURS) {
+    el.style.setProperty(
+      `--color-month-pace-${name}`,
+      palette['month-pace'][name]
     )
   }
   el.style.colorScheme = scheme

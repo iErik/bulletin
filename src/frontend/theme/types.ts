@@ -48,6 +48,37 @@ export type WeightLineStop =
 export const WEIGHT_LINE_STOPS: readonly WeightLineStop[] =
   ['line-start', 'line-rise', 'line-peak', 'line-end']
 
+/**
+ * The Month Pace Widget's colours, from Figma's
+ * "Expenses / Month Pace" frame.
+ */
+export type MonthPaceColour =
+  | 'grid'
+  | 'area'
+  | 'line'
+  | 'line-glow'
+  | 'pace'
+  | 'projection'
+  | 'figure'
+  | 'label'
+  | 'marker'
+  | 'dot'
+  | 'dot-glow'
+  | 'tip'
+  | 'tip-text'
+  | 'bar'
+  | 'bar-bright'
+  | 'bar-glow'
+  | 'rest'
+  | 'cap'
+
+export const MONTH_PACE_COLOURS: readonly MonthPaceColour[] = [
+  'grid', 'area', 'line', 'line-glow', 'pace',
+  'projection', 'figure', 'label', 'marker', 'dot',
+  'dot-glow', 'tip', 'tip-text', 'bar', 'bar-bright',
+  'bar-glow', 'rest', 'cap'
+]
+
 /** Whose Day Pill colours: a Mood's, or a done Habit's. */
 export type PillKey = MoodKey | 'habit'
 
@@ -120,6 +151,10 @@ export interface Palette {
   readonly sleep: Readonly<Record<SleepColour, string>>
   /** The Weight chart's, as `--color-weight-<key>`. */
   readonly weight: Readonly<Record<WeightLineStop, string>>
+  /** Month Pace's, as `--color-month-pace-<key>`. */
+  readonly 'month-pace': Readonly<
+    Record<MonthPaceColour, string>
+  >
 }
 
 /** A named visual identity: one Palette per Scheme. */
