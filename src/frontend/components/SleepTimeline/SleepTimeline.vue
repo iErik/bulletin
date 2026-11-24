@@ -5,7 +5,8 @@
 // current month dimmed below today. Months load as the
 // list nears either edge, and the Selected Date's day
 // scrolls to the centre whenever it changes. Scrolling
-// never changes the Selected Date.
+// never changes the Selected Date. `fade` draws the
+// bottom mask; the Sleep Page turns it off.
 //
 // Creating a Period takes two clicks on empty parts of
 // the Timeline: the first sets the Head, then a preview
@@ -64,6 +65,17 @@ import {
 import { useSleepMonths } from '@/sleep/use-sleep-months'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
+
+withDefaults(
+  defineProps<{
+    /**
+     * Draws the bottom transparency mask. On by
+     * default; the Sleep Page turns it off.
+     */
+    fade?: boolean
+  }>(),
+  { fade: true }
+)
 
 const store = useSelectedDateStore()
 const months = useSleepMonths(() => store.today)
@@ -480,7 +492,11 @@ watch(() => store.today, today => {
 </script>
 
 <template>
-  <div ref="root" class="sleep-timeline">
+  <div
+    ref="root"
+    class="sleep-timeline"
+    :class="{ '-fade': fade }"
+  >
     <p v-if="months.failed.value" class="error" role="alert">
       Couldn't load sleep.
     </p>
@@ -593,8 +609,9 @@ $day: 57px;
 
   // Figma's transparency mask, as the Widget's colour
   // over the days: the same on its solid background,
-  // and the tooltip can sit over it.
-  > .view::after {
+  // and the tooltip can sit over it. The Sleep Page
+  // leaves it off.
+  &.-fade > .view::after {
     position: absolute;
     inset: 0;
     z-index: 1;

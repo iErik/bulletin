@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import SleepView from './views/SleepView/SleepView.vue'
 import { isPageActive, PAGES, type Page } from './pages'
 
 const page = (name: string): Page => {
@@ -17,6 +18,10 @@ describe('PAGES', () => {
       ['Expenses', '/expenses'],
       ['Notes', '/notes']
     ])
+  })
+
+  it('gives the Sleep Page its view', () => {
+    expect(page('sleep').view).toBe(SleepView)
   })
 })
 

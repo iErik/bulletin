@@ -35,16 +35,16 @@ describe('DashboardView', () => {
   })
 
   it.each([
-    ['sleep', 'Sleep', 'moon'],
-    ['expenses', 'Expenses', 'dollar-sign'],
-    ['mood', 'Mood', 'mood'],
-    ['habits', 'Habits', 'checklist'],
-    ['weight', 'Weight', 'activity']
+    ['wide', 'Sleep', 'moon'],
+    ['side', 'Expenses', 'dollar-sign'],
+    ['left', 'Mood', 'mood'],
+    ['middle', 'Habits', 'checklist'],
+    ['right', 'Weight', 'activity']
   ])(
-    'places the %s Widget in its grid area',
+    'places a Widget in the %s cell',
     (area, title, icon) => {
       const cell = mountDashboard()
-        .get(`.dashboard-view > .${area}`)
+        .get(`.page-grid > .${area}`)
       // The Mood Widget wraps its frame.
       const widget = cell.classes('widget-frame')
         ? cell
@@ -57,10 +57,10 @@ describe('DashboardView', () => {
   )
 
   it('fills the Sleep Widget with its Timeline', () => {
-    expect(
-      mountDashboard().find('.sleep > .body > .sleep-timeline')
-        .exists()
-    ).toBe(true)
+    const timeline = mountDashboard()
+      .get('.sleep > .body > .sleep-timeline')
+
+    expect(timeline.classes()).toContain('-fade')
   })
 
   it('shows exactly five Widgets', () => {

@@ -83,10 +83,13 @@ interface Mounted {
   list: HTMLElement
 }
 
-const mountTimeline = async (): Promise<Mounted> => {
+const mountTimeline = async (
+  props: { fade?: boolean } = {}
+): Promise<Mounted> => {
   const pinia = createPinia()
   setActivePinia(pinia)
   timeline = mount(SleepTimeline, {
+    props,
     attachTo: document.body,
     global: { plugins: [pinia] }
   })
@@ -202,6 +205,18 @@ describe('SleepTimeline', () => {
     expect(hours[0].text()).toBe('1:00')
     expect(hours).toHaveLength(2 * 12)
   })
+
+  it('draws the bottom fade unless asked not to',
+    async () => {
+      const { timeline: on } = await mountTimeline()
+      expect(on.classes()).toContain('-fade')
+
+      on.unmount()
+      const { timeline: off } = await mountTimeline({
+        fade: false
+      })
+      expect(off.classes()).not.toContain('-fade')
+    })
 
   it("centres the Selected Date's row", async () => {
     const { store, list } = await mountTimeline()
