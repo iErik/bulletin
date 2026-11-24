@@ -19,3 +19,11 @@
   transition-duration: $duration-fast;
   transition-timing-function: ease-out;
 }
+
+/// Hides a scroll element's native scrollbar, for the
+/// OverlayScrollbar component to draw its own over it.
+@mixin hide-native-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}

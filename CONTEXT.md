@@ -64,26 +64,28 @@ Selected Date.
 _Avoid_: Home, overview
 
 **Widget**:
-A Tracker's panel on the Dashboard. Each Widget decides how the
-Selected Date maps to the range of Entries it shows.
+A panel on a Page showing one Tracker's Entries. The Dashboard
+has one per Tracker; a Tracker's own Page has several. Each
+Widget decides how the Selected Date maps to the range of
+Entries it shows.
 _Avoid_: Card, tile, panel
 
 **Selected Date**:
-The day the Dashboard is focused on. It opens on today, is
-never in the future, and is not remembered between launches.
-Only the date header changes it; Widgets read it but never set
-it.
+The day the whole app is focused on, shared by every Page. It
+opens on today, is never in the future, and is not remembered
+between launches. Only the date header changes it; Widgets read
+it but never set it.
 _Avoid_: Current date, active date
 
 ### Trackers
 
 **Period**:
-A Sleep Entry: one stretch of sleep, from its Head (start) to
-its Tail (end). A day can have several Periods (naps, broken
-sleep), a Period can cross midnight, and Periods never overlap.
+A Sleep Entry: one unbroken span of sleep, from its Head
+(start) to its Tail (end). A day can have several Periods, a
+Period can cross midnight, and Periods never overlap.
 A Period belongs to its Head's calendar day, local time, so
 going to bed at 1 AM on the 8th counts as the 8th.
-_Avoid_: Night, session
+_Avoid_: Session
 
 **Timeline**:
 The Sleep Widget's track, on which Periods are drawn: one
@@ -95,15 +97,53 @@ next day's AM row. A Period runs along it from its Head to its
 Tail, round the curves.
 _Avoid_: Chart, axis
 
+**Wake-up**:
+A gap of an hour or less between two consecutive Periods.
+_Avoid_: Interruption, awakening
+
+**Stretch**:
+One Period, or several consecutive Periods joined by Wake-ups.
+It belongs to the day it ends on, and its length counts only
+the time asleep.
+_Avoid_: Sleep session, bout
+
+**Night**:
+A day's longest Stretch, or the earlier of two that tie.
+_Avoid_: Main sleep
+
+**Nap**:
+Any Stretch of a day other than its Night.
+
+**Sleep Goal**:
+How long the user wants each Night to last: one value, not an
+Entry.
+_Avoid_: Target
+
+**Sleep Quality**:
+How well the user slept, rated at most once a day on a
+five-step scale from Poor to Great.
+_Avoid_: Score, rest rating
+
 **Mood**:
 One of a fixed set of feelings a day can be marked with. A
 Mood Entry assigns one Mood to one day, or the day has none.
-The set can't be edited yet.
+Every Mood is a Good Mood, a Hard Mood, or neither, like
+Neutral. The set can't be edited yet; once it can, the user
+picks which of the three a Mood is when creating it.
+
+**Good Mood**:
+A Mood that marks a good day: Happy and Okay, for now.
+_Avoid_: Positive mood
+
+**Hard Mood**:
+A Mood that marks a hard day: Stressed, Anxious and Angry, for
+now.
+_Avoid_: Bad mood, negative mood
 
 **Month Grid**:
 A calendar-shaped view of one month's days, with weeks as rows
-starting on the Locale's first day of the week. The Mood and
-Habits Widgets use it.
+starting on the Locale's first day of the week. The Mood,
+Habits and Sleep Quality Widgets use it.
 _Avoid_: Calendar, heatmap
 
 **Day Pill**:
@@ -115,8 +155,42 @@ Something the user wants to do regularly, tracked day by day
 in the Habits Tracker. It has a name, unique among all Habits
 including archived ones, and an icon. Deleting a Habit archives it: it leaves
 the list, but its Entries are kept. Creating a Habit with an
-archived Habit's name restores that Habit.
+archived Habit's name restores that Habit. Archiving starts an
+Archive Period and restoring ends it; the Habit counts on each
+day from its creation up to the Selected Date that isn't in one.
 _Avoid_: Goal, routine
+
+**Archive Period**:
+A stretch of days during which a Habit was archived: from the
+day it was archived to the day before it was restored, or
+open-ended while it stays archived. Its days don't count for the
+Habit.
+
+**Streak**:
+How many days in a row a Habit was done, counting back from the
+Selected Date, or from the day before if that isn't done yet.
+Days in Archive Periods are skipped over, not breaks; its best
+Streak is its longest up to the Selected Date.
+_Avoid_: Chain, run
+
+**Completion Rate**:
+The share of the days a Habit counted in a span on which it was
+done; for several Habits, all their done days out of all their
+counted days. A span with no counted days has none.
+_Avoid_: Score, percentage
+
+**Slipping**:
+Said of a Habit whose Completion Rate over the 14 days ending on
+the Selected Date is at least 20 points below its rate over the
+14 days before.
+
+**Perfect Day**:
+A day on which every Habit that counted was done.
+
+**Habit Goal**:
+The weekly Completion Rate the user aims for: one value for all
+Habits, not an Entry.
+_Avoid_: Target
 
 **Task**:
 A Tasks Entry: something the user means to do, with a title
@@ -161,6 +235,19 @@ A Transaction with a positive amount.
 
 **Expense**:
 A Transaction with a negative amount.
+
+**Large Expense**:
+An Expense of at least a quarter of the Budget that applies to
+its month, such as a new laptop. A month no Budget applies to
+has none.
+_Avoid_: Outlier, splurge, one-off
+
+**Recurring Expense**:
+An Expense whose description, ignoring case and surrounding
+spaces, appears in each of the last three consecutive months,
+such as a subscription. It is detected, never entered, and
+monthly only, for now.
+_Avoid_: Subscription, fixed expense, bill
 
 **Budget**:
 How much the user plans to spend in a month, compared against
