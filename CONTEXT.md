@@ -71,11 +71,10 @@ Entries it shows.
 _Avoid_: Card, tile, panel
 
 **Selected Date**:
-The day the whole app is focused on, shared by every Page, so
-changing it moves every Widget back or forward in time. It
+The day the whole app is focused on, shared by every Page. It
 opens on today, is never in the future, and is not remembered
-between launches. Only the date header changes it; Widgets
-read it but never set it.
+between launches. Only the date header changes it; Widgets read
+it but never set it.
 _Avoid_: Current date, active date
 
 ### Trackers
@@ -105,22 +104,21 @@ _Avoid_: Interruption, awakening
 
 **Night**:
 A day's longest stretch of sleep: one Period, or several joined
-by Wake-ups. A stretch belongs to the day it ends on, so a day's
-Night is the sleep you woke from that day. Its length counts only
-the time asleep, not the Wake-ups.
+by Wake-ups. It belongs to the day it ends on, and its length
+counts only the time asleep.
 _Avoid_: Main sleep
 
 **Nap**:
 Any stretch of sleep in a day other than its Night.
 
 **Sleep Goal**:
-How long the user wants each Night to last. One value, set by
-the user, not an Entry.
+How long the user wants each Night to last: one value, not an
+Entry.
 _Avoid_: Target
 
 **Sleep Quality**:
-How well the user slept, rated after waking on a five-step
-scale from Poor to Great. A day has at most one rating, or none.
+How well the user slept, rated at most once a day on a
+five-step scale from Poor to Great.
 _Avoid_: Score, rest rating
 
 **Mood**:
