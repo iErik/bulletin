@@ -51,7 +51,6 @@ describe('App', () => {
   })
 
   it.each([
-    ['/mood', 'Mood'],
     ['/tasks', 'Tasks'],
     ['/notes', 'Notes']
   ])('shows a placeholder on %s', async (path, label) => {
@@ -79,6 +78,24 @@ describe('App', () => {
         app.get('a[aria-current="page"]')
           .attributes('aria-label')
       ).toBe('Sleep')
+    })
+
+  it('shows the Mood Page, highlighted in the Sidebar',
+    async () => {
+      const app = await mountAt('/mood')
+
+      expect(app.find('.placeholder-view').exists())
+        .toBe(false)
+      expect(
+        app.find(
+          '.page > .scroller > .page-grid > .left'
+          + ' > .mood-widget'
+        ).exists()
+      ).toBe(true)
+      expect(
+        app.get('a[aria-current="page"]')
+          .attributes('aria-label')
+      ).toBe('Mood')
     })
 
   it('shows the Expenses Page, highlighted in the Sidebar',
@@ -174,6 +191,43 @@ describe('the Selected Date across Pages', () => {
         expect(rows[index]?.getAttribute('data-day'))
           .toBe('2026-11-08')
         expect(list.scrollTop).toBe(centred(index))
+      } finally {
+        app.unmount()
+      }
+    })
+
+  it('shows Mood on the day chosen on the Dashboard',
+    async () => {
+      const api = stubBulletin()
+      vi.mocked(api.mood.list).mockResolvedValue({
+        ok: true,
+        value: [{ date: '2026-10-31', mood: 'happy' }]
+      })
+      await router.push('/')
+      await router.isReady()
+      const app = mount(App, {
+        attachTo: document.body,
+        global: { plugins: [createPinia(), router] }
+      })
+      try {
+        await settle()
+        for (let i = 0; i < 9; i++) {
+          await app.get('[aria-label="Previous day"]')
+            .trigger('click')
+        }
+        vi.mocked(api.mood.list).mockClear()
+
+        await router.push('/mood')
+        await settle()
+
+        expect(api.mood.list).toHaveBeenCalledWith({
+          from: '2026-10-01',
+          to: '2026-10-31'
+        })
+        expect(
+          app.get('.left > .mood-widget .pill.-selected')
+            .attributes('aria-label')
+        ).toBe('Oct 31 · Happy')
       } finally {
         app.unmount()
       }
