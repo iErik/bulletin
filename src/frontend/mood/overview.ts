@@ -86,7 +86,8 @@ const ytdRange = (date: LocalDate): DateRange =>
 const monthRange = (date: LocalDate): DateRange =>
   ({ from: `${date.slice(0, 7)}-01`, to: date })
 
-const last90Range = (date: LocalDate): DateRange =>
+/** The 90 days ending on `date`. */
+export const last90Range = (date: LocalDate): DateRange =>
   ({ from: shiftDay(date, -89), to: date })
 
 const byDateInRange = (

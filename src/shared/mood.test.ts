@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { MOODS, isGoodMood, isHardMood } from './mood'
+import {
+  MOODS,
+  MOOD_DISPLAY_ORDER,
+  isGoodMood,
+  isHardMood
+} from './mood'
 
 describe('Mood classification', () => {
   it('classifies Good, Hard and Neutral on MOODS', () => {
@@ -24,5 +29,15 @@ describe('Mood classification', () => {
     expect(isHardMood('anxious')).toBe(true)
     expect(isGoodMood('neutral')).toBe(false)
     expect(isHardMood('neutral')).toBe(false)
+  })
+})
+
+describe('MOOD_DISPLAY_ORDER', () => {
+  it('lists every Mood once, in Figma order', () => {
+    expect(MOOD_DISPLAY_ORDER).toEqual([
+      'happy', 'okay', 'neutral', 'stressed', 'anxious', 'angry'
+    ])
+    expect([...MOOD_DISPLAY_ORDER].sort())
+      .toEqual(MOODS.map(mood => mood.key).sort())
   })
 })
