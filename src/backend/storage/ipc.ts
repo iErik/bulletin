@@ -17,6 +17,7 @@ import {
   listTransactions,
   updateTransaction
 } from './expenses'
+import { getHabitGoal, setHabitGoal } from './habit-goal'
 import {
   archiveHabit,
   createHabit,
@@ -97,6 +98,8 @@ const OPERATIONS: Record<string, Operation> = {
   [HABITS_CHANNELS.createEntry]: (db, p) =>
     createHabitEntry(db, p),
   [HABITS_CHANNELS.deleteEntry]: deleteHabitEntry,
+  [HABITS_CHANNELS.getGoal]: getHabitGoal,
+  [HABITS_CHANNELS.setGoal]: setHabitGoal,
   [EXPENSES_CHANNELS.list]: listTransactions,
   [EXPENSES_CHANNELS.create]: (db, p) =>
     createTransaction(db, p),

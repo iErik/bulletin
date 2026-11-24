@@ -4,7 +4,11 @@ import type {
   ExpensesApi,
   NewTransaction
 } from '@shared/expenses'
-import type { Habit, HabitsApi } from '@shared/habits'
+import {
+  HABIT_GOAL,
+  type Habit,
+  type HabitsApi
+} from '@shared/habits'
 import type { MoodApi } from '@shared/mood'
 import {
   SLEEP_GOAL_DEFAULT_MINUTES,
@@ -77,7 +81,9 @@ const fakeHabits = (): HabitsApi => {
     unarchive: resolves(habit),
     listEntries: resolves([]),
     createEntry: echoes(),
-    deleteEntry: resolves(null)
+    deleteEntry: resolves(null),
+    getGoal: resolves(HABIT_GOAL.default),
+    setGoal: echoes()
   }
 }
 

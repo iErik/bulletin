@@ -37,6 +37,17 @@ export const HABIT_ICONS = [
 
 export type HabitIcon = (typeof HABIT_ICONS)[number]
 
+/**
+ * Bounds, step and default for the Habit Goal, as a
+ * percentage.
+ */
+export const HABIT_GOAL = {
+  min: 10,
+  max: 100,
+  step: 5,
+  default: 75
+} as const
+
 /** Something the user wants to do regularly. */
 export interface Habit {
   readonly id: number
@@ -108,6 +119,16 @@ export interface HabitsApi {
   deleteEntry(entry: HabitEntry): Promise<
     StorageResult<null>
   >
+  /**
+   * The Habit Goal in percent: the stored value, or
+   * 75 when none is stored.
+   */
+  getGoal(): Promise<StorageResult<number>>
+  /**
+   * Sets the Habit Goal, in percent. Main accepts an
+   * integer from 10 to 100 in steps of 5.
+   */
+  setGoal(goal: number): Promise<StorageResult<number>>
 }
 
 /** IPC channel per `HabitsApi` method. */
@@ -119,5 +140,7 @@ export const HABITS_CHANNELS = {
   unarchive: 'habits:unarchive',
   listEntries: 'habits:list-entries',
   createEntry: 'habits:create-entry',
-  deleteEntry: 'habits:delete-entry'
+  deleteEntry: 'habits:delete-entry',
+  getGoal: 'habits:get-goal',
+  setGoal: 'habits:set-goal'
 } as const satisfies Record<keyof HabitsApi, string>

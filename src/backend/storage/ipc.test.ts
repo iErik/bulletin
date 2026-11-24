@@ -161,6 +161,22 @@ describe('handleStorage', () => {
       .toMatchObject(ok([{ id: 1 }]))
   })
 
+  it('handles the Habit Goal channels', async () => {
+    const call = serve()
+
+    expect(await call(HABITS_CHANNELS.getGoal, undefined))
+      .toEqual({ ok: true, value: 75 })
+    expect(await call(HABITS_CHANNELS.setGoal, 80))
+      .toEqual({ ok: true, value: 80 })
+    expect(await call(HABITS_CHANNELS.getGoal, undefined))
+      .toEqual({ ok: true, value: 80 })
+    expect(await call(HABITS_CHANNELS.setGoal, 77))
+      .toMatchObject({
+        ok: false,
+        error: { code: 'invalid-payload' }
+      })
+  })
+
   it('handles every Expenses channel', async () => {
     const call = serve()
     const transaction = {
