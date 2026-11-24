@@ -100,6 +100,27 @@ export const defaultTheme: Theme = {
         'line-peak': 'rgb(255 255 255 / 75%)',
         'line-end': 'rgb(64 64 64 / 25%)'
       },
+      // The dark Month Pace frame's whites and greys.
+      'month-pace': {
+        grid: 'rgb(255 255 255 / 5%)',
+        area: 'rgb(255 255 255 / 35%)',
+        line: 'rgb(255 255 255 / 95%)',
+        'line-glow': 'rgb(255 255 255 / 60%)',
+        pace: 'rgb(255 255 255 / 35%)',
+        projection: 'rgb(255 255 255 / 60%)',
+        figure: 'rgb(187 187 187 / 80%)',
+        label: 'rgb(165 165 165 / 50%)',
+        marker: 'rgb(255 255 255 / 12%)',
+        dot: '#ffffff',
+        'dot-glow': 'rgb(255 255 255 / 80%)',
+        tip: '#2a2a2a',
+        'tip-text': 'rgb(165 165 165 / 80%)',
+        bar: 'rgb(255 255 255 / 30%)',
+        'bar-bright': 'rgb(255 255 255 / 80%)',
+        'bar-glow': 'rgb(255 255 255 / 35%)',
+        rest: 'rgb(255 255 255 / 6%)',
+        cap: 'rgb(165 165 165 / 60%)'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -180,6 +201,28 @@ export const defaultTheme: Theme = {
         'line-rise': 'rgb(127 127 127 / 50%)',
         'line-peak': 'rgb(0 0 0 / 75%)',
         'line-end': 'rgb(191 191 191 / 25%)'
+      },
+      // The dark Month Pace frame's, mirrored: each
+      // channel inverted, as the header's greys are.
+      'month-pace': {
+        grid: 'rgb(0 0 0 / 5%)',
+        area: 'rgb(0 0 0 / 35%)',
+        line: 'rgb(0 0 0 / 95%)',
+        'line-glow': 'rgb(0 0 0 / 60%)',
+        pace: 'rgb(0 0 0 / 35%)',
+        projection: 'rgb(0 0 0 / 60%)',
+        figure: 'rgb(68 68 68 / 80%)',
+        label: 'rgb(90 90 90 / 50%)',
+        marker: 'rgb(0 0 0 / 12%)',
+        dot: '#000000',
+        'dot-glow': 'rgb(0 0 0 / 80%)',
+        tip: '#d5d5d5',
+        'tip-text': 'rgb(90 90 90 / 80%)',
+        bar: 'rgb(0 0 0 / 30%)',
+        'bar-bright': 'rgb(0 0 0 / 80%)',
+        'bar-glow': 'rgb(0 0 0 / 35%)',
+        rest: 'rgb(0 0 0 / 6%)',
+        cap: 'rgb(90 90 90 / 60%)'
       },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
