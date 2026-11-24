@@ -5,11 +5,16 @@ import {
   it,
   vi
 } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import {
+  flushPromises,
+  mount,
+  type VueWrapper
+} from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { nextTick } from 'vue'
 import OverlayScrollbar
   from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
+import { stubBulletin } from '@/testing/bulletin'
 import { useFixedToday } from '@/testing/clock'
 import App from './App.vue'
 import { router } from './router'
@@ -48,7 +53,6 @@ describe('App', () => {
   it.each([
     ['/mood', 'Mood'],
     ['/tasks', 'Tasks'],
-    ['/expenses', 'Expenses'],
     ['/notes', 'Notes']
   ])('shows a placeholder on %s', async (path, label) => {
     const app = await mountAt(path)
@@ -75,6 +79,24 @@ describe('App', () => {
         app.get('a[aria-current="page"]')
           .attributes('aria-label')
       ).toBe('Sleep')
+    })
+
+  it('shows the Expenses Page, highlighted in the Sidebar',
+    async () => {
+      const app = await mountAt('/expenses')
+
+      expect(app.find('.placeholder-view').exists())
+        .toBe(false)
+      expect(
+        app.find(
+          '.page > .scroller > .page-grid > .side'
+          + ' > .expenses-widget'
+        ).exists()
+      ).toBe(true)
+      expect(
+        app.get('a[aria-current="page"]')
+          .attributes('aria-label')
+      ).toBe('Expenses')
     })
 
   it('draws an overlay scrollbar on the Page',
@@ -152,6 +174,38 @@ describe('the Selected Date across Pages', () => {
         expect(rows[index]?.getAttribute('data-day'))
           .toBe('2026-11-08')
         expect(list.scrollTop).toBe(centred(index))
+      } finally {
+        app.unmount()
+      }
+    })
+
+  it('loads Expenses for the month chosen on the Dashboard',
+    async () => {
+      const api = stubBulletin()
+      await router.push('/')
+      await router.isReady()
+      const app = mount(App, {
+        attachTo: document.body,
+        global: { plugins: [createPinia(), router] }
+      })
+      try {
+        await settle()
+        await app.get('.date-header > .date')
+          .trigger('click')
+        await app.get('select[aria-label="Month"]')
+          .setValue('9')
+        await settle()
+
+        vi.mocked(api.expenses.list).mockClear()
+        vi.mocked(api.expenses.getBudget).mockClear()
+        await router.push('/expenses')
+        await flushPromises()
+
+        expect(api.expenses.list).toHaveBeenCalledWith(
+          { from: '2026-10-01', to: '2026-10-31' }
+        )
+        expect(api.expenses.getBudget)
+          .toHaveBeenCalledWith('2026-10')
       } finally {
         app.unmount()
       }
