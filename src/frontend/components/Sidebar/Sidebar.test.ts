@@ -11,9 +11,10 @@ import Sidebar from './Sidebar.vue'
 const LABELS = [
   'Dashboard',
   'Sleep',
+  'Expenses',
+  'Habits',
   'Mood',
   'Tasks',
-  'Expenses',
   'Notes'
 ]
 
@@ -62,9 +63,10 @@ describe('Sidebar', () => {
     expect(links.map(l => l.attributes('href'))).toEqual([
       '/',
       '/sleep',
+      '/expenses',
+      '/habits',
       '/mood',
       '/tasks',
-      '/expenses',
       '/notes'
     ])
   })
@@ -73,7 +75,7 @@ describe('Sidebar', () => {
     const { sidebar } = await mountAt('/')
 
     const icons = sidebar.findAll('nav a > svg')
-    expect(icons).toHaveLength(6)
+    expect(icons).toHaveLength(7)
     for (const icon of icons)
       expect(icon.attributes('aria-hidden')).toBe('true')
   })
@@ -85,6 +87,7 @@ describe('Sidebar', () => {
     ['/mood', 'Mood'],
     ['/tasks/a/b', 'Tasks'],
     ['/expenses', 'Expenses'],
+    ['/habits', 'Habits'],
     ['/notes/x', 'Notes']
   ])('marks only %s\'s Page current', async (path, label) => {
     const { sidebar } = await mountAt(path)
@@ -113,6 +116,6 @@ describe('Sidebar', () => {
     const { sidebar } = await mountAt('/')
 
     expect(sidebar.findAll('.app-tooltip > a'))
-      .toHaveLength(6)
+      .toHaveLength(7)
   })
 })

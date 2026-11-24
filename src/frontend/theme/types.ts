@@ -90,6 +90,14 @@ export interface Palette {
   readonly 'tile-icon': string
   /** A Widget's title, as `--color-widget-title`. */
   readonly 'widget-title': string
+  /** The Sidebar's strip, as `--color-sidebar`. */
+  readonly sidebar: string
+  /** The current Page's button, `--color-sidebar-active`. */
+  readonly 'sidebar-active': string
+  /** Sidebar icons, as `--color-sidebar-icon`. */
+  readonly 'sidebar-icon': string
+  /** The current Page's icon, `--color-sidebar-icon-active`. */
+  readonly 'sidebar-icon-active': string
   /** The Expenses add row, as `--color-expense-add`. */
   readonly 'expense-add': string
   /** The Habit name's open pill, `--color-habit-pill`. */

@@ -43,7 +43,7 @@ _Avoid_: Record, log, item
 
 **Page**:
 A top-level screen of the app, one per Sidebar button:
-Dashboard, Sleep, Mood, Tasks, Expenses and Notes.
+Dashboard, Sleep, Expenses, Habits, Mood, Tasks and Notes.
 _Avoid_: Screen, view, tab
 
 **Title Bar**:
