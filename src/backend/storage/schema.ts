@@ -221,6 +221,32 @@ export const budget = sqliteTable(
 )
 
 /**
+ * Sleep Quality Entries: at most one per day, keyed
+ * by the local calendar date, holding a rating from
+ * 1 (Poor) to 5 (Great). Like Mood's, the text
+ * primary key needs a check to rule out NULL; the
+ * rating check backs up the 1–5 range main validates.
+ */
+export const sleepQuality = sqliteTable(
+  'sleep_quality',
+  {
+    date: text().primaryKey(),
+    rating: integer().notNull()
+  },
+  table => [
+    check(
+      'sleep_quality_date_not_null',
+      sql`${table.date} IS NOT NULL`
+    ),
+    check(
+      'sleep_quality_rating_range',
+      sql`${table.rating} BETWEEN ${sql.raw('1')} AND ${
+        sql.raw('5')}`
+    )
+  ]
+)
+
+/**
  * The Sleep Goal: one row, how long the user wants
  * each Night to last, in minutes. Not an Entry. The
  * checks back up the rules main validates: only row

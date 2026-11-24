@@ -15,6 +15,7 @@ import {
   type NewSleepPeriod,
   type SleepApi
 } from '@shared/sleep'
+import type { SleepQualityApi } from '@shared/sleep-quality'
 import type { WeightApi } from '@shared/weight'
 
 /** Resolves every call with `value`, successfully. */
@@ -50,6 +51,13 @@ const fakeSleep = (): SleepApi => ({
   delete: resolves(null),
   getGoal: resolves(SLEEP_GOAL_DEFAULT_MINUTES),
   setGoal: echoes()
+})
+
+/** Empty Sleep Quality storage, like `fakeWeight`. */
+const fakeSleepQuality = (): SleepQualityApi => ({
+  list: resolves([]),
+  create: echoes(),
+  delete: resolves(null)
 })
 
 /** Empty Mood storage, like `fakeWeight`. */
@@ -121,6 +129,7 @@ export const fakeBulletin = (
   setWindowControlsColours: vi.fn(),
   weight: fakeWeight(),
   sleep: fakeSleep(),
+  sleepQuality: fakeSleepQuality(),
   mood: fakeMood(),
   habits: fakeHabits(),
   expenses: fakeExpenses(),

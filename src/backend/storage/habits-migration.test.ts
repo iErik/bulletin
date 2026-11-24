@@ -30,8 +30,14 @@ describe('the Archive Period migration', () => {
       dir = mkdtempSync(join(tmpdir(), 'bulletin-habits-'))
       const folder = join(dir, 'migrations')
       cpSync(migrationsFolder, folder, { recursive: true })
+      // Only the three Archive Period migrations, so
+      // later tables like sleep_quality don't count.
       const later = readdirSync(folder)
         .filter(name => name > BEFORE)
+        .filter(name =>
+          /habit_archive|drop_habits_archived/
+            .test(name)
+        )
       expect(later).toHaveLength(3)
       for (const name of later)
         rmSync(join(folder, name), { recursive: true })

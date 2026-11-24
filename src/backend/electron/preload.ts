@@ -18,6 +18,10 @@ import {
   type SleepApi
 } from '@shared/sleep'
 import {
+  SLEEP_QUALITY_CHANNELS,
+  type SleepQualityApi
+} from '@shared/sleep-quality'
+import {
   WEIGHT_CHANNELS,
   type WeightApi
 } from '@shared/weight'
@@ -45,6 +49,9 @@ const api: BulletinApi = {
     ipcRenderer.send(WINDOW_CONTROLS_CHANNEL, colours),
   weight: invoker<WeightApi>(WEIGHT_CHANNELS),
   sleep: invoker<SleepApi>(SLEEP_CHANNELS),
+  sleepQuality: invoker<SleepQualityApi>(
+    SLEEP_QUALITY_CHANNELS
+  ),
   mood: invoker<MoodApi>(MOOD_CHANNELS),
   habits: invoker<HabitsApi>(HABITS_CHANNELS),
   expenses: invoker<ExpensesApi>(EXPENSES_CHANNELS)
