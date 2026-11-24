@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import Icon from '@/components/Icon/Icon.vue'
+import SleepTimeline
+  from '@/components/SleepTimeline/SleepTimeline.vue'
 import SleepWidget from './SleepWidget.vue'
 
 const mountWidget = (
@@ -33,5 +35,13 @@ describe('SleepWidget', () => {
     expect(
       mountWidget(false).get('.sleep-timeline').classes()
     ).not.toContain('-fade')
+  })
+
+  it('re-emits Timeline change', () => {
+    const widget = mountWidget()
+
+    widget.getComponent(SleepTimeline).vm.$emit('change')
+
+    expect(widget.emitted('change')).toHaveLength(1)
   })
 })

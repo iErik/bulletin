@@ -83,7 +83,9 @@ describe('SleepView', () => {
       )
 
       expect(timeline.classes()).not.toContain('-fade')
-      for (const cell of ['side', 'left', 'middle', 'right']) {
+      expect(page.get('.right .title').text())
+        .toBe('Sleep & Mood')
+      for (const cell of ['side', 'left', 'middle']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }

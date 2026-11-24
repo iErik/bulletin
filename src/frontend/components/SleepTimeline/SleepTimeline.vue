@@ -77,6 +77,10 @@ withDefaults(
   { fade: true }
 )
 
+const emit = defineEmits<{
+  change: []
+}>()
+
 const store = useSelectedDateStore()
 const months = useSleepMonths(() => store.today)
 const scroller = useTemplateRef<HTMLElement>('scroller')
@@ -258,8 +262,10 @@ const save = async (
   saving.value = true
   const result = await window.bulletin.sleep.create(period)
   saving.value = false
-  if (result.ok) months.add(result.value)
-  else {
+  if (result.ok) {
+    months.add(result.value)
+    emit('change')
+  } else {
     saveError.value = "Couldn't save the period. "
       + `${reason(result.error.code)}.`
   }
@@ -306,8 +312,10 @@ const move = async (
   saving.value = true
   const result = await window.bulletin.sleep.update(period)
   saving.value = false
-  if (result.ok) months.add(result.value)
-  else {
+  if (result.ok) {
+    months.add(result.value)
+    emit('change')
+  } else {
     months.add(saved)
     saveError.value = "Couldn't move the period. "
       + `${reason(result.error.code)}.`
@@ -391,7 +399,8 @@ const remove = async (
   const result = await window.bulletin.sleep.delete(
     period.id)
   saving.value = false
-  if (!result.ok) {
+  if (result.ok) emit('change')
+  else {
     months.add(period)
     saveError.value = "Couldn't delete the period. "
       + `${reason(result.error.code)}.`

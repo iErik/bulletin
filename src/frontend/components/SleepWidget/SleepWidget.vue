@@ -2,7 +2,8 @@
 // The Sleep Widget both Pages use: the moon tile, the
 // title and the Timeline. Figma's frame sits closer in
 // than the shared Widget. `fade` is the Timeline's
-// bottom mask; the Sleep Page turns it off.
+// bottom mask; the Sleep Page turns it off. `change`
+// re-fires when the Timeline saves, moves or deletes.
 import SleepTimeline
   from '@/components/SleepTimeline/SleepTimeline.vue'
 import Widget from '@/components/Widget/Widget.vue'
@@ -14,11 +15,18 @@ withDefaults(
   }>(),
   { fade: true }
 )
+
+defineEmits<{
+  change: []
+}>()
 </script>
 
 <template>
   <Widget class="sleep" title="Sleep" icon="moon">
-    <SleepTimeline :fade="fade" />
+    <SleepTimeline
+      :fade="fade"
+      @change="$emit('change')"
+    />
   </Widget>
 </template>
 
