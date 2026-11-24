@@ -150,8 +150,9 @@ const onKeydown = (event: KeyboardEvent): void => {
 }
 
 /**
- * The list's visible area, inside its border and left
- * of its scrollbar gutter, which would clip the tooltip.
+ * The list's visible area, inside its border, which
+ * would clip the tooltip. Its overlay scrollbar takes
+ * no space, so the tooltip may sit over it.
  */
 const listView = (): {
   left: number
