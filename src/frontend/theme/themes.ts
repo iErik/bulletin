@@ -155,6 +155,11 @@ export const defaultTheme: Theme = {
         anxious: pill('#c6c489', '#f8f5ab'),
         habit: pill(
           '#a5a5a5', '#d3d3d3', '#ffffff', '#67a1d4'
+        ),
+        // Figma's Sleep / Quality: one white pill, its
+        // opacity showing the rating's step.
+        quality: pill(
+          '#a5a5a5', '#d3d3d3', '#ffffff', '#67a1d4'
         )
       }
     },
@@ -261,6 +266,9 @@ export const defaultTheme: Theme = {
         angry: pill('#bd5f63', '#a23a3f'),
         anxious: pill('#dac74c', '#c6ae1c'),
         habit: pill(
+          '#8a8a8a', '#4a4a4a', '#4a4a4a', '#3f6fa0'
+        ),
+        quality: pill(
           '#8a8a8a', '#4a4a4a', '#4a4a4a', '#3f6fa0'
         )
       }

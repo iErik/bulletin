@@ -31,6 +31,8 @@ const props = defineProps<{
   disabled?: (day: Date) => boolean
   /** Flat pills without weekday headers. */
   compact?: boolean
+  /** A filled Day Pill's opacity, 0–1; 1 if none. */
+  opacity?: (day: Date) => number | undefined
 }>()
 
 const emit = defineEmits<{ activate: [day: Date] }>()
@@ -151,10 +153,14 @@ const pillStyle = (
   day: Date
 ): Record<string, string> => {
   const colours = props.pill?.(day)
-  return colours
-    ? Object.fromEntries(Object.entries(colours).map(
-        ([part, colour]) => [`--pill-${part}`, colour]))
-    : {}
+  if (!colours) return {}
+  const style = Object.fromEntries(
+    Object.entries(colours).map(
+      ([part, colour]) => [`--pill-${part}`, colour]))
+  const opacity = props.opacity?.(day)
+  if (opacity !== undefined)
+    style['--pill-opacity'] = String(opacity)
+  return style
 }
 </script>
 
@@ -261,6 +267,7 @@ const pillStyle = (
     background: var(--pill-base, var(--color-pill-empty));
     filter: blur(1.5px);
     border-radius: rem(4px);
+    opacity: var(--pill-opacity, 1);
     @include colour-transition(background-color);
   }
 
@@ -270,6 +277,7 @@ const pillStyle = (
     background: var(--pill-glow);
     filter: blur(1.75px);
     border-radius: rem(6px);
+    opacity: var(--pill-opacity, 1);
     box-shadow:
       0 0 17.5px glow(var(--pill-shadow), 38%),
       0 2px 5px glow(var(--pill-tint), 35%),
