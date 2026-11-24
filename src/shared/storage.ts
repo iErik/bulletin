@@ -26,8 +26,9 @@ export interface DateRange {
  * - `overlapping-period`: a Period overlaps another;
  * - `name-taken`: another Habit, `active` or
  *   `archived`, already has the name;
- * - `archived-habit`: the Habit is archived, so it
- *   takes no new Entries;
+ * - `archived-habit`: the Habit is archived, or the
+ *   day is inside one of its Archive Periods, so it
+ *   takes no new Entry;
  * - `internal`: anything unexpected, logged in main.
  */
 export type StorageError =

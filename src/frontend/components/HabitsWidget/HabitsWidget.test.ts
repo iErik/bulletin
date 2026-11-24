@@ -23,7 +23,14 @@ const habit = (
   name: string,
   created = '2026-01-01'
 ): Habit =>
-  ({ id, name, icon: 'reading', created, archived: false })
+  ({
+    id,
+    name,
+    icon: 'reading',
+    created,
+    archived: false,
+    archivePeriods: []
+  })
 
 const HABITS = [
   habit(1, 'Reading'),

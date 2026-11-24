@@ -154,11 +154,19 @@ describe('handleStorage', () => {
     expect(await call(HABITS_CHANNELS.deleteEntry, entry))
       .toEqual(ok(null))
     expect(await call(HABITS_CHANNELS.archive, 1))
-      .toMatchObject(ok({ archived: true }))
-    expect(await call(HABITS_CHANNELS.unarchive, 1))
-      .toMatchObject(ok({ archived: false }))
-    expect(await call(HABITS_CHANNELS.list, 'active'))
+      .toMatchObject(ok({
+        archived: true,
+        archivePeriods: [{ end: null }]
+      }))
+    expect(await call(HABITS_CHANNELS.list, 'archived'))
       .toMatchObject(ok([{ id: 1 }]))
+    expect(await call(HABITS_CHANNELS.unarchive, 1))
+      .toMatchObject(ok({
+        archived: false,
+        archivePeriods: []
+      }))
+    expect(await call(HABITS_CHANNELS.list, 'all'))
+      .toMatchObject(ok([{ id: 1, archived: false }]))
   })
 
   it('handles the Habit Goal channels', async () => {

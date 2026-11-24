@@ -85,10 +85,11 @@ export const mood = sqliteTable(
 )
 
 /**
- * Habits, archived rather than deleted. `created` is
- * the local date it was created. Main checks that
- * names are unique ignoring case; the index backs it
- * up for ASCII letters.
+ * Habits. `created` is the local date it was created.
+ * Archiving is recorded in `habit_archive_periods`:
+ * an open period means the Habit is archived. Main
+ * checks that names are unique ignoring case; the
+ * index backs it up for ASCII letters.
  */
 export const habits = sqliteTable(
   'habits',
@@ -96,10 +97,7 @@ export const habits = sqliteTable(
     id: integer().primaryKey({ autoIncrement: true }),
     name: text().notNull(),
     icon: text().notNull(),
-    created: text().notNull(),
-    archived: integer({ mode: 'boolean' })
-      .notNull()
-      .default(false)
+    created: text().notNull()
   },
   table => [
     uniqueIndex('habits_name')
@@ -107,6 +105,32 @@ export const habits = sqliteTable(
     check(
       'habits_name_not_blank',
       sql`trim(${table.name}) <> ''`
+    )
+  ]
+)
+
+/**
+ * Archive Periods: the days a Habit spent archived,
+ * from `start` through `end`, or still open when
+ * `end` is null. An open period is what "archived"
+ * means. A period covers at least its start, so
+ * `end` is null or on that day or later. Foreign
+ * keys are off, so main checks the Habit exists.
+ */
+export const habitArchivePeriods = sqliteTable(
+  'habit_archive_periods',
+  {
+    habitId: integer('habit_id').notNull(),
+    start: text().notNull(),
+    end: text()
+  },
+  table => [
+    primaryKey({
+      columns: [table.habitId, table.start]
+    }),
+    check(
+      'habit_archive_period_end',
+      sql`${table.end} IS NULL OR ${table.end} >= ${table.start}`
     )
   ]
 )
