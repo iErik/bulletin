@@ -119,40 +119,29 @@ archived Habit's name restores that Habit.
 _Avoid_: Goal, routine
 
 **Task**:
-A Tasks Entry: something the user means to do, with a title,
-optionally a planned day and a time, and done or not. A Task
-without a time is done "any time" that day. Deleting a Task
-removes it for good.
+A Tasks Entry: something the user means to do, with a title
+and, optionally, a planned day and a time.
 _Avoid_: To-do, item, chore
 
 **Someday**:
-Where Tasks without a planned day wait until the user plans
-them onto a day.
+Where a Task without a planned day waits.
 _Avoid_: Backlog, inbox
 
 **Overdue**:
-Said of a one-off Task planned before today and not done. It
-stays on its day until it's done, moved or deleted. Today is
-the real today, not the Selected Date. An Occurrence is never
-Overdue.
+Said of a one-off Task that isn't done and was planned before
+today, the real date rather than the Selected Date.
 
 **Recurring Task**:
-A Task that repeats on a schedule: every N days, weekly on
-chosen weekdays, monthly on a day, or yearly on a date. It
-appears as an Occurrence on every scheduled day until it stops
-repeating.
+A Task that repeats on a schedule, appearing as an Occurrence
+on each scheduled day.
 _Avoid_: Repeating task, routine, Habit
 
 **Occurrence**:
-One scheduled day of a Recurring Task. Each is done or not on
-its own and can be moved, edited or skipped without touching
-the others. A missed Occurrence stays on its day, undone.
+One scheduled day of a Recurring Task, done, moved or skipped
+on its own. It is never Overdue.
 
 **Reminder**:
-A notice before a Task, set as an offset from its time (or
-09:00 if it has none): at the time, 15, 30 or 60 minutes
-before, or 1 or 2 days before at a chosen time. A Recurring
-Task's Reminder repeats for every Occurrence.
+A notice the app gives at a set time before a Task.
 _Avoid_: Alarm, alert, notification
 
 **Category**:
