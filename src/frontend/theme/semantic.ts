@@ -32,6 +32,8 @@ type Single =
   | 'tile'
   | 'tile-icon'
   | 'widget-title'
+  | 'stat-value'
+  | 'improvement'
   | 'sidebar'
   | 'sidebar-active'
   | 'sidebar-icon'
@@ -134,6 +136,8 @@ export const applyPalette = (
     'tile',
     'tile-icon',
     'widget-title',
+    'stat-value',
+    'improvement',
     'sidebar',
     'sidebar-active',
     'sidebar-icon',

@@ -70,16 +70,18 @@ describe('MoodView', () => {
           + ' .month-grid'
         ).exists()
       ).toBe(true)
-      for (const cell of [
-        'wide',
-        'side',
-        'middle',
-        'right'
-      ]) {
+      for (const cell of ['wide', 'middle', 'right']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
     })
+
+  it('shows the Overview in the side cell', async () => {
+    const { view: page } = await mountView()
+
+    expect(page.find('.side > .mood-overview').exists())
+      .toBe(true)
+  })
 
   it('puts the date header in the Title Bar', async () => {
     await mountView()
@@ -123,7 +125,10 @@ describe('MoodView', () => {
       store.step(-1)
       await flushPromises()
       expect(pill(page, 8).classes()).toContain('-selected')
-      expect(api.mood.list).toHaveBeenCalledTimes(1)
+      // The Mood Widget keeps its month's load.
+      expect(vi.mocked(api.mood.list).mock.calls
+        .filter(([range]) => range.from === '2026-11-01'))
+        .toHaveLength(1)
 
       vi.mocked(api.mood.list).mockResolvedValue({
         ok: true,
@@ -132,7 +137,7 @@ describe('MoodView', () => {
       store.setDay(new Date(2026, 9, 15))
       await flushPromises()
 
-      expect(api.mood.list).toHaveBeenLastCalledWith({
+      expect(api.mood.list).toHaveBeenCalledWith({
         from: '2026-10-01',
         to: '2026-10-31'
       })

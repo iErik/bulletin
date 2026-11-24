@@ -102,7 +102,7 @@ describe('logged', () => {
 })
 
 describe('moodMix', () => {
-  it('compares Mar 1-31 vs Feb 1-28 in Mood order, 10% flag', () => {
+  it('compares Mar 1-31 vs Feb 1-28, 10% flag', () => {
     const mix = moodMix([
       e('2026-02-01', 'anxious'), e('2026-02-28', 'happy'),
       e('2026-03-01', 'stressed'), e('2026-03-31', 'happy'),
@@ -131,6 +131,17 @@ describe('moodMix', () => {
     expect(moodMix([...ten, e('2026-05-11', 'happy')], '2026-05-11')
       .current.segments[1].showPercent).toBe(false)
     expect(moodMix(ten, '2026-05-10').previous.segments).toEqual([])
+  })
+
+  it('orders segments Good, Neutral, then Hard as Figma', () => {
+    const mix = moodMix([
+      e('2026-06-01', 'angry'), e('2026-06-02', 'anxious'),
+      e('2026-06-03', 'stressed'), e('2026-06-04', 'neutral'),
+      e('2026-06-05', 'okay'), e('2026-06-06', 'happy')
+    ], '2026-06-06')
+    expect(mix.current.segments.map(s => s.mood)).toEqual([
+      'happy', 'okay', 'neutral', 'stressed', 'anxious', 'angry'
+    ])
   })
 })
 

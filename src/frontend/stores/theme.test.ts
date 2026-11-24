@@ -43,6 +43,8 @@ vi.mock('@/theme/themes', async original => {
       tile: colour,
       'tile-icon': colour,
       'widget-title': colour,
+      'stat-value': colour,
+      improvement: colour,
       sidebar: colour,
       'sidebar-active': colour,
       'sidebar-icon': colour,
@@ -224,6 +226,21 @@ describe('theme store', () => {
     store.setPreference('light')
 
     expect(read()).toBe(light['expense-add'])
+  })
+
+  it("writes the Overview's stat colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const names = ['stat-value', 'improvement'] as const
+    const read = (): string[] => names.map(name =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`))
+
+    expect(read()).toEqual(names.map(name => dark[name]))
+
+    store.setPreference('light')
+
+    expect(read()).toEqual(names.map(name => light[name]))
   })
 
   it("writes the Habits header's colours", () => {

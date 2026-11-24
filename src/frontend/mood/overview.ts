@@ -12,6 +12,7 @@ import {
 import { localDate, sameSpanLastMonth } from '@shared/dates'
 import {
   MOODS,
+  MOOD_DISPLAY_ORDER,
   isGoodMood,
   isHardMood,
   type MoodEntry,
@@ -172,7 +173,7 @@ const mixBar = (entries: Entries, range: DateRange): MoodMixBar => {
   const { total, counts } = spanCounts(entries, range)
   if (total === 0) return { range, total: 0, segments: [] }
   const segments: MoodMixSegment[] = []
-  for (const { key } of MOODS) {
+  for (const key of MOOD_DISPLAY_ORDER) {
     const count = counts.get(key) ?? 0
     if (count === 0) continue
     const share = count / total
@@ -183,7 +184,10 @@ const mixBar = (entries: Entries, range: DateRange): MoodMixBar => {
   return { range, total, segments }
 }
 
-/** This month vs same span last month, in `MOODS` order. */
+/**
+ * This month vs the same span last month, segments in
+ * `MOOD_DISPLAY_ORDER`.
+ */
 export const moodMix = (entries: Entries, date: LocalDate): MoodMix => ({
   current: mixBar(entries, monthRange(date)),
   previous: mixBar(entries, sameSpanLastMonth(date))
