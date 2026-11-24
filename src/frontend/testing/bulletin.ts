@@ -14,6 +14,11 @@ import {
   type HabitsApi
 } from '@shared/habits'
 import type { MoodApi } from '@shared/mood'
+import type {
+  NewRecurringTask,
+  RecurringTask,
+  RecurringTasksApi
+} from '@shared/recurring-tasks'
 import {
   SLEEP_GOAL_DEFAULT_MINUTES,
   type NewSleepPeriod,
@@ -151,6 +156,27 @@ const fakeTasks = (): TasksApi => {
   }
 }
 
+/** No Recurring Tasks: created get id 1. */
+const fakeRecurringTasks = (): RecurringTasksApi => {
+  const rule: RecurringTask = {
+    id: 1,
+    title: 'Recurring Task',
+    time: null,
+    schedule: { kind: 'days', every: 1 },
+    firstDay: '2026-01-01',
+    lastDay: null,
+    created: 0
+  }
+  return {
+    list: resolves([]),
+    create: echoes((value: NewRecurringTask) =>
+      ({ ...rule, ...value })),
+    stop: resolves({ ...rule, lastDay: '2026-01-01' }),
+    delete: resolves(null),
+    listOccurrences: resolves([])
+  }
+}
+
 type AnyFn = (...args: unknown[]) => unknown
 
 // Maps a wrapped Proxy back to its target so spreading
@@ -232,6 +258,7 @@ export const fakeBulletin = (
     habits: fakeHabits(),
     expenses: fakeExpenses(),
     tasks: fakeTasks(),
+    recurringTasks: fakeRecurringTasks(),
     ...overrides
   }
   const wrapped = { ...api } as Record<string, unknown>

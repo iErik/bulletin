@@ -2,6 +2,9 @@ import type { DataSource } from './data-sources'
 import type { ExpensesApi } from './expenses'
 import type { HabitsApi } from './habits'
 import type { MoodApi } from './mood'
+import type {
+  RecurringTasksApi
+} from './recurring-tasks'
 import type { SleepApi } from './sleep'
 import type { SleepQualityApi } from './sleep-quality'
 import type { TasksApi } from './tasks'
@@ -58,6 +61,8 @@ export interface BulletinApi {
   readonly expenses: ExpensesApi
   /** One-off Tasks. */
   readonly tasks: TasksApi
+  /** Recurring Tasks and their Occurrences. */
+  readonly recurringTasks: RecurringTasksApi
 }
 
 export const BRIDGE_KEY = 'bulletin'

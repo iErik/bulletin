@@ -87,5 +87,12 @@ export const DATA_SOURCE_WRITES = {
     update: 'tasks',
     setDone: 'tasks',
     delete: 'tasks'
+  },
+  recurringTasks: {
+    list: null,
+    create: 'tasks',
+    stop: 'tasks',
+    delete: 'tasks',
+    listOccurrences: null
   }
 } as const satisfies DataSourceWrites

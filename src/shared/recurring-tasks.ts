@@ -1,4 +1,8 @@
-import type { DateRange, LocalDate } from './storage'
+import type {
+  DateRange,
+  LocalDate,
+  StorageResult
+} from './storage'
 import type { LocalTime, Task } from './tasks'
 
 /** A day of the week, Sunday 0, like `Date.getDay()`. */
@@ -186,3 +190,38 @@ export const compareForDay = (
   }
   return a.created - b.created
 }
+
+/** A Recurring Task to create. */
+export interface NewRecurringTask {
+  readonly title: string
+  readonly time: LocalTime | null
+  readonly schedule: TaskSchedule
+  readonly firstDay: LocalDate
+}
+
+/** `window.bulletin.recurringTasks`. */
+export interface RecurringTasksApi {
+  /** Every Recurring Task, stopped ones included. */
+  list(): Promise<StorageResult<RecurringTask[]>>
+  /** Creates a Recurring Task; `created` is now. */
+  create(
+    task: NewRecurringTask
+  ): Promise<StorageResult<RecurringTask>>
+  /** Sets `lastDay` to today, keeping today's. */
+  stop(id: number): Promise<StorageResult<RecurringTask>>
+  /** Deletes a Recurring Task by its `id`. */
+  delete(id: number): Promise<StorageResult<null>>
+  /** Expands rules over the span, ordered for the day. */
+  listOccurrences(
+    range: DateRange
+  ): Promise<StorageResult<Occurrence[]>>
+}
+
+/** IPC channel per `RecurringTasksApi` method. */
+export const RECURRING_TASKS_CHANNELS = {
+  list: 'recurring-tasks:list',
+  create: 'recurring-tasks:create',
+  stop: 'recurring-tasks:stop',
+  delete: 'recurring-tasks:delete',
+  listOccurrences: 'recurring-tasks:list-occurrences'
+} as const satisfies Record<keyof RecurringTasksApi, string>

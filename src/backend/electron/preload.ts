@@ -18,6 +18,10 @@ import {
 } from '@shared/habits'
 import { MOOD_CHANNELS, type MoodApi } from '@shared/mood'
 import {
+  RECURRING_TASKS_CHANNELS,
+  type RecurringTasksApi
+} from '@shared/recurring-tasks'
+import {
   SLEEP_CHANNELS,
   type SleepApi
 } from '@shared/sleep'
@@ -102,7 +106,10 @@ const api: BulletinApi = {
   expenses: invoker<ExpensesApi>(
     EXPENSES_CHANNELS, DATA_SOURCE_WRITES.expenses),
   tasks: invoker<TasksApi>(
-    TASKS_CHANNELS, DATA_SOURCE_WRITES.tasks)
+    TASKS_CHANNELS, DATA_SOURCE_WRITES.tasks),
+  recurringTasks: invoker<RecurringTasksApi>(
+    RECURRING_TASKS_CHANNELS,
+    DATA_SOURCE_WRITES.recurringTasks)
 }
 
 contextBridge.exposeInMainWorld(BRIDGE_KEY, api)

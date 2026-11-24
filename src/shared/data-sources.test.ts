@@ -7,6 +7,9 @@ import {
 import { EXPENSES_CHANNELS } from './expenses'
 import { HABITS_CHANNELS } from './habits'
 import { MOOD_CHANNELS } from './mood'
+import {
+  RECURRING_TASKS_CHANNELS
+} from './recurring-tasks'
 import { SLEEP_CHANNELS } from './sleep'
 import { SLEEP_QUALITY_CHANNELS } from './sleep-quality'
 import { TASKS_CHANNELS } from './tasks'
@@ -19,7 +22,8 @@ const CHANNELS = {
   mood: MOOD_CHANNELS,
   habits: HABITS_CHANNELS,
   expenses: EXPENSES_CHANNELS,
-  tasks: TASKS_CHANNELS
+  tasks: TASKS_CHANNELS,
+  recurringTasks: RECURRING_TASKS_CHANNELS
 } as const
 
 describe('DATA_SOURCE_WRITES', () => {
