@@ -153,7 +153,7 @@ onBeforeUnmount(release)
 
 .label {
   padding-left: space(2);
-  font-family: $font-mono;
+  font-family: $font-family-mono;
   font-size: rem(10px);
   color: var(--color-text-muted);
   text-transform: uppercase;

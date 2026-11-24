@@ -85,9 +85,11 @@ describe('SleepView', () => {
       expect(timeline.classes()).not.toContain('-fade')
       expect(page.get('.left .title').text())
         .toBe('Schedule')
+      expect(page.get('.side .title').text())
+        .toBe('Overview')
       expect(page.get('.right .title').text())
         .toBe('Sleep & Mood')
-      for (const cell of ['side', 'middle']) {
+      for (const cell of ['middle']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
