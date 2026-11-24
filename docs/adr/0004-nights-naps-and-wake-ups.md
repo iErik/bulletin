@@ -8,13 +8,14 @@ The Sleep Page reports nights, naps and wake-ups, but
 the only Sleep Entry is a Period, and a day can hold
 several. Rather than asking the user to tag Periods,
 we derive them: Periods separated by a gap of an hour
-or less are one stretch of sleep, joined by Wake-ups.
-A stretch belongs to the day it ends on, the day its
-last Period ends. A day's longest stretch is its
-Night, and every other stretch is a Nap. A Night's
-length counts time asleep only.
+or less form one Stretch, joined by Wake-ups. A
+Stretch belongs to the day it ends on, the day its
+last Period ends. A day's longest Stretch is its
+Night (the earlier one, on a tie), and every other
+Stretch is a Nap. A Stretch's length counts time
+asleep only.
 
-Filing a stretch under its wake day keeps one Night
+Filing a Stretch under its wake day keeps one Night
 per day however the bedtime drifts: bed at 23:30 on
 Monday and bed at 00:30 on Tuesday both wake on
 Tuesday, so both are Tuesday's Night. This is how
@@ -31,11 +32,11 @@ filed by wake day.
   there are no Wake-ups to count.
 - **A Nap is any Period starting between 10:00 and
   20:00.** Breaks for anyone who sleeps by day.
-- **A stretch belongs to the day it starts on.**
+- **A Stretch belongs to the day it starts on.**
   Matches the Timeline, but a bedtime that moves
   across midnight puts two Nights on one day and
   none on the next, where a Nap is promoted to Night.
-- **A stretch belongs to the noon-to-noon window
+- **A Stretch belongs to the noon-to-noon window
   holding its start.** Also keeps one Night per day,
   but brings back the noon boundary ADR 0003 dropped,
   and pairing a Night with the next day's Mood would

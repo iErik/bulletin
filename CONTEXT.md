@@ -80,9 +80,9 @@ _Avoid_: Current date, active date
 ### Trackers
 
 **Period**:
-A Sleep Entry: one stretch of sleep, from its Head (start) to
-its Tail (end). A day can have several Periods (naps, broken
-sleep), a Period can cross midnight, and Periods never overlap.
+A Sleep Entry: one unbroken span of sleep, from its Head
+(start) to its Tail (end). A day can have several Periods, a
+Period can cross midnight, and Periods never overlap.
 A Period belongs to its Head's calendar day, local time, so
 going to bed at 1 AM on the 8th counts as the 8th.
 _Avoid_: Session
@@ -99,17 +99,20 @@ _Avoid_: Chart, axis
 
 **Wake-up**:
 A gap of an hour or less between two consecutive Periods.
-Periods joined by Wake-ups form one stretch of sleep.
 _Avoid_: Interruption, awakening
 
+**Stretch**:
+One Period, or several consecutive Periods joined by Wake-ups.
+It belongs to the day it ends on, and its length counts only
+the time asleep.
+_Avoid_: Sleep session, bout
+
 **Night**:
-A day's longest stretch of sleep: one Period, or several joined
-by Wake-ups. It belongs to the day it ends on, and its length
-counts only the time asleep.
+A day's longest Stretch, or the earlier of two that tie.
 _Avoid_: Main sleep
 
 **Nap**:
-Any stretch of sleep in a day other than its Night.
+Any Stretch of a day other than its Night.
 
 **Sleep Goal**:
 How long the user wants each Night to last: one value, not an
