@@ -1,3 +1,4 @@
+import type { DataSource } from './data-sources'
 import type { ExpensesApi } from './expenses'
 import type { HabitsApi } from './habits'
 import type { MoodApi } from './mood'
@@ -32,6 +33,14 @@ export interface BulletinApi {
   setWindowControlsColours(
     colours: WindowControlsColours
   ): void
+  /**
+   * Calls `listener` after a bridge write succeeds,
+   * with the Data Source that changed. Returns a
+   * function to stop listening.
+   */
+  onDataChange(
+    listener: (source: DataSource) => void
+  ): () => void
   /** The Weight Tracker's Entries. */
   readonly weight: WeightApi
   /** The Sleep Tracker's Periods. */

@@ -70,6 +70,13 @@ Widget decides how the Selected Date maps to the range of
 Entries it shows.
 _Avoid_: Card, tile, panel
 
+**Data Source**:
+A named slice of stored data, such as `sleep`, `sleepGoal` or
+`transactions`, that Widgets read and write through the bridge.
+When a write succeeds, the bridge signals its Data Source so
+any Widget showing it can reload (see ADR 0007).
+_Avoid_: Event, topic, channel
+
 **Selected Date**:
 The day the whole app is focused on, shared by every Page. It
 opens on today, is never in the future, and is not remembered
