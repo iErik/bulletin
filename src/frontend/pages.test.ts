@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import ExpensesView
   from './views/ExpensesView/ExpensesView.vue'
+import HabitsView
+  from './views/HabitsView/HabitsView.vue'
 import MoodView from './views/MoodView/MoodView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
 import TasksView from './views/TasksView/TasksView.vue'
@@ -51,6 +53,11 @@ describe('PAGES', () => {
 
   it('gives the Tasks Page its view', () => {
     expect(page('tasks').view).toBe(TasksView)
+  })
+
+  it('gives the Habits Page its view and icon', () => {
+    expect(page('habits').view).toBe(HabitsView)
+    expect(page('habits').icon).toBe('weight')
   })
 })
 

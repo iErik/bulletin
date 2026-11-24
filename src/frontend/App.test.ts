@@ -51,7 +51,6 @@ describe('App', () => {
   })
 
   it.each([
-    ['/habits', 'Habits'],
     ['/notes', 'Notes']
   ])('shows a placeholder on %s', async (path, label) => {
     const app = await mountAt(path)
@@ -130,6 +129,24 @@ describe('App', () => {
         app.get('a[aria-current="page"]')
           .attributes('aria-label')
       ).toBe('Tasks')
+    })
+
+  it('shows the Habits Page, highlighted in the Sidebar',
+    async () => {
+      const app = await mountAt('/habits')
+
+      expect(app.find('.placeholder-view').exists())
+        .toBe(false)
+      expect(
+        app.find(
+          '.page > .scroller > .page-grid > .left'
+          + ' > .habits-widget'
+        ).exists()
+      ).toBe(true)
+      expect(
+        app.get('a[aria-current="page"]')
+          .attributes('aria-label')
+      ).toBe('Habits')
     })
 
   it('draws an overlay scrollbar on the Page',
