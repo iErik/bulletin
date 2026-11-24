@@ -20,9 +20,21 @@
   transition-timing-function: ease-out;
 }
 
-/// Hides a scroll element's native scrollbar, for the
-/// OverlayScrollbar component to draw its own over it.
-@mixin hide-native-scrollbar {
+/// Scrolls on `$axis` (`x`, `y` or `both`) and hides the
+/// native scrollbar, for OverlayScrollbar to draw its
+/// own. The Stylelint guard allows `auto` and `scroll`
+/// only in this mixin.
+@mixin scroller($axis) {
+  @if $axis == both {
+    overflow: auto;
+  } @else if $axis == x {
+    overflow-x: auto;
+  } @else if $axis == y {
+    overflow-y: auto;
+  } @else {
+    @error 'scroller() expects x, y or both';
+  }
+
   scrollbar-width: none;
 
   &::-webkit-scrollbar { display: none; }

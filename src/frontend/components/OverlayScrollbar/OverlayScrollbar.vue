@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // The overlay scrollbar's track and thumb for `target`,
 // a scroll element whose native bar is hidden (the
-// hide-native-scrollbar mixin). It fills its positioned
+// scroller mixin). It fills its positioned
 // parent, which must have the scroller's box, and
 // draws a bar over the edge of each axis that
 // overflows, taking no layout space.

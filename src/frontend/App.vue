@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import Sidebar from '@/components/Sidebar/Sidebar.vue'
 import TitleBar from '@/components/TitleBar/TitleBar.vue'
+
+const scroller = useTemplateRef<HTMLElement>('scroller')
 </script>
 
 <template>
@@ -11,7 +16,10 @@ import TitleBar from '@/components/TitleBar/TitleBar.vue'
         <Sidebar />
       </div>
       <div class="page">
-        <RouterView />
+        <div ref="scroller" class="scroller">
+          <RouterView />
+        </div>
+        <OverlayScrollbar :target="scroller" />
       </div>
     </div>
   </div>
@@ -41,10 +49,18 @@ import TitleBar from '@/components/TitleBar/TitleBar.vue'
     margin-inline: rem(15px);
   }
 
+  // The frame. The scroller fills it, so a view
+  // with height: 100% still fills the Page.
   > .body > .page {
+    position: relative;
     flex: 1;
     min-width: 0;
-    overflow: auto;
+    min-height: 0;
+  }
+
+  > .body > .page > .scroller {
+    height: 100%;
+    @include scroller(both);
   }
 }
 </style>

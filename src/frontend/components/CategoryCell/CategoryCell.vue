@@ -19,6 +19,8 @@ import {
   type CSSProperties
 } from 'vue'
 import type { Category } from '@shared/expenses'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import Tooltip from '@/components/Tooltip/Tooltip.vue'
 import {
   type CategoryChoice,
@@ -43,6 +45,7 @@ const place = ref<CSSProperties>({})
 const button = useTemplateRef<HTMLButtonElement>('button')
 const popover = useTemplateRef<HTMLElement>('popover')
 const field = useTemplateRef<HTMLInputElement>('field')
+const options = useTemplateRef<HTMLElement>('options')
 
 const name = computed(() => props.category?.name ?? '')
 
@@ -157,32 +160,36 @@ const label = (choice: CategoryChoice): string =>
             ? `${id}-${highlight}`
             : undefined"
         >
-        <ul
-          :id="`${id}-list`"
-          class="options"
-          role="listbox"
-          aria-label="Categories"
-        >
-          <li
-            v-for="(choice, i) in choices"
-            :id="`${id}-${i}`"
-            :key="choice.kind === 'pick'
-              ? choice.category.id
-              : 'create'"
-            class="option"
-            :class="{ '-active': i === highlight }"
-            role="option"
-            :aria-selected="i === highlight"
-            @pointerdown.prevent
-            @pointermove="highlight = i"
-            @click="choose(choice)"
+        <div class="view">
+          <ul
+            :id="`${id}-list`"
+            ref="options"
+            class="options"
+            role="listbox"
+            aria-label="Categories"
           >
-            <span v-if="choice.kind === 'create'" class="create">
-              Create
-            </span>
-            <span class="chip">{{ label(choice) }}</span>
-          </li>
-        </ul>
+            <li
+              v-for="(choice, i) in choices"
+              :id="`${id}-${i}`"
+              :key="choice.kind === 'pick'
+                ? choice.category.id
+                : 'create'"
+              class="option"
+              :class="{ '-active': i === highlight }"
+              role="option"
+              :aria-selected="i === highlight"
+              @pointerdown.prevent
+              @pointermove="highlight = i"
+              @click="choose(choice)"
+            >
+              <span v-if="choice.kind === 'create'" class="create">
+                Create
+              </span>
+              <span class="chip">{{ label(choice) }}</span>
+            </li>
+          </ul>
+          <OverlayScrollbar :target="options" />
+        </div>
       </div>
     </template>
   </span>
@@ -259,12 +266,16 @@ const label = (choice: CategoryChoice): string =>
     @include focus-ring;
   }
 
+  .view { position: relative; }
+
+  // The 180px cap stays on the list. The bar is the
+  // same size as everywhere else.
   .options {
     max-height: rem(180px);
     padding: 0;
     margin: 0;
-    overflow-y: auto;
     list-style: none;
+    @include scroller(y);
   }
 
   .option {

@@ -38,6 +38,8 @@ import CategoryCell
   from '@/components/CategoryCell/CategoryCell.vue'
 import DateCell from '@/components/DateCell/DateCell.vue'
 import Icon from '@/components/Icon/Icon.vue'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import { amountText, parseAmount } from '@/expenses/amount'
 import type { CategoryChoice } from '@/expenses/categories'
 import { formatAmount } from '@/expenses/money'
@@ -221,6 +223,7 @@ const onDraftFocusout = (event: FocusEvent): void => {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+const scroller = useTemplateRef<HTMLElement>('scroller')
 
 /** The first element in DOM order matching `selector`. */
 const find = (selector: string): HTMLElement | null =>
@@ -252,7 +255,7 @@ const {
 
 <template>
   <div ref="root" class="expense-table" @keydown="onKeydown">
-    <div class="scroller">
+    <div ref="scroller" class="scroller">
       <table class="table" tabindex="-1">
         <thead>
           <tr>
@@ -430,6 +433,7 @@ const {
       <!-- Figma's empty rows, down to the Widget's edge. -->
       <div class="fillers" aria-hidden="true" />
     </div>
+    <OverlayScrollbar :target="scroller" />
     <p v-if="error" class="error" role="alert">
       {{ error }}
     </p>
@@ -457,20 +461,26 @@ const {
     var(--color-surface-raised)
   );
 
-  display: flex;
+  // The bar shares the scroller's cell, so its box
+  // is the scroller's. The error sits in the row
+  // beneath.
+  position: relative;
+  display: grid;
   flex: 1;
-  flex-direction: column;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
 
   // Its corners round off whichever rows meet them.
   > .scroller {
     display: flex;
-    flex: 1;
+    grid-area: 1 / 1;
     flex-direction: column;
     min-height: 0;
-    overflow-y: auto;
     border-radius: rem(8px);
+    @include scroller(y);
   }
+
+  > .overlay-scrollbar { grid-area: 1 / 1; }
 
   // The spacing's outer gaps are pulled in, so the
   // header meets the top and the fillers' gap follows.
@@ -638,6 +648,7 @@ const {
   }
 
   > .error {
+    grid-row: 2;
     margin-top: space(1);
     font-size: rem(11px);
     color: var(--color-danger);

@@ -8,6 +8,8 @@ import {
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { nextTick } from 'vue'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import { useFixedToday } from '@/testing/clock'
 import App from './App.vue'
 import { router } from './router'
@@ -27,8 +29,10 @@ describe('App', () => {
     const app = await mountAt('/')
 
     expect(app.find('.title-bar').exists()).toBe(true)
-    expect(app.find('.body > .page > .page-grid').exists())
-      .toBe(true)
+    expect(
+      app.find('.body > .page > .scroller > .page-grid')
+        .exists()
+    ).toBe(true)
     expect(app.findAll('.page .widget-frame'))
       .toHaveLength(5)
   })
@@ -49,7 +53,9 @@ describe('App', () => {
   ])('shows a placeholder on %s', async (path, label) => {
     const app = await mountAt(path)
 
-    const view = app.get('.page > .placeholder-view')
+    const view = app.get(
+      '.page > .scroller > .placeholder-view'
+    )
     expect(view.get('h1').text()).toBe(label)
     expect(view.text()).toContain('Coming soon')
   })
@@ -61,13 +67,24 @@ describe('App', () => {
       expect(app.find('.placeholder-view').exists())
         .toBe(false)
       expect(
-        app.find('.page > .page-grid .sleep-timeline')
-          .exists()
+        app.find(
+          '.page > .scroller > .page-grid .sleep-timeline'
+        ).exists()
       ).toBe(true)
       expect(
         app.get('a[aria-current="page"]')
           .attributes('aria-label')
       ).toBe('Sleep')
+    })
+
+  it('draws an overlay scrollbar on the Page',
+    async () => {
+      const app = await mountAt('/notes')
+      const bar = app.getComponent(OverlayScrollbar)
+
+      expect(bar.props('target')).toBe(
+        app.get('.page > .scroller').element
+      )
     })
 })
 

@@ -25,6 +25,8 @@ import type { Habit } from '@shared/habits'
 import HabitEditor
   from '@/components/HabitEditor/HabitEditor.vue'
 import Icon from '@/components/Icon/Icon.vue'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import { useRowDeleteConfirm }
   from '@/composables/use-row-delete-confirm'
 import { HABIT_ICON_COMPONENTS } from '@/habits/icons'
@@ -58,6 +60,7 @@ const count = (habit: Habit): string =>
   + `${formatNumber(props.days)} days`
 
 const root = useTemplateRef<HTMLElement>('root')
+const scroller = useTemplateRef<HTMLElement>('scroller')
 
 /** The first element in DOM order matching `selector`. */
 const find = (selector: string): HTMLElement | null =>
@@ -185,7 +188,7 @@ onMounted(() => {
 
 <template>
   <div ref="root" class="habit-list" @keydown="onKeydown">
-    <ul class="rows" aria-label="Habits">
+    <ul ref="scroller" class="rows" aria-label="Habits">
       <li
         v-for="(habit, i) in habits"
         :key="habit.id"
@@ -297,6 +300,7 @@ onMounted(() => {
         </button>
       </li>
     </ul>
+    <OverlayScrollbar :target="scroller" />
     <p v-if="error" class="error" role="alert">
       {{ error }}
     </p>
@@ -315,17 +319,23 @@ onMounted(() => {
     transparent
   );
 
-  display: flex;
-  flex-direction: column;
+  // The bar shares the list's cell. The list
+  // shrinks and scrolls, and doesn't grow.
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, auto) auto;
   height: 100%;
 
   > .rows {
     display: flex;
+    grid-area: 1 / 1;
     flex-direction: column;
     gap: rem(4px);
     min-height: 0;
-    overflow-y: auto;
+    @include scroller(y);
   }
+
+  > .overlay-scrollbar { grid-area: 1 / 1; }
 
   .row {
     display: flex;
@@ -420,6 +430,7 @@ onMounted(() => {
   .row.-new > .choose > .add { grid-row: auto; }
 
   > .error {
+    grid-row: 2;
     margin-top: space(1);
     font-size: rem(11px);
     color: var(--color-text);

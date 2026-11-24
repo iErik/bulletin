@@ -7,6 +7,8 @@ import {
 } from '@vue/test-utils'
 import type { Transaction } from '@shared/expenses'
 import { stubBulletin } from '@/testing/bulletin'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import ExpenseTable from './ExpenseTable.vue'
 
 let table: VueWrapper | undefined
@@ -78,6 +80,17 @@ describe('ExpenseTable', () => {
     table?.unmount()
     table = undefined
   })
+
+  it('draws an overlay scrollbar on its scroller',
+    async () => {
+      const wrapper = mountTable()
+      await flushPromises()
+      const bar = wrapper.getComponent(OverlayScrollbar)
+
+      expect(bar.props('target')).toBe(
+        wrapper.get('.scroller').element
+      )
+    })
 
   it('has the columns, with no TYPE', () => {
     const wrapper = mountTable()

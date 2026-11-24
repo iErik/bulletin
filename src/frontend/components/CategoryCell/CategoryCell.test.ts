@@ -3,6 +3,8 @@ import { flushPromises, mount, type VueWrapper }
   from '@vue/test-utils'
 import type { Category } from '@shared/expenses'
 import { useFixedToday } from '@/testing/clock'
+import OverlayScrollbar
+  from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import CategoryCell from './CategoryCell.vue'
 
 const FOOD: Category = { id: 1, name: 'Food' }
@@ -47,6 +49,16 @@ describe('CategoryCell', () => {
     cell?.unmount()
     cell = undefined
   })
+
+  it('draws an overlay scrollbar on its options',
+    async () => {
+      const wrapper = await mountOpen()
+      const bar = wrapper.getComponent(OverlayScrollbar)
+
+      expect(bar.props('target')).toBe(
+        wrapper.get('.options').element
+      )
+    })
 
   it('opens with the prompt and every chip, A to Z',
     async () => {
