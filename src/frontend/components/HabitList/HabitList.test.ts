@@ -20,7 +20,8 @@ const habit = (id: number, name: string): Habit =>
     name,
     icon: 'reading',
     created: '2026-01-01',
-    archived: false
+    archived: false,
+    archivePeriods: []
   })
 
 const HABITS = [

@@ -13,7 +13,8 @@ const READING: Habit = {
   name: 'Reading',
   icon: 'reading',
   created: '2026-01-01',
-  archived: false
+  archived: false,
+  archivePeriods: []
 }
 
 /** Mounts it editing Reading, or creating with `{}`. */

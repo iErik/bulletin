@@ -71,7 +71,8 @@ const fakeHabits = (): HabitsApi => {
     name: 'Habit',
     icon: 'meditation',
     created: '2026-01-01',
-    archived: false
+    archived: false,
+    archivePeriods: []
   }
   return {
     list: resolves([]),

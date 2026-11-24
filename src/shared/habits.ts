@@ -48,6 +48,20 @@ export const HABIT_GOAL = {
   default: 75
 } as const
 
+/**
+ * A stretch of days a Habit spent archived. Its days
+ * don't count for the Habit.
+ */
+export interface ArchivePeriod {
+  /** The day it was archived. */
+  readonly start: LocalDate
+  /**
+   * The day before it was restored, or null while
+   * the period is still open.
+   */
+  readonly end: LocalDate | null
+}
+
 /** Something the user wants to do regularly. */
 export interface Habit {
   readonly id: number
@@ -58,6 +72,8 @@ export interface Habit {
   readonly created: LocalDate
   /** Archived Habits leave the list, keeping Entries. */
   readonly archived: boolean
+  /** Oldest first. An open period means archived. */
+  readonly archivePeriods: readonly ArchivePeriod[]
 }
 
 /** A Habit to create. */
@@ -73,8 +89,8 @@ export interface HabitChanges {
   readonly icon?: HabitIcon
 }
 
-/** Which Habits to list. */
-export type HabitStatus = 'active' | 'archived'
+/** Which Habits to list. `all` is every Habit. */
+export type HabitStatus = 'active' | 'archived' | 'all'
 
 /** A Habit Entry: the Habit was done on that day. */
 export interface HabitEntry {
@@ -84,7 +100,10 @@ export interface HabitEntry {
 
 /** `window.bulletin.habits`. */
 export interface HabitsApi {
-  /** Active or archived Habits, oldest first. */
+  /**
+   * Active Habits, archived ones, or every Habit,
+   * oldest first.
+   */
   list(status: HabitStatus): Promise<
     StorageResult<Habit[]>
   >

@@ -59,7 +59,8 @@ describe('createHabit', () => {
       name: 'Read',
       icon: 'reading',
       created: today,
-      archived: false
+      archived: false,
+      archivePeriods: []
     })
     expect(await listHabits(db, 'active'))
       .toEqual([habit])
@@ -77,7 +78,7 @@ describe('createHabit', () => {
   it('restores an archived Habit by name', async () => {
     const habit = await read()
     await mark({ habitId: habit.id, date: today })
-    await archiveHabit(db, habit.id)
+    await archiveHabit(db, habit.id, now)
 
     const restored = await createHabit(
       db,
@@ -87,7 +88,10 @@ describe('createHabit', () => {
 
     expect(restored).toEqual({
       ...habit,
-      icon: 'study'
+      icon: 'study',
+      archivePeriods: [
+        { start: today, end: '2026-06-30' }
+      ]
     })
     expect(await listHabits(db, 'active'))
       .toEqual([restored])
@@ -123,16 +127,23 @@ describe('listHabits', () => {
       { name: 'Walk', icon: 'walking' },
       new Date(2026, 5, 1)
     )
-    await archiveHabit(db, read2.id)
+    await archiveHabit(db, read2.id, now)
 
+    const archived = {
+      ...read2,
+      archived: true,
+      archivePeriods: [{ start: today, end: null }]
+    }
     expect(await listHabits(db, 'active'))
       .toEqual([walk, run])
     expect(await listHabits(db, 'archived'))
-      .toEqual([{ ...read2, archived: true }])
+      .toEqual([archived])
+    expect(await listHabits(db, 'all'))
+      .toEqual([walk, run, archived])
   })
 
   it('rejects an unknown status', () =>
-    failsWith(listHabits(db, 'all'), {
+    failsWith(listHabits(db, 'gone'), {
       code: 'invalid-payload',
       field: ''
     }))
@@ -166,7 +177,7 @@ describe('updateHabit', () => {
     archived
   ) => {
     const taken = await read()
-    if (archived) await archiveHabit(db, taken.id)
+    if (archived) await archiveHabit(db, taken.id, now)
     const { id } = await create({
       name: 'Run',
       icon: 'running'
@@ -200,10 +211,14 @@ describe('archiveHabit and unarchiveHabit', () => {
     const habit = await read()
     await mark({ habitId: habit.id, date: today })
 
-    expect(await archiveHabit(db, habit.id))
-      .toEqual({ ...habit, archived: true })
+    expect(await archiveHabit(db, habit.id, now))
+      .toEqual({
+        ...habit,
+        archived: true,
+        archivePeriods: [{ start: today, end: null }]
+      })
     expect(await listHabits(db, 'active')).toEqual([])
-    expect(await unarchiveHabit(db, habit.id))
+    expect(await unarchiveHabit(db, habit.id, now))
       .toEqual(habit)
     expect(await entries()).toEqual([
       { habitId: habit.id, date: today }
@@ -232,7 +247,7 @@ describe('createHabitEntry', () => {
 
   it('rejects an archived Habit', async () => {
     const { id } = await read()
-    await archiveHabit(db, id)
+    await archiveHabit(db, id, now)
 
     await failsWith(mark({ habitId: id, date: today }), {
       code: 'archived-habit'
@@ -287,7 +302,7 @@ describe('listHabitEntries', () => {
       [run, '2026-06-10'],
       [read2, '2026-06-11']
     ] as const) await mark({ habitId: habit.id, date })
-    await archiveHabit(db, run.id)
+    await archiveHabit(db, run.id, now)
 
     expect(await listHabitEntries(db, {
       from: '2026-06-01',
@@ -327,7 +342,7 @@ describe('deleteHabitEntry', () => {
   it("works on an archived Habit's Entry", async () => {
     const { id } = await read()
     await mark({ habitId: id, date: today })
-    await archiveHabit(db, id)
+    await archiveHabit(db, id, now)
 
     expect(await deleteHabitEntry(db, {
       habitId: id,
@@ -371,5 +386,139 @@ describe('the habit tables', () => {
       .toThrow(/NOT NULL constraint failed/)
     expect(() => entry.run(null, today))
       .toThrow(/NOT NULL constraint failed/)
+
+    const period = db.$client.prepare(
+      'INSERT INTO habit_archive_periods'
+        + ' (habit_id, start, end) VALUES (?, ?, ?)'
+    )
+    period.run(1, today, null)
+    expect(() => period.run(1, today, null))
+      .toThrow(/UNIQUE constraint failed/)
+    expect(() => period.run(1, '2026-06-10', '2026-06-09'))
+      .toThrow(/CHECK constraint failed/)
   })
+})
+
+describe('Archive Periods', () => {
+  const at = (
+    year: number,
+    month: number,
+    day: number
+  ): Date => new Date(year, month - 1, day, 12)
+
+  it('keeps each period and refuses days inside',
+    async () => {
+      const habit = await createHabit(
+        db,
+        { name: 'Read', icon: 'reading' },
+        at(2026, 1, 1)
+      )
+      const early = {
+        habitId: habit.id,
+        date: '2025-12-01'
+      }
+      await createHabitEntry(db, early, at(2026, 9, 2))
+      await archiveHabit(db, habit.id, at(2026, 6, 10))
+      await unarchiveHabit(db, habit.id, at(2026, 7, 1))
+      await archiveHabit(db, habit.id, at(2026, 8, 1))
+      const restored = await unarchiveHabit(
+        db,
+        habit.id,
+        at(2026, 9, 1)
+      )
+
+      const periods = [
+        { start: '2026-06-10', end: '2026-06-30' },
+        { start: '2026-08-01', end: '2026-08-31' }
+      ]
+      expect(restored).toEqual({
+        ...habit,
+        archivePeriods: periods
+      })
+      expect(await listHabits(db, 'active'))
+        .toEqual([restored])
+
+      for (const date of [
+        '2026-06-10',
+        '2026-06-30',
+        '2026-08-01',
+        '2026-08-31'
+      ]) {
+        await failsWith(
+          createHabitEntry(
+            db,
+            { habitId: habit.id, date },
+            at(2026, 9, 2)
+          ),
+          { code: 'archived-habit' }
+        )
+      }
+
+      const between = {
+        habitId: habit.id,
+        date: '2026-07-01'
+      }
+      expect(await createHabitEntry(
+        db,
+        between,
+        at(2026, 9, 2)
+      )).toEqual(between)
+      expect(await listHabitEntries(db, {
+        from: '2025-01-01',
+        to: '2026-12-31'
+      })).toEqual([early, between])
+    })
+
+  it('locks an archived Habit before its period',
+    async () => {
+      const habit = await createHabit(
+        db,
+        { name: 'Read', icon: 'reading' },
+        at(2026, 6, 1)
+      )
+      const archived = await archiveHabit(
+        db,
+        habit.id,
+        at(2026, 6, 15)
+      )
+
+      expect(archived.archivePeriods).toEqual([
+        { start: '2026-06-15', end: null }
+      ])
+      expect(await archiveHabit(
+        db,
+        habit.id,
+        at(2026, 6, 16)
+      )).toEqual(archived)
+      await failsWith(
+        createHabitEntry(
+          db,
+          { habitId: habit.id, date: '2026-06-10' },
+          at(2026, 6, 15)
+        ),
+        { code: 'archived-habit' }
+      )
+    })
+
+  it('drops a period that would have no days',
+    async () => {
+      const habit = await read()
+      await archiveHabit(db, habit.id, now)
+      const restored = { ...habit, icon: 'study' }
+
+      expect(await create({
+        name: 'read',
+        icon: 'study'
+      })).toEqual(restored)
+      await archiveHabit(db, habit.id, now)
+      expect(await unarchiveHabit(db, habit.id, now))
+        .toEqual(restored)
+
+      db.$client.prepare(
+        'INSERT INTO habit_archive_periods'
+          + ' (habit_id, start) VALUES (?, ?)'
+      ).run(habit.id, '2026-06-16')
+      expect(await unarchiveHabit(db, habit.id, now))
+        .toEqual(restored)
+    })
 })

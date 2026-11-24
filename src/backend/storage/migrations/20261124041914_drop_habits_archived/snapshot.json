@@ -1,0 +1,600 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "788938d4-e3ce-4272-9dd0-96eb8772b2cc",
+  "prevIds": [
+    "5dcfbcb0-b2c7-44fc-a2a0-f92a94daeaea"
+  ],
+  "ddl": [
+    {
+      "name": "budget",
+      "entityType": "tables"
+    },
+    {
+      "name": "categories",
+      "entityType": "tables"
+    },
+    {
+      "name": "habit_archive_periods",
+      "entityType": "tables"
+    },
+    {
+      "name": "habit_entries",
+      "entityType": "tables"
+    },
+    {
+      "name": "habit_goal",
+      "entityType": "tables"
+    },
+    {
+      "name": "habits",
+      "entityType": "tables"
+    },
+    {
+      "name": "mood",
+      "entityType": "tables"
+    },
+    {
+      "name": "sleep",
+      "entityType": "tables"
+    },
+    {
+      "name": "sleep_goal",
+      "entityType": "tables"
+    },
+    {
+      "name": "transactions",
+      "entityType": "tables"
+    },
+    {
+      "name": "weight",
+      "entityType": "tables"
+    },
+    {
+      "table": "budget",
+      "name": "month",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "budget",
+      "name": "amount",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "categories",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "categories",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_archive_periods",
+      "name": "habit_id",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_archive_periods",
+      "name": "start",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_archive_periods",
+      "name": "end",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_entries",
+      "name": "habit_id",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_entries",
+      "name": "date",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_goal",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habit_goal",
+      "name": "percent",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "icon",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "habits",
+      "name": "created",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "mood",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "mood",
+      "name": "mood",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "start",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep",
+      "name": "end",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep_goal",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sleep_goal",
+      "name": "minutes",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "transactions",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "transactions",
+      "name": "date",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "transactions",
+      "name": "description",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "transactions",
+      "name": "category_id",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "transactions",
+      "name": "amount",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "date",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "weight",
+      "name": "grams",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "categories",
+      "name": "categories_name",
+      "columns": [
+        {
+          "value": "lower(\"name\")",
+          "isExpression": true
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "habit_entries",
+      "name": "habit_entries_date",
+      "columns": [
+        {
+          "value": "date",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "habits",
+      "name": "habits_name",
+      "columns": [
+        {
+          "value": "lower(\"name\")",
+          "isExpression": true
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_start",
+      "columns": [
+        {
+          "value": "start",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "transactions",
+      "name": "transactions_date",
+      "columns": [
+        {
+          "value": "date",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "habit_archive_periods",
+      "name": "habit_archive_periods_pk",
+      "columns": [
+        "habit_id",
+        "start"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "habit_entries",
+      "name": "habit_entries_pk",
+      "columns": [
+        "habit_id",
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "budget",
+      "name": "budget_pk",
+      "columns": [
+        "month"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "categories",
+      "name": "categories_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "habit_goal",
+      "name": "habit_goal_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "habits",
+      "name": "habits_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "mood",
+      "name": "mood_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sleep_goal",
+      "name": "sleep_goal_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "transactions",
+      "name": "transactions_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_pk",
+      "columns": [
+        "date"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "budget",
+      "name": "budget_month_not_null",
+      "value": "\"month\" IS NOT NULL",
+      "entityType": "checks"
+    },
+    {
+      "table": "budget",
+      "name": "budget_amount_not_negative",
+      "value": "\"amount\" >= 0",
+      "entityType": "checks"
+    },
+    {
+      "table": "categories",
+      "name": "categories_name_not_blank",
+      "value": "trim(\"name\") <> ''",
+      "entityType": "checks"
+    },
+    {
+      "table": "habit_archive_periods",
+      "name": "habit_archive_period_end",
+      "value": "\"end\" IS NULL OR \"end\" >= \"start\"",
+      "entityType": "checks"
+    },
+    {
+      "table": "habit_goal",
+      "name": "habit_goal_one_row",
+      "value": "\"id\" = 1",
+      "entityType": "checks"
+    },
+    {
+      "table": "habit_goal",
+      "name": "habit_goal_percent_range",
+      "value": "\"percent\" BETWEEN 10 AND 100",
+      "entityType": "checks"
+    },
+    {
+      "table": "habit_goal",
+      "name": "habit_goal_percent_step",
+      "value": "\"percent\" % 5 = 0",
+      "entityType": "checks"
+    },
+    {
+      "table": "habits",
+      "name": "habits_name_not_blank",
+      "value": "trim(\"name\") <> ''",
+      "entityType": "checks"
+    },
+    {
+      "table": "mood",
+      "name": "mood_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_end_after_start",
+      "value": "\"end\" > \"start\"",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep",
+      "name": "sleep_at_most_24_hours",
+      "value": "\"end\" - \"start\" <= 86400000",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep_goal",
+      "name": "sleep_goal_one_row",
+      "value": "\"id\" = 1",
+      "entityType": "checks"
+    },
+    {
+      "table": "sleep_goal",
+      "name": "sleep_goal_minutes_range",
+      "value": "\"minutes\" BETWEEN 240 AND 720",
+      "entityType": "checks"
+    },
+    {
+      "table": "weight",
+      "name": "weight_date_not_null",
+      "value": "\"date\" IS NOT NULL",
+      "entityType": "checks"
+    }
+  ],
+  "renames": []
+}

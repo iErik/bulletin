@@ -12,7 +12,8 @@ const habit = (id: number): Habit => ({
   name: `Habit ${id}`,
   icon: 'reading',
   created: '2026-01-01',
-  archived: false
+  archived: false,
+  archivePeriods: []
 })
 
 describe('current Habit', () => {
