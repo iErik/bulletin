@@ -16,6 +16,11 @@ import {
   type SleepApi
 } from '@shared/sleep'
 import type { SleepQualityApi } from '@shared/sleep-quality'
+import type {
+  NewTask,
+  TaskDone,
+  TasksApi
+} from '@shared/tasks'
 import type { WeightApi } from '@shared/weight'
 
 /** Resolves every call with `value`, successfully. */
@@ -117,6 +122,31 @@ const fakeExpenses = (): ExpensesApi => ({
   setBudget: echoes()
 })
 
+/** No Tasks: created get id 1; updates merge onto it. */
+const fakeTasks = (): TasksApi => {
+  const task = {
+    id: 1,
+    title: 'Task',
+    day: '2026-01-01' as const,
+    time: null,
+    doneAt: null,
+    created: 0,
+    moves: 0
+  }
+  return {
+    list: resolves([]),
+    listSomeday: resolves([]),
+    create: echoes((value: NewTask) =>
+      ({ ...task, ...value })),
+    update: echoes(changes => ({ ...task, ...changes })),
+    setDone: vi.fn(async ({ id, done }: TaskDone) => ({
+      ok: true as const,
+      value: { ...task, id, doneAt: done ? 1 : null }
+    })),
+    delete: resolves(null)
+  }
+}
+
 /**
  * A fake preload API for renderer tests. Typed against
  * `BulletinApi`, so it stops compiling when the bridge
@@ -133,6 +163,7 @@ export const fakeBulletin = (
   mood: fakeMood(),
   habits: fakeHabits(),
   expenses: fakeExpenses(),
+  tasks: fakeTasks(),
   ...overrides
 })
 

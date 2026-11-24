@@ -8,6 +8,7 @@ import { SLEEP_CHANNELS } from '@shared/sleep'
 import {
   SLEEP_QUALITY_CHANNELS
 } from '@shared/sleep-quality'
+import { TASKS_CHANNELS } from '@shared/tasks'
 import { WEIGHT_CHANNELS } from '@shared/weight'
 import { getBudget, setBudget } from './budget'
 import type { Database } from './database'
@@ -49,6 +50,14 @@ import {
   deleteSleepQuality,
   listSleepQuality
 } from './sleep-quality'
+import {
+  createTask,
+  deleteTask,
+  listSomedayTasks,
+  listTasks,
+  setTaskDone,
+  updateTask
+} from './tasks'
 import {
   createWeight,
   deleteWeight,
@@ -121,7 +130,13 @@ const OPERATIONS: Record<string, Operation> = {
   [EXPENSES_CHANNELS.listCategories]: listCategories,
   [EXPENSES_CHANNELS.createCategory]: createCategory,
   [EXPENSES_CHANNELS.getBudget]: getBudget,
-  [EXPENSES_CHANNELS.setBudget]: setBudget
+  [EXPENSES_CHANNELS.setBudget]: setBudget,
+  [TASKS_CHANNELS.list]: listTasks,
+  [TASKS_CHANNELS.listSomeday]: listSomedayTasks,
+  [TASKS_CHANNELS.create]: (db, p) => createTask(db, p),
+  [TASKS_CHANNELS.update]: updateTask,
+  [TASKS_CHANNELS.setDone]: (db, p) => setTaskDone(db, p),
+  [TASKS_CHANNELS.delete]: deleteTask
 }
 
 /** Registers one `ipc.handle` per storage operation. */
