@@ -79,8 +79,11 @@ export const MONTH_PACE_COLOURS: readonly MonthPaceColour[] = [
   'bar-glow', 'rest', 'cap'
 ]
 
-/** Whose Day Pill colours: a Mood's, or a done Habit's. */
-export type PillKey = MoodKey | 'habit'
+/**
+ * Whose Day Pill colours: a Mood's, a done Habit's, or
+ * a Sleep Quality rating's.
+ */
+export type PillKey = MoodKey | 'habit' | 'quality'
 
 /**
  * A filled Day Pill's colours, from Figma's "Mood

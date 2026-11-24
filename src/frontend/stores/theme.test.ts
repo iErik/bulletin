@@ -55,13 +55,16 @@ vi.mock('@/theme/themes', async original => {
       'pill-outline': colour,
       weekday: colour,
       pill: Object.fromEntries(
-        [...MOODS.map(mood => mood.key), 'habit'].map(
-          key => [key, {
-            base: colour,
-            glow: colour,
-            shadow: colour,
-            tint: colour
-          }])
+        [
+          ...MOODS.map(mood => mood.key),
+          'habit',
+          'quality'
+        ].map(key => [key, {
+          base: colour,
+          glow: colour,
+          shadow: colour,
+          tint: colour
+        }])
       ) as Palette['pill'],
       mood: Object.fromEntries(
         MOODS.map(mood => [mood.key, colour])
@@ -178,7 +181,11 @@ describe('theme store', () => {
   it("writes the Day Pills' colours", () => {
     mockSystemScheme(true)
     const store = useThemeStore()
-    const keys = [...MOODS.map(mood => mood.key), 'habit']
+    const keys = [
+      ...MOODS.map(mood => mood.key),
+      'habit',
+      'quality'
+    ]
     const read = (name: string): string =>
       document.documentElement.style
         .getPropertyValue(`--color-${name}`)

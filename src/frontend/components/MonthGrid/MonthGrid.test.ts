@@ -184,6 +184,28 @@ describe('MonthGrid', () => {
         .not.toContain('-filled')
     })
 
+    it('dims a filled day to the opacity given', () => {
+      const colours = {
+        base: 'red',
+        glow: 'pink',
+        shadow: 'white',
+        tint: 'blue'
+      }
+      const wrapper = mountGrid({
+        pill: (day: Date) =>
+          day.getDate() <= 4 ? colours : undefined,
+        opacity: (day: Date) =>
+          day.getDate() >= 3 ? 0.35 : undefined
+      })
+
+      expect(pill(wrapper, 4).attributes('style'))
+        .toContain('--pill-opacity: 0.35;')
+      expect(pill(wrapper, 2).attributes('style'))
+        .not.toContain('--pill-opacity')
+      expect(pill(wrapper, 5).attributes('style'))
+        .toBeUndefined()
+    })
+
     it('draws an empty day as the base alone', () => {
       const wrapper = mountGrid()
 
