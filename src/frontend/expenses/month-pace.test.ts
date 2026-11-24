@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Budget, Transaction } from '@shared/expenses'
-import { monthPace } from './month-pace'
+import { monthPace, paceOn } from './month-pace'
 
 let nextId = 1
 
@@ -308,5 +308,22 @@ describe('monthPace', () => {
     expect(result.projection).toBe(100 + (100 / 3) * 26)
     expect(result.cap).toBe(4 * (100 / 3))
     expect(result.pace?.end.date).toBe('2024-02-29')
+  })
+})
+
+describe('paceOn', () => {
+  const { pace } = monthPace(
+    [], budget(3_000), new Date(2026, 10, 21)
+  )
+
+  it('runs from 0 on the 1st to the Budget on the last day', () => {
+    if (!pace) throw new Error('expected a pace line')
+    expect(paceOn(pace, 1)).toBe(0)
+    expect(paceOn(pace, 30)).toBe(3_000)
+  })
+
+  it('reads the line between its endpoints', () => {
+    if (!pace) throw new Error('expected a pace line')
+    expect(paceOn(pace, 11)).toBeCloseTo(3_000 * 10 / 29, 10)
   })
 })

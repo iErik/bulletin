@@ -74,6 +74,23 @@ export interface MonthPace {
   readonly cap: number | null
 }
 
+/**
+ * The pace line's amount on day `day` of the month, in
+ * centavos, unrounded: a straight line between the two
+ * endpoints, so 0 on the 1st and the Budget on the last
+ * day.
+ */
+export const paceOn = (
+  pace: BudgetPace,
+  day: number
+): number => {
+  const { start, end } = pace
+  if (end.day === start.day) return end.amount
+  return start.amount
+    + (end.amount - start.amount)
+    * (day - start.day) / (end.day - start.day)
+}
+
 interface DayBucket {
   spend: number
   largeExpenses: Transaction[]
