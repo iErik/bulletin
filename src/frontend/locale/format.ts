@@ -54,7 +54,8 @@ const dateLocale = (): DateLocale => {
  * - `month`: "September", "setembro";
  * - `monthShort`: "Sep", "set.";
  * - `monthYear`: "September 2026", "setembro de 2026";
- * - `weekday`: "Mon", "seg.".
+ * - `weekday`: "Mon", "seg.";
+ * - `weekdayDay`: "Sat 14".
  */
 export type DateStyle =
   | 'long'
@@ -63,9 +64,10 @@ export type DateStyle =
   | 'monthShort'
   | 'monthYear'
   | 'weekday'
+  | 'weekdayDay'
 
 const INTL_STYLES: Readonly<Record<
-  Exclude<DateStyle, 'long'>,
+  Exclude<DateStyle, 'long' | 'weekdayDay'>,
   Intl.DateTimeFormatOptions
 >> = {
   short: { month: 'short', day: 'numeric' },
@@ -73,6 +75,16 @@ const INTL_STYLES: Readonly<Record<
   monthShort: { month: 'short' },
   monthYear: { month: 'long', year: 'numeric' },
   weekday: { weekday: 'short' }
+}
+
+/** Weekday then day, even when Intl swaps them. */
+const weekdayDay = (date: Date): string => {
+  const parts = new Intl.DateTimeFormat(locale(), {
+    weekday: 'short', day: 'numeric'
+  }).formatToParts(date)
+  const w = parts.find(p => p.type === 'weekday')?.value
+  const d = parts.find(p => p.type === 'day')?.value
+  return [w, d].filter(Boolean).join(' ')
 }
 
 export const formatDate = (
@@ -83,10 +95,12 @@ export const formatDate = (
   // date-fns locale's long date.
   style === 'long'
     ? format(date, 'PPP', { locale: dateLocale() })
-    : new Intl.DateTimeFormat(
-        locale(),
-        INTL_STYLES[style]
-      ).format(date)
+    : style === 'weekdayDay'
+      ? weekdayDay(date)
+      : new Intl.DateTimeFormat(
+          locale(),
+          INTL_STYLES[style]
+        ).format(date)
 
 /**
  * A time of day on the Locale's clock: "2:10 AM" in
