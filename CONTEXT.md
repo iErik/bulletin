@@ -31,14 +31,14 @@ _Avoid_: Language, region, culture
 ### Dashboard
 
 **Tracker**:
-A kind of thing the user logs: Sleep, Mood, Habits, Weight or
-Expenses. Each Tracker holds its own Entries.
+A kind of thing the user logs: Sleep, Mood, Habits, Weight,
+Expenses or Tasks. Each Tracker holds its own Entries.
 _Avoid_: Module, category
 
 **Entry**:
 One logged record in a Tracker, such as one sleep Period, one
 day's mood or one expense. An Entry is never dated in the
-future.
+future, except a Task, which is planned ahead.
 _Avoid_: Record, log, item
 
 **Page**:
@@ -128,8 +128,8 @@ Where a Task without a planned day waits.
 _Avoid_: Backlog, inbox
 
 **Overdue**:
-Said of a one-off Task that isn't done and was planned before
-today, the real date rather than the Selected Date.
+Said of a Task that doesn't recur, isn't done, and was planned
+before today, the real date rather than the Selected Date.
 
 **Recurring Task**:
 A Task that repeats on a schedule, appearing as an Occurrence
