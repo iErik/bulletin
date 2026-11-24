@@ -120,23 +120,20 @@ the day it was created, except during its Archive Periods.
 _Avoid_: Goal, routine
 
 **Archive Period**:
-A stretch of days during which a Habit was archived. It starts
-on the day the Habit is archived and ends the day before it is
-restored; a Habit still archived has one with no end. Its days
-are never missed, can't be ticked, and are skipped over by a
-Streak rather than breaking it.
+A stretch of days during which a Habit was archived: from the
+day it was archived to the day before it was restored, or
+open-ended while it stays archived. Its days don't count for the
+Habit.
 
 **Streak**:
 How many days in a row a Habit was done, counting back from the
-Selected Date, or from the day before if the Selected Date isn't
-done yet. A Habit's best Streak is its longest ever, up to the
-Selected Date.
+Selected Date, or from the day before if that isn't done yet.
+Days in Archive Periods are skipped over, not breaks.
 _Avoid_: Chain, run
 
 **Completion Rate**:
-The share of days a Habit was done, out of the days it counted
-in a span. For several Habits, all their done days out of all
-their counted days.
+The share of the days a Habit counted in a span on which it was
+done; for several Habits, of all their counted days.
 _Avoid_: Score, percentage
 
 **Slipping**:
@@ -147,9 +144,8 @@ at least 20 points below its rate over the 14 days before.
 A day on which every Habit that counted was done.
 
 **Habit Goal**:
-The weekly Completion Rate the user aims for, from 10% to 100%
-in steps of 5%. One value for all Habits, set by dragging; not
-an Entry.
+The weekly Completion Rate the user aims for: one value for all
+Habits, not an Entry.
 _Avoid_: Target
 
 **Category**:
