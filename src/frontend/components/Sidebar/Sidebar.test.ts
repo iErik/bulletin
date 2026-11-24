@@ -88,6 +88,7 @@ describe('Sidebar', () => {
     ['/tasks/a/b', 'Tasks'],
     ['/expenses', 'Expenses'],
     ['/habits', 'Habits'],
+    ['/habits/x', 'Habits'],
     ['/notes/x', 'Notes']
   ])('marks only %s\'s Page current', async (path, label) => {
     const { sidebar } = await mountAt(path)

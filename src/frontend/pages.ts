@@ -3,6 +3,7 @@ import DashboardView
   from './views/DashboardView/DashboardView.vue'
 import ExpensesView
   from './views/ExpensesView/ExpensesView.vue'
+import HabitsView from './views/HabitsView/HabitsView.vue'
 import MoodView from './views/MoodView/MoodView.vue'
 import SleepView from './views/SleepView/SleepView.vue'
 import TasksView from './views/TasksView/TasksView.vue'
@@ -54,7 +55,8 @@ export const PAGES: readonly Page[] = [
     name: 'habits',
     path: '/habits',
     label: 'Habits',
-    icon: 'weight'
+    icon: 'weight',
+    view: HabitsView
   },
   {
     name: 'mood',
