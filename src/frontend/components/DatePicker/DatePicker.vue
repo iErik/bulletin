@@ -1,21 +1,24 @@
 <script setup lang="ts">
 // Day, month and year dropdowns for one day, as a
-// `v-model`: the date header's popover and the Weight
-// form's date. They never offer or emit a day after
-// `max`, and the day list follows the chosen month's
-// length.
+// `v-model`: the date header's popover, the Weight
+// form's date and the Task editor's day. Given `max`,
+// they never offer or emit a later day; without it,
+// they reach a few years past today. The day list
+// follows the chosen month's length.
 import { computed } from 'vue'
 import { getDaysInMonth, isAfter } from 'date-fns'
 import { formatDate, formatNumber } from '@/locale/format'
 
 /** How many years back the year list reaches. */
 const YEARS_BACK = 20
+/** Without `max`, how far past this year it reaches. */
+const YEARS_AHEAD = 5
 
 const props = defineProps<{
   /** The chosen day, at local midnight. */
   modelValue: Date
-  /** The latest day offered: today. */
-  max: Date
+  /** The latest day offered, if any: today. */
+  max?: Date
 }>()
 
 const emit = defineEmits<{
@@ -33,10 +36,13 @@ const range = (from: number, to: number): number[] =>
     (_, i) => from + i
   )
 
-// Newest first, reaching back far enough to include
-// the chosen year.
+// Newest first, reaching far enough either way to
+// include the chosen year.
 const years = computed(() => {
-  const latest = props.max.getFullYear()
+  const latest = props.max?.getFullYear() ?? Math.max(
+    new Date().getFullYear() + YEARS_AHEAD,
+    year.value
+  )
   const earliest = Math.min(
     latest - YEARS_BACK + 1,
     year.value
@@ -44,33 +50,33 @@ const years = computed(() => {
   return range(earliest, latest).reverse()
 })
 
-const isMaxYear = computed(() =>
-  year.value === props.max.getFullYear()
+/** `max`, when it falls in the chosen year. */
+const maxThisYear = computed(() =>
+  props.max?.getFullYear() === year.value
+    ? props.max
+    : undefined
 )
 
 const months = computed(() =>
-  range(
-    0,
-    isMaxYear.value ? props.max.getMonth() : 11
-  ).map(value => ({
-    value,
-    name: formatDate(new Date(2000, value, 1), 'month')
-  }))
+  range(0, maxThisYear.value?.getMonth() ?? 11)
+    .map(value => ({
+      value,
+      name: formatDate(new Date(2000, value, 1), 'month')
+    }))
 )
 
 const days = computed(() => {
-  const isMaxMonth = isMaxYear.value
-    && month.value === props.max.getMonth()
+  const max = maxThisYear.value
   return range(
     1,
-    isMaxMonth
-      ? props.max.getDate()
+    max && month.value === max.getMonth()
+      ? max.getDate()
       : getDaysInMonth(day.value)
   )
 })
 
 // Sets one part, keeping the others. The day is clamped
-// to the month's length, then to `max`.
+// to the month's length, then to `max`, if any.
 const select = (
   part: 'day' | 'month' | 'year',
   event: Event
@@ -88,9 +94,10 @@ const select = (
   const chosen = new Date(
     parts.year, parts.month, Math.min(parts.day, length)
   )
+  const { max } = props
   emit(
     'update:modelValue',
-    isAfter(chosen, props.max) ? props.max : chosen
+    max && isAfter(chosen, max) ? max : chosen
   )
 }
 </script>

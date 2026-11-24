@@ -142,4 +142,50 @@ describe('DatePicker', () => {
       .toEqual([[today]])
     expect(store.day).toEqual(today)
   })
+
+  describe('without max', () => {
+    const mountFree = (day: Date): VueWrapper => {
+      const picker: VueWrapper = mount(DatePicker, {
+        props: {
+          modelValue: day,
+          'onUpdate:modelValue': (next: Date) =>
+            picker.setProps({ modelValue: next })
+        }
+      })
+      return picker
+    }
+
+    it('offers every month and day of this year', () => {
+      const picker = mountFree(today)
+
+      expect(options(picker, 'Month')).toHaveLength(12)
+      expect(options(picker, 'Day')).toHaveLength(30)
+    })
+
+    it('lists 20 years, five of them ahead', () => {
+      const years = options(mountFree(today), 'Year')
+
+      expect(years).toHaveLength(20)
+      expect(years[0]).toBe('2031')
+    })
+
+    it('reaches a chosen year further ahead', () => {
+      const years = options(
+        mountFree(new Date(2040, 0, 1)),
+        'Year'
+      )
+
+      expect(years[0]).toBe('2040')
+    })
+
+    it('emits a future date', async () => {
+      const picker = mountFree(today)
+
+      await picker.get('[aria-label="Year"]')
+        .setValue('2027')
+
+      expect(picker.emitted('update:modelValue'))
+        .toEqual([[new Date(2027, 10, 9)]])
+    })
+  })
 })
