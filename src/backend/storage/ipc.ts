@@ -39,6 +39,7 @@ import {
   listSleep,
   updateSleep
 } from './sleep'
+import { getSleepGoal, setSleepGoal } from './sleep-goal'
 import {
   createWeight,
   deleteWeight,
@@ -81,6 +82,8 @@ const OPERATIONS: Record<string, Operation> = {
   [SLEEP_CHANNELS.create]: (db, p) => createSleep(db, p),
   [SLEEP_CHANNELS.update]: (db, p) => updateSleep(db, p),
   [SLEEP_CHANNELS.delete]: deleteSleep,
+  [SLEEP_CHANNELS.getGoal]: getSleepGoal,
+  [SLEEP_CHANNELS.setGoal]: setSleepGoal,
   [MOOD_CHANNELS.list]: listMood,
   [MOOD_CHANNELS.create]: (db, p) => createMood(db, p),
   [MOOD_CHANNELS.update]: (db, p) => updateMood(db, p),

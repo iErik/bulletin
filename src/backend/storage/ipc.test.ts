@@ -100,6 +100,22 @@ describe('handleStorage', () => {
       .toEqual({ ok: true, value: null })
   })
 
+  it('handles the Sleep Goal channels', async () => {
+    const call = serve()
+
+    expect(await call(SLEEP_CHANNELS.getGoal, undefined))
+      .toEqual({ ok: true, value: 8 * 60 })
+    expect(await call(SLEEP_CHANNELS.setGoal, 7 * 60 + 30))
+      .toEqual({ ok: true, value: 7 * 60 + 30 })
+    expect(await call(SLEEP_CHANNELS.getGoal, undefined))
+      .toEqual({ ok: true, value: 7 * 60 + 30 })
+    expect(await call(SLEEP_CHANNELS.setGoal, 3 * 60))
+      .toMatchObject({
+        ok: false,
+        error: { code: 'invalid-payload' }
+      })
+  })
+
   it('handles every Mood channel', async () => {
     const call = serve()
     const entry = { date: '2026-01-01', mood: 'okay' }
