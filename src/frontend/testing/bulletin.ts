@@ -1,5 +1,9 @@
 import { vi, type Mock } from 'vitest'
 import type { BulletinApi } from '@shared/bridge'
+import {
+  DATA_SOURCE_WRITES,
+  type DataSource
+} from '@shared/data-sources'
 import type {
   ExpensesApi,
   NewTransaction
@@ -147,6 +151,55 @@ const fakeTasks = (): TasksApi => {
   }
 }
 
+type AnyFn = (...args: unknown[]) => unknown
+
+// Maps a wrapped Proxy back to its target so spreading
+// `{ ...stubBulletin().sleep }` rebinds notifications
+// without stacking Proxies.
+const originals = new WeakMap<AnyFn, AnyFn>()
+
+const isOk = (result: unknown): boolean =>
+  typeof result === 'object'
+  && result !== null
+  && (result as { ok?: unknown }).ok === true
+
+const wrapWrite = (
+  fn: AnyFn,
+  source: DataSource,
+  notify: (changed: DataSource) => void
+): AnyFn => {
+  const target = originals.get(fn) ?? fn
+  const proxy = new Proxy(target, {
+    apply(raw, thisArg, args: unknown[]) {
+      const result: unknown = Reflect.apply(
+        raw, thisArg, args)
+      if (!(result instanceof Promise)) return result
+      return result.then((resolved: unknown) => {
+        if (isOk(resolved)) notify(source)
+        return resolved
+      })
+    }
+  })
+  originals.set(proxy, target)
+  return proxy
+}
+
+const wrapNamespace = (
+  namespace: object,
+  writes: Record<string, DataSource | null>,
+  notify: (changed: DataSource) => void
+): Record<string, unknown> => {
+  const wrapped = { ...namespace } as Record<
+    string, unknown
+  >
+  for (const [method, source] of Object.entries(writes)) {
+    const fn = wrapped[method]
+    if (source !== null && typeof fn === 'function')
+      wrapped[method] = wrapWrite(fn as AnyFn, source, notify)
+  }
+  return wrapped
+}
+
 /**
  * A fake preload API for renderer tests. Typed against
  * `BulletinApi`, so it stops compiling when the bridge
@@ -154,18 +207,41 @@ const fakeTasks = (): TasksApi => {
  */
 export const fakeBulletin = (
   overrides: Partial<BulletinApi> = {}
-): BulletinApi => ({
-  platform: 'testos',
-  setWindowControlsColours: vi.fn(),
-  weight: fakeWeight(),
-  sleep: fakeSleep(),
-  sleepQuality: fakeSleepQuality(),
-  mood: fakeMood(),
-  habits: fakeHabits(),
-  expenses: fakeExpenses(),
-  tasks: fakeTasks(),
-  ...overrides
-})
+): BulletinApi => {
+  const listeners = new Set<(source: DataSource) => void>()
+  const notify = (source: DataSource): void => {
+    for (const listener of listeners) {
+      try {
+        listener(source)
+      } catch {
+        // Match preload: one throw does not stop others.
+      }
+    }
+  }
+  const api: BulletinApi = {
+    platform: 'testos',
+    setWindowControlsColours: vi.fn(),
+    onDataChange: listener => {
+      listeners.add(listener)
+      return () => void listeners.delete(listener)
+    },
+    weight: fakeWeight(),
+    sleep: fakeSleep(),
+    sleepQuality: fakeSleepQuality(),
+    mood: fakeMood(),
+    habits: fakeHabits(),
+    expenses: fakeExpenses(),
+    tasks: fakeTasks(),
+    ...overrides
+  }
+  const wrapped = { ...api } as Record<string, unknown>
+  for (const [ns, writes] of
+    Object.entries(DATA_SOURCE_WRITES)) {
+    wrapped[ns] = wrapNamespace(
+      wrapped[ns] as object, writes, notify)
+  }
+  return wrapped as unknown as BulletinApi
+}
 
 /**
  * Replaces `window.bulletin` for the current test only;

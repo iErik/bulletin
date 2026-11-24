@@ -49,6 +49,22 @@ installed by the setup file. It lives in
   Call it before mounting, or before importing a
   module that reads `window.bulletin` when it loads.
 
+The fake also wires `onDataChange`: any write method
+in `DATA_SOURCE_WRITES` signals its Data Source after
+resolving with `{ ok: true }`, including methods
+overridden in `stubBulletin({ ... })` or via
+`vi.mocked(...)`. Reads and `{ ok: false }` results
+signal nothing, so a test can check that a Widget
+reloads after another write without firing signals by
+hand:
+
+```ts
+const api = stubBulletin()
+// mount a Widget watching useDataVersion('sleep')
+await api.sleep.create(period)
+await flushPromises()
+```
+
 After each renderer test, globals are unstubbed
 (Vitest's `unstubGlobals`) and `localStorage` is
 cleared.
