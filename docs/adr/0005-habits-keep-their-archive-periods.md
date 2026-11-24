@@ -10,8 +10,9 @@ its Streak. An archived Habit was only a flag, so
 nothing said when it was archived, and its past could
 not be shown or counted fairly. We keep every Archive
 Period instead: archiving starts one on that day and
-restoring ends it the day before, so the days in
-between are never counted as missed.
+restoring ends it the day before, so its days, from
+the archive day to the day before the restore, are
+never counted as missed.
 
 ## Considered Options
 

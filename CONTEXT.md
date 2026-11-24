@@ -116,8 +116,8 @@ in the Habits Tracker. It has a name, unique among all Habits
 including archived ones, and an icon. Deleting a Habit archives it: it leaves
 the list, but its Entries are kept. Creating a Habit with an
 archived Habit's name restores that Habit. Archiving starts an
-Archive Period and restoring ends it; the Habit counts on every
-other day from its creation up to the Selected Date.
+Archive Period and restoring ends it; the Habit counts on each
+day from its creation up to the Selected Date that isn't in one.
 _Avoid_: Goal, routine
 
 **Archive Period**:
@@ -129,12 +129,14 @@ Habit.
 **Streak**:
 How many days in a row a Habit was done, counting back from the
 Selected Date, or from the day before if that isn't done yet.
-Days in Archive Periods are skipped over, not breaks.
+Days in Archive Periods are skipped over, not breaks; its best
+Streak is its longest up to the Selected Date.
 _Avoid_: Chain, run
 
 **Completion Rate**:
 The share of the days a Habit counted in a span on which it was
-done; for several Habits, of all their counted days. A span with
+done; for several Habits, all their done days out of all their
+counted days. A span with
 no counted days has none.
 _Avoid_: Score, percentage
 
