@@ -9,6 +9,9 @@
 // Day Pill is outlined. A filled Day Pill is Figma's
 // "Mood Indicator": a blurred base under a glowing
 // inner pill; an empty one is the base alone.
+// `compact` is Figma's Year in Mood grid instead: no
+// weekday headers, and flat pills in the `base` colour
+// whose Selected Date is outlined in `shadow`'s glow.
 import { computed, nextTick, ref, watch } from 'vue'
 import { isAfter, isSameDay, isSameMonth } from 'date-fns'
 import { monthWeeks, weekdays } from '@/month-grid/layout'
@@ -26,6 +29,8 @@ const props = defineProps<{
   pill?: (day: Date) => PillColours | undefined
   /** Days to dim and ignore, besides future ones. */
   disabled?: (day: Date) => boolean
+  /** Flat pills without weekday headers. */
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{ activate: [day: Date] }>()
@@ -156,12 +161,13 @@ const pillStyle = (
 <template>
   <div
     class="month-grid"
+    :class="{ '-compact': compact }"
     role="group"
     :aria-label="formatDate(month, 'month')"
     :style="{ '--weeks': weeks.length }"
   >
     <span
-      v-for="name in headers"
+      v-for="name in compact ? [] : headers"
       :key="name"
       class="weekday"
       aria-hidden="true"
@@ -193,7 +199,10 @@ const pillStyle = (
           @blur="focusedPill = null"
         >
           <span class="base" />
-          <span v-if="pill?.(day)" class="glow" />
+          <span
+            v-if="pill?.(day) && !compact"
+            class="glow"
+          />
         </button>
       </template>
     </template>
@@ -277,6 +286,34 @@ const pillStyle = (
   > .pill.-disabled {
     cursor: default;
     opacity: 0.35;
+  }
+
+  // Figma's Year in Mood: 20×10 pills, 3px apart
+  // across and 5px down, with no blur or glow.
+  &.-compact {
+    grid-template-rows: repeat(var(--weeks), rem(10px));
+    gap: rem(5px) rem(3px);
+    padding: 0;
+
+    > .pill,
+    > .pill > .base {
+      border-radius: rem(3px);
+    }
+
+    > .pill { height: rem(10px); }
+
+    > .pill > .base {
+      background: var(--pill-base, var(--color-pill-flat-empty));
+      filter: none;
+    }
+
+    > .pill.-selected > .base {
+      border: 1px solid var(--color-pill-outline);
+      box-shadow: 0 0 6px glow(var(--pill-shadow), 60%);
+    }
+
+    // 40% of the 5% empty fill: Figma's 2% future day.
+    > .pill.-disabled { opacity: 0.4; }
   }
 
   > .tooltip {

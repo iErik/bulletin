@@ -100,6 +100,10 @@ export interface Palette {
   readonly mood: Readonly<Record<MoodKey, string>>
   /** An empty Day Pill, as `--color-pill-empty`. */
   readonly 'pill-empty': string
+  /** A compact empty one, `--color-pill-flat-empty`. */
+  readonly 'pill-flat-empty': string
+  /** A compact Selected Date's, `--color-pill-outline`. */
+  readonly 'pill-outline': string
   /** Month Grid weekdays, as `--color-weekday`. */
   readonly weekday: string
   /** Filled Day Pills', as `--color-pill-<key>-<part>`. */

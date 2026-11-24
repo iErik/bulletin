@@ -43,6 +43,8 @@ vi.mock('@/theme/themes', async original => {
       'habit-pill': colour,
       'habit-pill-text': colour,
       'pill-empty': colour,
+      'pill-flat-empty': colour,
+      'pill-outline': colour,
       weekday: colour,
       pill: Object.fromEntries(
         [...MOODS.map(mood => mood.key), 'habit'].map(
@@ -171,12 +173,16 @@ describe('theme store', () => {
         .getPropertyValue(`--color-${name}`)
     const pills = (): string[] => [
       read('pill-empty'),
+      read('pill-flat-empty'),
+      read('pill-outline'),
       read('weekday'),
       ...keys.flatMap(key => PILL_PARTS.map(part =>
         read(`pill-${key}-${part}`)))
     ]
     const expected = (palette: Palette): string[] => [
       palette['pill-empty'],
+      palette['pill-flat-empty'],
+      palette['pill-outline'],
       palette.weekday,
       ...keys.flatMap(key => PILL_PARTS.map(part =>
         palette.pill[key as keyof Palette['pill']][part]))

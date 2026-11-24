@@ -19,11 +19,6 @@ export const SLEEP_MOOD_BUCKETS = [
 export type SleepMoodBucketId =
   (typeof SLEEP_MOOD_BUCKETS)[number]['id']
 
-/** Legend order in Figma (≠ `MOODS` / bar order). */
-export const SLEEP_MOOD_LEGEND = [
-  'happy', 'okay', 'neutral', 'stressed', 'anxious', 'angry'
-] as const satisfies readonly MoodKey[]
-
 export interface SleepMoodSegment {
   readonly mood: MoodKey
   readonly count: number

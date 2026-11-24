@@ -35,6 +35,8 @@ type Single =
   | 'habit-pill'
   | 'habit-pill-text'
   | 'pill-empty'
+  | 'pill-flat-empty'
+  | 'pill-outline'
   | 'weekday'
 
 type ScaleRef = readonly [
@@ -125,6 +127,8 @@ export const applyPalette = (
     'habit-pill',
     'habit-pill-text',
     'pill-empty',
+    'pill-flat-empty',
+    'pill-outline',
     'weekday'
   ]
   for (const name of singles)
