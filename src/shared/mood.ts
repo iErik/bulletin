@@ -45,6 +45,21 @@ export const MOODS = [
 export type Mood = (typeof MOODS)[number]
 export type MoodKey = Mood['key']
 
+/**
+ * The order Moods are shown in wherever they're laid
+ * out together, as in Figma's stacked bars: Happy
+ * first (at the bottom or left), Angry last. It
+ * differs from `MOODS`, which follows the picker.
+ */
+export const MOOD_DISPLAY_ORDER = [
+  'happy',
+  'okay',
+  'neutral',
+  'stressed',
+  'anxious',
+  'angry'
+] as const satisfies readonly MoodKey[]
+
 const kindOf = (mood: Mood | MoodKey): MoodKind | undefined =>
   typeof mood === 'string'
     ? MOODS.find(item => item.key === mood)?.kind
