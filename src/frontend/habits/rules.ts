@@ -1,8 +1,8 @@
 /**
  * The shared Habit rules (see `CONTEXT.md` and ADR
  * 0005): which days a Habit counts, Completion Rate,
- * Slipping and Perfect Day. Every Habits Page Widget
- * uses these instead of its own copy.
+ * Slipping, Perfect Day, day split and Streaks. Every
+ * Habits Page Widget uses these instead of its own copy.
  */
 import { addDays, parseISO } from 'date-fns'
 import { localDate } from '@shared/dates'
@@ -152,4 +152,97 @@ export const ratePercent = (rate: number): number => {
   // Drops float noise, as in 0.285 * 100.
   const scaled = Number((Math.abs(rate) * 100).toPrecision(12))
   return Math.sign(rate) * Math.round(scaled) || 0
+}
+
+/** The days `habit` was done, from every Entry. */
+const doneDays = (
+  habit: Habit,
+  entries: Entries
+): Set<LocalDate> => new Set(
+  entries
+    .filter(entry => entry.habitId === habit.id)
+    .map(entry => entry.date)
+)
+
+/** A Habit's counted days in a range, split in two. */
+export interface DaySplit {
+  /** Counted days it was done, oldest first. */
+  readonly done: readonly LocalDate[]
+  /** Counted days it wasn't done, oldest first. */
+  readonly notDone: readonly LocalDate[]
+}
+
+/**
+ * `habit`'s counted days in `range`, split by whether
+ * it was done. Days it didn't count are in neither,
+ * and so are Entries on them.
+ */
+export const daySplit = (
+  habit: Habit,
+  entries: Entries,
+  range: DateRange,
+  selectedDate: LocalDate
+): DaySplit => {
+  const done: LocalDate[] = []
+  const notDone: LocalDate[] = []
+  const doneOn = doneDays(habit, entries)
+  for (const day of eachDay(range)) {
+    if (!countsOn(habit, day, selectedDate)) continue
+    if (doneOn.has(day)) done.push(day)
+    else notDone.push(day)
+  }
+  return { done, notDone }
+}
+
+/** One Streak: done days in a row. */
+export interface StreakRun {
+  /** Its first done day. */
+  readonly from: LocalDate
+  /** Its last done day. */
+  readonly to: LocalDate
+  /**
+   * How many days it was done. Archive Period days
+   * inside it are skipped, not counted.
+   */
+  readonly days: number
+  /**
+   * Whether a counted day it wasn't done broke it,
+   * before the Selected Date. The one open run, if
+   * any, is the current Streak.
+   */
+  readonly ended: boolean
+}
+
+/**
+ * Every Streak `habit` had up to the Selected Date,
+ * oldest first. Days in Archive Periods are skipped
+ * over, and the run starts no earlier than `created`.
+ * A counted day it wasn't done ends the run, except
+ * the Selected Date itself, which may still be done.
+ */
+export const streakRuns = (
+  habit: Habit,
+  entries: Entries,
+  selectedDate: LocalDate
+): StreakRun[] => {
+  const doneOn = doneDays(habit, entries)
+  const runs: StreakRun[] = []
+  let open: StreakRun | null = null
+  for (
+    let day = habit.created;
+    day <= selectedDate;
+    day = shiftDay(day, 1)
+  ) {
+    if (!countsOn(habit, day, selectedDate)) continue
+    if (doneOn.has(day)) {
+      const from: LocalDate = open?.from ?? day
+      const days: number = (open?.days ?? 0) + 1
+      open = { from, to: day, days, ended: false }
+    } else if (open && day < selectedDate) {
+      runs.push({ ...open, ended: true })
+      open = null
+    }
+  }
+  if (open) runs.push(open)
+  return runs
 }
