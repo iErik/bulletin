@@ -55,7 +55,9 @@ const dateLocale = (): DateLocale => {
  * - `monthShort`: "Sep", "set.";
  * - `monthYear`: "September 2026", "setembro de 2026";
  * - `weekday`: "Mon", "seg.";
- * - `weekdayDay`: "Sat 14".
+ * - `weekdayDay`: "Sat 14";
+ * - `ordinal`: the day of the month alone, "8th",
+ *   "8º".
  */
 export type DateStyle =
   | 'long'
@@ -65,9 +67,10 @@ export type DateStyle =
   | 'monthYear'
   | 'weekday'
   | 'weekdayDay'
+  | 'ordinal'
 
 const INTL_STYLES: Readonly<Record<
-  Exclude<DateStyle, 'long' | 'weekdayDay'>,
+  Exclude<DateStyle, 'long' | 'weekdayDay' | 'ordinal'>,
   Intl.DateTimeFormatOptions
 >> = {
   short: { month: 'short', day: 'numeric' },
@@ -90,17 +93,19 @@ const weekdayDay = (date: Date): string => {
 export const formatDate = (
   date: Date,
   style: DateStyle
-): string =>
-  // Intl has no ordinals ("1st"), so `long` uses the
-  // date-fns locale's long date.
-  style === 'long'
-    ? format(date, 'PPP', { locale: dateLocale() })
-    : style === 'weekdayDay'
-      ? weekdayDay(date)
-      : new Intl.DateTimeFormat(
-          locale(),
-          INTL_STYLES[style]
-        ).format(date)
+): string => {
+  // Intl has no ordinals ("1st"), so `long` and
+  // `ordinal` use the date-fns locale.
+  if (style === 'long')
+    return format(date, 'PPP', { locale: dateLocale() })
+  if (style === 'ordinal')
+    return format(date, 'do', { locale: dateLocale() })
+  if (style === 'weekdayDay') return weekdayDay(date)
+  return new Intl.DateTimeFormat(
+    locale(),
+    INTL_STYLES[style]
+  ).format(date)
+}
 
 /**
  * A time of day on the Locale's clock: "2:10 AM" in

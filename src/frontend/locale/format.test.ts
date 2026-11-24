@@ -68,6 +68,22 @@ describe('format', () => {
   )
 
   it.each([
+    ['en-US', '1st', '14th', '22nd'],
+    ['pt-BR', '1º', '14º', '22º']
+  ])(
+    'writes ordinal days in %s',
+    async (tag, first, fourteenth, twentySecond) => {
+      const { formatDate } = await loadIn(tag)
+
+      expect(formatDate(SEP_1, 'ordinal')).toBe(first)
+      expect(formatDate(SEP_14, 'ordinal'))
+        .toBe(fourteenth)
+      expect(formatDate(new Date(2026, 8, 22), 'ordinal'))
+        .toBe(twentySecond)
+    }
+  )
+
+  it.each([
     ['en-US', '2:05 AM', '2:30 PM'],
     ['pt-BR', '2:05', '14:30']
   ])(
