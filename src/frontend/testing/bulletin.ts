@@ -6,9 +6,10 @@ import type {
 } from '@shared/expenses'
 import type { Habit, HabitsApi } from '@shared/habits'
 import type { MoodApi } from '@shared/mood'
-import type {
-  NewSleepPeriod,
-  SleepApi
+import {
+  SLEEP_GOAL_DEFAULT_MINUTES,
+  type NewSleepPeriod,
+  type SleepApi
 } from '@shared/sleep'
 import type { WeightApi } from '@shared/weight'
 
@@ -42,7 +43,9 @@ const fakeSleep = (): SleepApi => ({
   create: echoes((period: NewSleepPeriod) =>
     ({ id: 1, ...period })),
   update: echoes(),
-  delete: resolves(null)
+  delete: resolves(null),
+  getGoal: resolves(SLEEP_GOAL_DEFAULT_MINUTES),
+  setGoal: echoes()
 })
 
 /** Empty Mood storage, like `fakeWeight`. */

@@ -8,6 +8,11 @@ import {
   text,
   uniqueIndex
 } from 'drizzle-orm/sqlite-core'
+// Relative: `pnpm db:generate` can't resolve `@shared`.
+import {
+  SLEEP_GOAL_MAX_MINUTES,
+  SLEEP_GOAL_MIN_MINUTES
+} from '../../shared/sleep'
 
 /** A Period's longest length: 24 hours, in ms. */
 export const MAX_PERIOD_MS = 24 * 60 * 60 * 1000
@@ -186,6 +191,34 @@ export const budget = sqliteTable(
     check(
       'budget_amount_not_negative',
       sql`${table.amount} >= 0`
+    )
+  ]
+)
+
+/**
+ * The Sleep Goal: one row, how long the user wants
+ * each Night to last, in minutes. Not an Entry. The
+ * checks back up the rules main validates: only row
+ * 1, between 4 and 12 hours.
+ */
+export const sleepGoal = sqliteTable(
+  'sleep_goal',
+  {
+    id: integer().primaryKey(),
+    minutes: integer().notNull()
+  },
+  table => [
+    check(
+      'sleep_goal_one_row',
+      sql`${table.id} = ${sql.raw('1')}`
+    ),
+    check(
+      'sleep_goal_minutes_range',
+      sql`${table.minutes} BETWEEN ${sql.raw(
+        String(SLEEP_GOAL_MIN_MINUTES)
+      )} AND ${sql.raw(
+        String(SLEEP_GOAL_MAX_MINUTES)
+      )}`
     )
   ]
 )
