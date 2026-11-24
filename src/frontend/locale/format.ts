@@ -150,3 +150,10 @@ export const formatMoney = (value: number): string =>
 /** The day weeks start on: 0 is Sunday, 1 Monday. */
 export const firstDayOfWeek = (): number =>
   dateLocale().options?.weekStartsOn ?? 0
+
+/**
+ * The day of January the Locale's week 1 must contain,
+ * which numbers the weeks: 1 in en-US, 4 in en-GB.
+ */
+export const firstWeekContainsDate = (): number =>
+  dateLocale().options?.firstWeekContainsDate ?? 1

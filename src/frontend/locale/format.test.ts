@@ -120,6 +120,17 @@ describe('format', () => {
     expect(firstDayOfWeek()).toBe(day)
   })
 
+  it.each([
+    ['en-US', 1],
+    ['pt-BR', 1],
+    ['en-GB', 4],
+    ['pt-PT', 4]
+  ])('numbers weeks in %s from Jan %i', async (tag, day) => {
+    const { firstWeekContainsDate } = await loadIn(tag)
+
+    expect(firstWeekContainsDate()).toBe(day)
+  })
+
   it('falls back to the language, then en-US', async () => {
     const format = await loadIn('pt-AO')
     expect(format.formatDate(SEP_1, 'long'))
