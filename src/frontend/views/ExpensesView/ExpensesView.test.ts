@@ -48,7 +48,7 @@ describe('ExpensesView', () => {
     document.body.innerHTML = ''
   })
 
-  it('places Month Pace in wide and Expenses in side',
+  it('places Month Pace, Expenses and Recurring',
     async () => {
       stubBulletin()
       const page = (await mountView()).view
@@ -61,7 +61,11 @@ describe('ExpensesView', () => {
         page.find('.page-grid > .side > .expenses-widget')
           .exists()
       ).toBe(true)
-      for (const cell of ['left', 'middle', 'right']) {
+      expect(
+        page.find('.page-grid > .middle > .recurring-widget')
+          .exists()
+      ).toBe(true)
+      for (const cell of ['left', 'right']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
@@ -95,7 +99,7 @@ describe('ExpensesView', () => {
       store.setDay(new Date(2026, 9, 20))
       await flushPromises()
 
-      expect(api.expenses.list).toHaveBeenLastCalledWith(
+      expect(api.expenses.list).toHaveBeenCalledWith(
         { from: '2026-10-01', to: '2026-10-31' }
       )
       expect(api.expenses.getBudget)

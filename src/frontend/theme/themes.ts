@@ -167,6 +167,11 @@ export const defaultTheme: Theme = {
       'weekday-low': 'rgb(255 112 112 / 60%)',
       // Figma's Mood / By Weekday frame.
       'weekday-best': 'rgb(165 165 165 / 80%)',
+      // Figma's Expenses / Recurring frame.
+      'recurring-row': 'rgb(255 255 255 / 3%)',
+      'recurring-meta': 'rgb(165 165 165 / 45%)',
+      'recurring-amount': 'rgb(255 112 112 / 85%)',
+      'recurring-footer': 'rgb(165 165 165 / 50%)',
       pill: {
         happy: pill('#77ca6e', '#77ca6e'),
         okay: pill('#6b85be', '#9095f4'),
@@ -302,6 +307,11 @@ export const defaultTheme: Theme = {
       'weekday-cell': '#000000',
       'weekday-low': 'rgb(196 55 59 / 70%)',
       'weekday-best': 'rgb(90 90 90 / 90%)',
+      // The dark Recurring frame's, mirrored for light.
+      'recurring-row': 'rgb(0 0 0 / 3%)',
+      'recurring-meta': 'rgb(90 90 90 / 45%)',
+      'recurring-amount': 'rgb(196 55 59 / 85%)',
+      'recurring-footer': 'rgb(90 90 90 / 50%)',
       pill: {
         happy: pill('#65b25c', '#3f9a36'),
         okay: pill('#7f86e3', '#5a62d8'),

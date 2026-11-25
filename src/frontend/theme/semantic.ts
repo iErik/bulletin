@@ -49,6 +49,10 @@ type Single =
   | 'weekday-cell'
   | 'weekday-low'
   | 'weekday-best'
+  | 'recurring-row'
+  | 'recurring-meta'
+  | 'recurring-amount'
+  | 'recurring-footer'
 
 type ScaleRef = readonly [
   Exclude<
@@ -156,7 +160,11 @@ export const applyPalette = (
     'weekday',
     'weekday-cell',
     'weekday-low',
-    'weekday-best'
+    'weekday-best',
+    'recurring-row',
+    'recurring-meta',
+    'recurring-amount',
+    'recurring-footer'
   ]
   for (const name of singles)
     el.style.setProperty(`--color-${name}`, palette[name])

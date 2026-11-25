@@ -181,6 +181,14 @@ export interface Palette {
   readonly 'weekday-low': string
   /** Mood By Weekday's best, `--color-weekday-best`. */
   readonly 'weekday-best': string
+  /** Recurring's row, as `--color-recurring-row`. */
+  readonly 'recurring-row': string
+  /** Its caption, as `--color-recurring-meta`. */
+  readonly 'recurring-meta': string
+  /** Its amount, as `--color-recurring-amount`. */
+  readonly 'recurring-amount': string
+  /** Its footer, as `--color-recurring-footer`. */
+  readonly 'recurring-footer': string
   /** Filled Day Pills', as `--color-pill-<key>-<part>`. */
   readonly pill: Readonly<Record<PillKey, PillColours>>
   /** The Sleep Timeline's, as `--color-sleep-<key>`. */

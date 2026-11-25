@@ -7,6 +7,8 @@ import ExpensesWidget
 import MonthPaceWidget
   from '@/components/MonthPaceWidget/MonthPaceWidget.vue'
 import PageGrid from '@/components/PageGrid/PageGrid.vue'
+import RecurringWidget
+  from '@/components/RecurringWidget/RecurringWidget.vue'
 </script>
 
 <template>
@@ -16,6 +18,9 @@ import PageGrid from '@/components/PageGrid/PageGrid.vue'
     </template>
     <template #side>
       <ExpensesWidget />
+    </template>
+    <template #middle>
+      <RecurringWidget />
     </template>
   </PageGrid>
 </template>
