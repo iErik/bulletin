@@ -11,10 +11,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { MOODS } from '@shared/mood'
 import { defaultTheme } from '@/theme/themes'
 import {
+  CATEGORY_COLOURS,
   HABIT_BOARD_COLOURS,
   MONTH_PACE_COLOURS,
   PILL_PARTS,
   SLEEP_COLOURS,
+  SPEND_COLOURS,
   WEIGHT_LINE_STOPS,
   type Palette,
   type Theme
@@ -28,9 +30,11 @@ vi.mock('@/theme/themes', async original => {
     await original<typeof import('@/theme/themes')>()
   // Mocks are hoisted above the imports.
   const {
+    CATEGORY_COLOURS,
     HABIT_BOARD_COLOURS,
     MONTH_PACE_COLOURS,
     SLEEP_COLOURS,
+    SPEND_COLOURS,
     WEIGHT_LINE_STOPS
   } = await import('@/theme/types')
   const flat = (colour: string): Palette => {
@@ -92,7 +96,13 @@ vi.mock('@/theme/themes', async original => {
       ) as Palette['month-pace'],
       'habit-board': Object.fromEntries(
         HABIT_BOARD_COLOURS.map(name => [name, colour])
-      ) as Palette['habit-board']
+      ) as Palette['habit-board'],
+      spend: Object.fromEntries(
+        SPEND_COLOURS.map(name => [name, colour])
+      ) as Palette['spend'],
+      category: Object.fromEntries(
+        CATEGORY_COLOURS.map(name => [name, colour])
+      ) as Palette['category']
     }
   }
   const other: Theme = {
@@ -351,6 +361,28 @@ describe('theme store', () => {
     expect(board()).toEqual(HABIT_BOARD_COLOURS.map(
       name => light['habit-board'][name]
     ))
+  })
+
+  it('writes the spend and By Category colours', () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const names = [
+      ...SPEND_COLOURS.map(name => `spend-${name}`),
+      ...CATEGORY_COLOURS.map(name => `category-${name}`)
+    ]
+    const read = (): string[] => names.map(name =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`))
+    const expected = (palette: Palette): string[] => [
+      ...SPEND_COLOURS.map(name => palette.spend[name]),
+      ...CATEGORY_COLOURS.map(name => palette.category[name])
+    ]
+
+    expect(read()).toEqual(expected(dark))
+
+    store.setPreference('light')
+
+    expect(read()).toEqual(expected(light))
   })
 
   it("writes the Sleep Timeline's colours", () => {

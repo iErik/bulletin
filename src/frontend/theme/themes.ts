@@ -146,6 +146,21 @@ export const defaultTheme: Theme = {
         best: 'rgb(187 187 187 / 60%)',
         low: '#ff7070'
       },
+      // Figma's Expenses frames: By Category and
+      // Insights share these.
+      spend: {
+        rise: 'rgb(255 112 112 / 90%)',
+        value: '#bbbbbb',
+        caption: 'rgb(165 165 165 / 50%)'
+      },
+      // Figma's Expenses / By Category frame.
+      category: {
+        label: 'rgb(165 165 165 / 60%)',
+        bar: 'rgb(255 255 255 / 50%)',
+        'bar-top': 'rgb(255 255 255 / 85%)',
+        'bar-glow': 'rgb(255 255 255 / 35%)',
+        note: 'rgb(165 165 165 / 30%)'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -290,6 +305,20 @@ export const defaultTheme: Theme = {
         streak: '#000000',
         best: 'rgb(68 68 68 / 60%)',
         low: '#c4373b'
+      },
+      // The dark spend colours, mirrored for light.
+      spend: {
+        rise: 'rgb(196 55 59 / 90%)',
+        value: '#444444',
+        caption: 'rgb(90 90 90 / 50%)'
+      },
+      // The dark By Category frame's, mirrored.
+      category: {
+        label: 'rgb(90 90 90 / 60%)',
+        bar: 'rgb(0 0 0 / 50%)',
+        'bar-top': 'rgb(0 0 0 / 85%)',
+        'bar-glow': 'rgb(0 0 0 / 35%)',
+        note: 'rgb(90 90 90 / 30%)'
       },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.

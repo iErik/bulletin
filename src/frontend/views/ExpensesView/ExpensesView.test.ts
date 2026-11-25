@@ -48,7 +48,7 @@ describe('ExpensesView', () => {
     document.body.innerHTML = ''
   })
 
-  it('places Month Pace, Expenses, Recurring and Insights',
+  it('places all five Expenses Page Widgets',
     async () => {
       stubBulletin()
       const page = (await mountView()).view
@@ -69,7 +69,10 @@ describe('ExpensesView', () => {
         page.find('.page-grid > .right > .expenses-insights-widget')
           .exists()
       ).toBe(true)
-      expect(page.get('.left').element.children).toHaveLength(0)
+      expect(
+        page.find('.page-grid > .left > .expenses-by-category')
+          .exists()
+      ).toBe(true)
     })
 
   it('puts the date header in the Title Bar', async () => {
@@ -102,6 +105,9 @@ describe('ExpensesView', () => {
 
       expect(api.expenses.list).toHaveBeenCalledWith(
         { from: '2026-10-01', to: '2026-10-31' }
+      )
+      expect(api.expenses.list).toHaveBeenCalledWith(
+        { from: '2026-09-01', to: '2026-10-20' }
       )
       expect(api.expenses.getBudget)
         .toHaveBeenLastCalledWith('2026-10')

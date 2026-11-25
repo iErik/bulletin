@@ -1,9 +1,11 @@
 import { MOODS, type Mood } from '@shared/mood'
 import {
+  CATEGORY_COLOURS,
   HABIT_BOARD_COLOURS,
   MONTH_PACE_COLOURS,
   PILL_PARTS,
   SLEEP_COLOURS,
+  SPEND_COLOURS,
   WEIGHT_LINE_STOPS,
   type Palette,
   type PillColours,
@@ -64,6 +66,8 @@ type ScaleRef = readonly [
     | 'weight'
     | 'month-pace'
     | 'habit-board'
+    | 'spend'
+    | 'category'
     | Single
   >,
   Shade
@@ -123,8 +127,9 @@ export const dayPill = (key: PillKey): PillColours =>
 /**
  * Writes the semantic custom properties, the danger,
  * Income and Expense colours, the Mood and Day Pill
- * colours, the Sleep Timeline's, the Weight chart's
- * and Month Pace's for a Palette onto
+ * colours, the Sleep Timeline's, the Weight chart's,
+ * Month Pace's, Habit Board's, the spend and By
+ * Category colours for a Palette onto
  * `el` (the root element by default).
  */
 export const applyPalette = (
@@ -206,6 +211,18 @@ export const applyPalette = (
     el.style.setProperty(
       `--color-habit-board-${name}`,
       palette['habit-board'][name]
+    )
+  }
+  for (const name of SPEND_COLOURS) {
+    el.style.setProperty(
+      `--color-spend-${name}`,
+      palette.spend[name]
+    )
+  }
+  for (const name of CATEGORY_COLOURS) {
+    el.style.setProperty(
+      `--color-category-${name}`,
+      palette.category[name]
     )
   }
   el.style.colorScheme = scheme
