@@ -20,14 +20,17 @@ import {
 import type { Database } from './database'
 import {
   dateRangeSchema,
-  localDateSchema
+  localDateSchema,
+  localTimeSchema
 } from './dates'
 import { parse, StorageFailure } from './errors'
+import {
+  fromReminderCols,
+  reminderOffsetSchema,
+  sameReminderCols,
+  toReminderCols
+} from './reminders'
 import { tasks } from './schema'
-
-const localTimeSchema = z
-  .string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
 
 const idSchema = createSelectSchema(tasks, {
   id: schema => schema.positive()
@@ -36,18 +39,21 @@ const idSchema = createSelectSchema(tasks, {
 const newTaskSchema = z.strictObject({
   title: z.string().trim().min(1),
   day: localDateSchema.nullable(),
-  time: localTimeSchema.nullable()
+  time: localTimeSchema.nullable(),
+  reminder: reminderOffsetSchema.nullable().optional()
 })
 
 const changesSchema = z.strictObject({
   id: idSchema,
   title: z.string().trim().min(1).optional(),
   day: localDateSchema.nullable().optional(),
-  time: localTimeSchema.nullable().optional()
+  time: localTimeSchema.nullable().optional(),
+  reminder: reminderOffsetSchema.nullable().optional()
 }).refine(
-  ({ title, day, time }) => title !== undefined
+  ({ title, day, time, reminder }) => title !== undefined
     || day !== undefined
-    || time !== undefined,
+    || time !== undefined
+    || reminder !== undefined,
   'Nothing to change'
 )
 
@@ -56,8 +62,16 @@ const doneSchema = z.strictObject({
   done: z.boolean()
 })
 
-const toTask = (row: typeof tasks.$inferSelect): Task =>
-  row
+const toTask = (row: typeof tasks.$inferSelect): Task => ({
+  id: row.id,
+  title: row.title,
+  day: row.day,
+  time: row.time,
+  reminder: fromReminderCols(row),
+  doneAt: row.doneAt,
+  created: row.created,
+  moves: row.moves
+})
 
 /** Tasks planned in the range, ordered for the day. */
 export const listTasks = async (
@@ -107,6 +121,8 @@ export const createTask = async (
       title: task.title,
       day: task.day,
       time: task.time,
+      ...toReminderCols(task.reminder ?? null),
+      reminderNotifiedAt: null,
       doneAt: null,
       created: now.getTime(),
       moves: 0
@@ -130,21 +146,27 @@ export const updateTask = async (
     if (!existing)
       throw new StorageFailure({ code: 'not-found' })
 
-    const patch: {
-      title?: string
-      day?: string | null
-      time?: string | null
-      moves?: number
-    } = {}
+    const patch: Partial<typeof tasks.$inferInsert> = {}
+    let dueChanged = false
     if (changes.title !== undefined)
       patch.title = changes.title
-    if (changes.time !== undefined)
+    if (changes.time !== undefined) {
       patch.time = changes.time
+      if (changes.time !== existing.time) dueChanged = true
+    }
     if (changes.day !== undefined) {
       patch.day = changes.day
       patch.moves = existing.moves
         + moveIncrement(existing.day, changes.day)
+      if (changes.day !== existing.day) dueChanged = true
     }
+    if (changes.reminder !== undefined) {
+      const cols = toReminderCols(changes.reminder)
+      Object.assign(patch, cols)
+      if (!sameReminderCols(existing, cols))
+        dueChanged = true
+    }
+    if (dueChanged) patch.reminderNotifiedAt = null
 
     const row = tx
       .update(tasks)

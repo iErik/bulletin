@@ -11,6 +11,20 @@ export const localDate = (date: Date): LocalDate =>
     pad(date.getDate())
   ].join('-')
 
+/** Moves `date` by `delta` calendar days, DST-safe. */
+export const shiftDay = (
+  date: LocalDate,
+  delta: number
+): LocalDate => {
+  const [y, m, d] = date.split('-').map(Number)
+  const shifted = new Date(Date.UTC(y, m - 1, d + delta))
+  return [
+    shifted.getUTCFullYear(),
+    pad(shifted.getUTCMonth() + 1),
+    pad(shifted.getUTCDate())
+  ].join('-')
+}
+
 /**
  * The previous month from its 1st to `date`'s day of
  * the month, capped at that month's last day (for

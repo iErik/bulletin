@@ -13,6 +13,11 @@ export const localDateSchema = z
     return localDate(date) === value
   }, 'Not a calendar date')
 
+/** A local 24-hour time of day written as `HH:MM`. */
+export const localTimeSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+
 /** A range of days whose start isn't after its end. */
 export const dateRangeSchema = z
   .strictObject({

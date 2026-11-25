@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, lte, or } from 'drizzle-orm'
 import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
-import { localDate } from '@shared/dates'
+import { localDate, shiftDay } from '@shared/dates'
 import {
   compareForDay,
   occursOn,
@@ -19,8 +19,19 @@ import {
 import type { DateRange, LocalDate } from '@shared/storage'
 import { moveIncrement } from '@shared/tasks'
 import type { Database } from './database'
-import { dateRangeSchema, localDateSchema } from './dates'
+import {
+  dateRangeSchema,
+  localDateSchema,
+  localTimeSchema
+} from './dates'
 import { parse, StorageFailure } from './errors'
+import {
+  fromReminderCols,
+  type ReminderCols,
+  reminderOffsetSchema,
+  sameReminderCols,
+  toReminderCols
+} from './reminders'
 import {
   occurrences,
   recurringTasks,
@@ -28,8 +39,6 @@ import {
 } from './schema'
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6]
-const localTimeSchema = z.string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
 const idSchema = createSelectSchema(recurringTasks, {
   id: schema => schema.positive()
 }).shape.id
@@ -69,6 +78,7 @@ const scheduleSchema = z.discriminatedUnion('kind', [
 const newRecurringTaskSchema = z.strictObject({
   title: z.string().trim().min(1),
   time: localTimeSchema.nullable(),
+  reminder: reminderOffsetSchema.nullable().optional(),
   schedule: scheduleSchema,
   firstDay: localDateSchema
 })
@@ -77,11 +87,14 @@ const recurringTaskUpdateSchema = z.strictObject({
   id: idSchema,
   title: z.string().trim().min(1).optional(),
   time: localTimeSchema.nullable().optional(),
+  reminder: reminderOffsetSchema.nullable().optional(),
   schedule: scheduleSchema.optional(),
   firstDay: localDateSchema.optional()
 }).refine(
-  ({ title, time, schedule, firstDay }) => title !== undefined
+  ({ title, time, reminder, schedule, firstDay }) =>
+    title !== undefined
     || time !== undefined
+    || reminder !== undefined
     || schedule !== undefined
     || firstDay !== undefined,
   'Nothing to change'
@@ -129,7 +142,7 @@ type ScheduleCols = Pick<
 type ScheduleRow = Pick<
   Row, 'kind' | 'every' | 'weekdays' | 'month' | 'monthDay'
 >
-type RuleFields = ScheduleCols & Pick<
+type RuleFields = ScheduleCols & ReminderCols & Pick<
   typeof recurringTasks.$inferInsert,
   'title' | 'time' | 'firstDay'
 >
@@ -175,21 +188,12 @@ const toRecurringTask = (row: Row): RecurringTask => ({
   id: row.id,
   title: row.title,
   time: row.time,
+  reminder: fromReminderCols(row),
   schedule: toSchedule(row),
   firstDay: row.firstDay,
   lastDay: row.lastDay,
   created: row.created
 })
-
-const shiftDay = (date: LocalDate, delta: number): LocalDate => {
-  const [y, m, d] = date.split('-').map(Number)
-  const shifted = new Date(Date.UTC(y, m - 1, d + delta))
-  return [
-    shifted.getUTCFullYear(),
-    String(shifted.getUTCMonth() + 1).padStart(2, '0'),
-    String(shifted.getUTCDate()).padStart(2, '0')
-  ].join('-')
-}
 
 const maxDate = (a: LocalDate, b: LocalDate): LocalDate =>
   a > b ? a : b
@@ -206,6 +210,7 @@ const clampLast = (
 const sameRule = (a: Row, b: RuleFields): boolean =>
   a.title === b.title
   && a.time === b.time
+  && sameReminderCols(a, b)
   && a.kind === b.kind
   && a.every === b.every
   && a.weekdays === b.weekdays
@@ -229,6 +234,7 @@ const ruleVersions = (
         id: rule.id,
         title: row.title,
         time: row.time,
+        reminder: fromReminderCols(row),
         schedule: toSchedule(row),
         firstDay: row.firstDay,
         from,
@@ -273,11 +279,21 @@ export const createRecurringTask = async (
   value: unknown,
   now = new Date()
 ): Promise<RecurringTask> => {
-  const { title, time, schedule, firstDay }: NewRecurringTask =
-    parse(newRecurringTaskSchema, value)
+  const {
+    title,
+    time,
+    reminder,
+    schedule,
+    firstDay
+  }: NewRecurringTask = parse(newRecurringTaskSchema, value)
   const [row] = await db.insert(recurringTasks).values({
-    title, time, ...toColumns(schedule),
-    firstDay, lastDay: null, created: now.getTime()
+    title,
+    time,
+    ...toReminderCols(reminder ?? null),
+    ...toColumns(schedule),
+    firstDay,
+    lastDay: null,
+    created: now.getTime()
   }).returning()
   return toRecurringTask(row)
 }
@@ -318,6 +334,13 @@ export const updateRecurringTask = async (
       time: changes.time !== undefined
         ? changes.time
         : existing.time,
+      ...(changes.reminder !== undefined
+        ? toReminderCols(changes.reminder)
+        : {
+            reminderMinutes: existing.reminderMinutes,
+            reminderDays: existing.reminderDays,
+            reminderTime: existing.reminderTime
+          }),
       ...(changes.schedule !== undefined
         ? toColumns(changes.schedule)
         : {
@@ -343,6 +366,9 @@ export const updateRecurringTask = async (
         ruleId: existing.id,
         title: existing.title,
         time: existing.time,
+        reminderMinutes: existing.reminderMinutes,
+        reminderDays: existing.reminderDays,
+        reminderTime: existing.reminderTime,
         kind: existing.kind,
         every: existing.every,
         weekdays: existing.weekdays,
@@ -374,6 +400,19 @@ export const updateRecurringTask = async (
           eq(occurrences.scheduled, scheduled)
         )).run()
       }
+    }
+    const remChanged = !sameReminderCols(existing, next)
+    const timeChanged = existing.time !== next.time
+    if (remChanged || timeChanged) {
+      tx.update(occurrences)
+        .set({ reminderNotifiedAt: null })
+        .where(and(
+          eq(occurrences.ruleId, existing.id),
+          gte(occurrences.scheduled, today),
+          ...(remChanged
+            ? []
+            : [eq(occurrences.timeChanged, 0)])
+        )).run()
     }
     return updated
   })
@@ -429,6 +468,7 @@ const resolveOccurrence = (
   title: row?.title ?? rule.title,
   day: row?.day ?? scheduled,
   time: row?.timeChanged ? row.time : rule.time,
+  reminder: rule.reminder,
   doneAt: row?.doneAt ?? null,
   moves: row?.moves ?? 0,
   created: rule.created
@@ -549,6 +589,11 @@ export const updateOccurrence = async (
     const { rule, existing } =
       requireOccurrence(tx, { ruleId, scheduled })
     const currentDay = existing?.day ?? scheduled
+    const currentTime = existing?.timeChanged
+      ? existing.time
+      : rule.time
+    const dueChanged = (day !== undefined && day !== currentDay)
+      || (time !== undefined && time !== currentTime)
     const nextDay = day !== undefined
       ? (day === scheduled ? null : day)
       : (existing?.day ?? null)
@@ -561,6 +606,9 @@ export const updateOccurrence = async (
     const nextTime = time !== undefined
       ? time
       : (existing?.time ?? null)
+    const nextNotifiedAt = dueChanged
+      ? null
+      : (existing?.reminderNotifiedAt ?? null)
 
     const row = tx.insert(occurrences).values({
       ruleId,
@@ -570,6 +618,7 @@ export const updateOccurrence = async (
       timeChanged: nextTimeChanged,
       day: nextDay,
       doneAt: existing?.doneAt ?? null,
+      reminderNotifiedAt: nextNotifiedAt,
       moves,
       skipped: 0
     }).onConflictDoUpdate({
@@ -579,6 +628,7 @@ export const updateOccurrence = async (
         time: nextTime,
         timeChanged: nextTimeChanged,
         day: nextDay,
+        reminderNotifiedAt: nextNotifiedAt,
         moves
       }
     }).returning().get()

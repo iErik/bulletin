@@ -1,3 +1,4 @@
+import type { ReminderOffset } from './reminders'
 import type {
   DateRange,
   LocalDate,
@@ -16,6 +17,8 @@ export interface Task {
   readonly day: LocalDate | null
   /** Optional; independent of Someday. */
   readonly time: LocalTime | null
+  /** Optional Reminder offset; kept across Someday. */
+  readonly reminder: ReminderOffset | null
   /** Epoch ms when marked done, or `null`. */
   readonly doneAt: number | null
   /** Epoch ms when created. */
@@ -29,14 +32,16 @@ export interface NewTask {
   readonly title: string
   readonly day: LocalDate | null
   readonly time: LocalTime | null
+  readonly reminder?: ReminderOffset | null
 }
 
-/** Changes to a Task's title, day, time, or any mix. */
+/** Changes to a Task's title, day, time, or Reminder. */
 export interface TaskChanges {
   readonly id: number
   readonly title?: string
   readonly day?: LocalDate | null
   readonly time?: LocalTime | null
+  readonly reminder?: ReminderOffset | null
 }
 
 /** Mark a Task done or not. */

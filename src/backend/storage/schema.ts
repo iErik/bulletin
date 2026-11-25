@@ -11,9 +11,40 @@ import {
 // Relative: `pnpm db:generate` can't resolve `@shared`.
 import { HABIT_GOAL } from '../../shared/habits'
 import {
+  REMINDER_DAYS,
+  REMINDER_MINUTES
+} from '../../shared/reminders'
+import {
   SLEEP_GOAL_MAX_MINUTES,
   SLEEP_GOAL_MIN_MINUTES
 } from '../../shared/sleep'
+
+const REMINDER_MINUTES_SQL = sql.raw(
+  REMINDER_MINUTES.join(', ')
+)
+const REMINDER_DAYS_SQL = sql.raw(REMINDER_DAYS.join(', '))
+
+const reminderCheck = (
+  name: string,
+  cols: {
+    reminderMinutes: unknown
+    reminderDays: unknown
+    reminderTime: unknown
+  }
+): ReturnType<typeof check> => check(
+  name,
+  sql`(${cols.reminderMinutes} IS NULL
+    AND ${cols.reminderDays} IS NULL
+    AND ${cols.reminderTime} IS NULL)
+  OR (${cols.reminderMinutes} IS NOT NULL
+    AND ${cols.reminderMinutes} IN (${REMINDER_MINUTES_SQL})
+    AND ${cols.reminderDays} IS NULL
+    AND ${cols.reminderTime} IS NULL)
+  OR (${cols.reminderMinutes} IS NULL
+    AND ${cols.reminderDays} IS NOT NULL
+    AND ${cols.reminderDays} IN (${REMINDER_DAYS_SQL})
+    AND ${cols.reminderTime} IS NOT NULL)`
+)
 
 /** A Period's longest length: 24 hours, in ms. */
 export const MAX_PERIOD_MS = 24 * 60 * 60 * 1000
@@ -318,6 +349,10 @@ export const tasks = sqliteTable(
     title: text().notNull(),
     day: text(),
     time: text(),
+    reminderMinutes: integer('reminder_minutes'),
+    reminderDays: integer('reminder_days'),
+    reminderTime: text('reminder_time'),
+    reminderNotifiedAt: integer('reminder_notified_at'),
     doneAt: integer('done_at'),
     created: integer().notNull(),
     moves: integer().notNull().default(0)
@@ -331,7 +366,8 @@ export const tasks = sqliteTable(
     check(
       'tasks_moves_not_negative',
       sql`${table.moves} >= 0`
-    )
+    ),
+    reminderCheck('tasks_reminder', table)
   ]
 )
 
@@ -347,6 +383,9 @@ export const recurringTasks = sqliteTable(
     id: integer().primaryKey({ autoIncrement: true }),
     title: text().notNull(),
     time: text(),
+    reminderMinutes: integer('reminder_minutes'),
+    reminderDays: integer('reminder_days'),
+    reminderTime: text('reminder_time'),
     kind: text().notNull(),
     every: integer(),
     weekdays: integer(),
@@ -383,7 +422,8 @@ export const recurringTasks = sqliteTable(
         AND ${table.monthDay} IS NOT NULL
         AND ${table.monthDay} BETWEEN 1 AND 31
         AND ${table.every} IS NULL AND ${table.weekdays} IS NULL)`
-    )
+    ),
+    reminderCheck('recurring_tasks_reminder', table)
   ]
 )
 
@@ -404,6 +444,9 @@ export const recurringTaskVersions = sqliteTable(
       }),
     title: text().notNull(),
     time: text(),
+    reminderMinutes: integer('reminder_minutes'),
+    reminderDays: integer('reminder_days'),
+    reminderTime: text('reminder_time'),
     kind: text().notNull(),
     every: integer(),
     weekdays: integer(),
@@ -446,7 +489,8 @@ export const recurringTaskVersions = sqliteTable(
         AND ${table.monthDay} IS NOT NULL
         AND ${table.monthDay} BETWEEN 1 AND 31
         AND ${table.every} IS NULL AND ${table.weekdays} IS NULL)`
-    )
+    ),
+    reminderCheck('recurring_task_versions_reminder', table)
   ]
 )
 
@@ -470,6 +514,7 @@ export const occurrences = sqliteTable(
     timeChanged: integer('time_changed').notNull().default(0),
     day: text(),
     doneAt: integer('done_at'),
+    reminderNotifiedAt: integer('reminder_notified_at'),
     moves: integer().notNull().default(0),
     skipped: integer().notNull().default(0)
   },
