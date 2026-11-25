@@ -9,6 +9,8 @@ import {
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import type { SleepPeriod } from '@shared/sleep'
+import { stubBulletin } from '@/testing/bulletin'
 import { useFixedToday } from '@/testing/clock'
 import { useSelectedDateStore }
   from '@/stores/selected-date'
@@ -111,5 +113,53 @@ describe('SleepView', () => {
       await settle()
       expect(list.scrollTop)
         .toBe(centred(indexOf('2026-11-08')))
+    })
+
+  it('reloads sibling Widgets after a Timeline edit',
+    async () => {
+      const periods: SleepPeriod[] = []
+      const api = stubBulletin()
+      vi.mocked(api.sleep.list).mockImplementation(
+        async () => ({ ok: true, value: [...periods] })
+      )
+      vi.mocked(api.sleep.create).mockImplementation(
+        async input => {
+          const created = {
+            id: periods.length + 1, ...input
+          }
+          periods.push(created)
+          return { ok: true, value: created }
+        }
+      )
+      vi.mocked(api.mood.list).mockResolvedValue({
+        ok: true,
+        value: [{ date: '2026-11-08', mood: 'happy' }]
+      })
+
+      const page = (await mountView()).view
+      expect(page.findAll('.left .dot')).toHaveLength(0)
+      expect(page.get('.side .stat .value').text())
+        .toBe('—')
+      expect(page.find('.right .headline').exists())
+        .toBe(false)
+
+      await page.get('[data-day="2026-11-07"]')
+        .trigger('keydown', { key: 'Enter' })
+      await settle()
+      const editor = page.get('.sleep-period-editor')
+      await editor.get('[aria-label="Start"]')
+        .setValue('11:30 PM')
+      await editor.get('[aria-label="End"]')
+        .setValue('7:00 AM')
+      await editor.get('input')
+        .trigger('keydown', { key: 'Enter' })
+      await settle()
+
+      expect(api.sleep.create).toHaveBeenCalledTimes(1)
+      expect(page.findAll('.left .dot')).toHaveLength(2)
+      expect(page.get('.side .stat .value').text())
+        .toBe('7h 30m')
+      expect(page.get('.right .headline').text())
+        .toBe('100% happy after 7–8h')
     })
 })

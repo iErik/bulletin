@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Sleep Overview (Figma 3859:6822). `revision` reloads after Timeline edits.
+// Sleep Overview (Figma 3859:6822). Reloads on Sleep or Goal changes.
 import { computed, ref, shallowRef, watch } from 'vue'
 import {
   SLEEP_GOAL_MAX_MINUTES,
@@ -9,6 +9,8 @@ import { localDate } from '@shared/dates'
 import GoalLine from '@/components/GoalLine/GoalLine.vue'
 import Icon from '@/components/Icon/Icon.vue'
 import Widget from '@/components/Widget/Widget.vue'
+import { useDataVersion }
+  from '@/composables/use-data-version'
 import {
   firstDayOfWeek,
   formatDate,
@@ -46,7 +48,7 @@ const CHART_H = 208
 const Y_TICKS = [12, 10, 8, 6, 4] as const
 const EMPTY = '—'
 
-const props = defineProps<{ revision?: number }>()
+const version = useDataVersion('sleep', 'sleepGoal')
 const selected = useSelectedDateStore()
 const goalStore = useSleepGoalStore()
 const days = shallowRef<SleepDay[]>([])
@@ -76,7 +78,7 @@ const load = async (): Promise<void> => {
 }
 
 watch(
-  () => [date.value, props.revision ?? 0] as const,
+  () => [date.value, version.value] as const,
   () => { void load() },
   { immediate: true }
 )

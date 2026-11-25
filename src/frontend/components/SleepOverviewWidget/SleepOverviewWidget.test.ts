@@ -39,21 +39,23 @@ const night = (
 
 const mountWidget = async (
   periods: SleepPeriod[] = [],
-  goal = 8 * 60,
-  revision = 0
+  goal = 8 * 60
 ): Promise<{ wrapper: VueWrapper; api: BulletinApi }> => {
   const api = stubBulletin()
+  let storedGoal = goal
   vi.mocked(api.sleep.list)
     .mockResolvedValue({ ok: true, value: periods })
   vi.mocked(api.sleep.getGoal)
-    .mockResolvedValue({ ok: true, value: goal })
+    .mockImplementation(async () =>
+      ({ ok: true, value: storedGoal }))
   vi.mocked(api.sleep.setGoal)
-    .mockImplementation(async minutes =>
-      ({ ok: true, value: minutes }))
+    .mockImplementation(async minutes => {
+      storedGoal = minutes
+      return { ok: true, value: minutes }
+    })
   const pinia = createPinia()
   setActivePinia(pinia)
   widget = mount(SleepOverviewWidget, {
-    props: { revision },
     attachTo: document.body,
     global: { plugins: [pinia] }
   })
@@ -119,7 +121,7 @@ describe('SleepOverviewWidget', () => {
         .toBe('+0h 00m')
     })
 
-  it('previews, Escapes, commits; follows date/revision',
+  it('previews, Escapes, commits; follows date/signals',
     async () => {
       const periods = [
         night(7, 8), night(8, 8), night(9, 8)
@@ -163,10 +165,30 @@ describe('SleepOverviewWidget', () => {
       expect(stat(wrapper, 'Streak').text())
         .toBe('2 nights')
 
+      const calls = vi.mocked(api.sleep.list).mock.calls
+        .length
+      await api.weight.delete('2026-11-09')
+      await flushPromises()
+      expect(vi.mocked(api.sleep.list).mock.calls.length)
+        .toBe(calls)
+
+      await api.sleep.create({
+        start: at(8, 22), end: at(9, 6)
+      })
+      await flushPromises()
+      expect(vi.mocked(api.sleep.list).mock.calls.length)
+        .toBe(calls + 1)
+
+      await api.sleep.setGoal(9 * 60)
+      await flushPromises()
+      expect(vi.mocked(api.sleep.list).mock.calls.length)
+        .toBe(calls + 2)
+      expect(line.props('label')).toBe('9h goal')
+
       vi.mocked(api.sleep.list).mockResolvedValue({
         ok: false, error: { code: 'internal' }
       })
-      await wrapper.setProps({ revision: 1 })
+      await api.sleep.delete(1)
       await flushPromises()
       expect(wrapper.get('[role="alert"]').text())
         .toContain('Couldn’t load')

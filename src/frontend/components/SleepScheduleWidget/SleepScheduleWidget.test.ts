@@ -26,8 +26,7 @@ const period = (
 ): SleepPeriod => ({ id, start, end })
 
 const mountWidget = async (
-  periods: SleepPeriod[] = [],
-  revision = 0
+  periods: SleepPeriod[] = []
 ): Promise<{ wrapper: VueWrapper; api: BulletinApi }> => {
   const api = stubBulletin()
   vi.mocked(api.sleep.list)
@@ -35,7 +34,6 @@ const mountWidget = async (
   const pinia = createPinia()
   setActivePinia(pinia)
   widget = mount(SleepScheduleWidget, {
-    props: { revision },
     attachTo: document.body,
     global: { plugins: [pinia] }
   })
@@ -100,7 +98,7 @@ describe('SleepScheduleWidget', () => {
       expect(wrapper.findAll('.weekday')).toHaveLength(7)
     })
 
-  it('follows Selected Date and revision, reports errors',
+  it('follows Selected Date and sleep signals, reports errors',
     async () => {
       const night = period(at(8, 23, 10), at(9, 7, 5))
       const { wrapper, api } = await mountWidget([
@@ -121,15 +119,22 @@ describe('SleepScheduleWidget', () => {
 
       const calls = vi.mocked(api.sleep.list).mock.calls
         .length
-      await wrapper.setProps({ revision: 1 })
+      await api.weight.delete('2026-11-09')
       await flushPromises()
       expect(vi.mocked(api.sleep.list).mock.calls.length)
-        .toBeGreaterThan(calls)
+        .toBe(calls)
+
+      await api.sleep.create({
+        start: at(8, 22), end: at(9, 6)
+      })
+      await flushPromises()
+      expect(vi.mocked(api.sleep.list).mock.calls.length)
+        .toBe(calls + 1)
 
       vi.mocked(api.sleep.list).mockResolvedValue({
         ok: false, error: { code: 'internal' }
       })
-      await wrapper.setProps({ revision: 2 })
+      await api.sleep.delete(1)
       await flushPromises()
       expect(wrapper.get('[role="alert"]').text())
         .toContain('Couldn’t load')
