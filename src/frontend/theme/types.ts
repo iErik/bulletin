@@ -103,6 +103,29 @@ export const HABIT_BOARD_COLOURS: readonly HabitBoardColour[] =
   ]
 
 /**
+ * Spend changes' colours, shared by the By Category
+ * and Insights Widgets (Figma's Expenses frames).
+ */
+export type SpendColour = 'rise' | 'value' | 'caption'
+
+export const SPEND_COLOURS: readonly SpendColour[] =
+  ['rise', 'value', 'caption']
+
+/**
+ * The By Category Widget's own colours, from Figma's
+ * "Expenses / By Category" frame.
+ */
+export type CategoryColour =
+  | 'label'
+  | 'bar'
+  | 'bar-top'
+  | 'bar-glow'
+  | 'note'
+
+export const CATEGORY_COLOURS: readonly CategoryColour[] =
+  ['label', 'bar', 'bar-top', 'bar-glow', 'note']
+
+/**
  * Whose Day Pill colours: a Mood's, a done Habit's, or
  * a Sleep Quality rating's.
  */
@@ -204,6 +227,12 @@ export interface Palette {
   /** Habit Board's, as `--color-habit-board-<key>`. */
   readonly 'habit-board': Readonly<
     Record<HabitBoardColour, string>
+  >
+  /** Spend changes', as `--color-spend-<key>`. */
+  readonly spend: Readonly<Record<SpendColour, string>>
+  /** By Category's, as `--color-category-<key>`. */
+  readonly category: Readonly<
+    Record<CategoryColour, string>
   >
 }
 
