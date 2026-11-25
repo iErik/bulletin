@@ -61,6 +61,10 @@ vi.mock('@/theme/themes', async original => {
       'weekday-cell': colour,
       'weekday-low': colour,
       'weekday-best': colour,
+      'recurring-row': colour,
+      'recurring-meta': colour,
+      'recurring-amount': colour,
+      'recurring-footer': colour,
       pill: Object.fromEntries(
         [
           ...MOODS.map(mood => mood.key),
@@ -260,6 +264,26 @@ describe('theme store', () => {
       'weekday-cell',
       'weekday-low',
       'weekday-best'
+    ] as const
+    const read = (): string[] => names.map(name =>
+      document.documentElement.style
+        .getPropertyValue(`--color-${name}`))
+
+    expect(read()).toEqual(names.map(name => dark[name]))
+
+    store.setPreference('light')
+
+    expect(read()).toEqual(names.map(name => light[name]))
+  })
+
+  it("writes Recurring's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const names = [
+      'recurring-row',
+      'recurring-meta',
+      'recurring-amount',
+      'recurring-footer'
     ] as const
     const read = (): string[] => names.map(name =>
       document.documentElement.style
