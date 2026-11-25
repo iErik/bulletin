@@ -17,6 +17,7 @@ import {
   PILL_PARTS,
   SLEEP_COLOURS,
   SPEND_COLOURS,
+  TASK_COLOURS,
   WEIGHT_LINE_STOPS,
   type Palette,
   type Theme
@@ -35,6 +36,7 @@ vi.mock('@/theme/themes', async original => {
     MONTH_PACE_COLOURS,
     SLEEP_COLOURS,
     SPEND_COLOURS,
+    TASK_COLOURS,
     WEIGHT_LINE_STOPS
   } = await import('@/theme/types')
   const flat = (colour: string): Palette => {
@@ -102,7 +104,10 @@ vi.mock('@/theme/themes', async original => {
       ) as Palette['spend'],
       category: Object.fromEntries(
         CATEGORY_COLOURS.map(name => [name, colour])
-      ) as Palette['category']
+      ) as Palette['category'],
+      tasks: Object.fromEntries(
+        TASK_COLOURS.map(name => [name, colour])
+      ) as Palette['tasks']
     }
   }
   const other: Theme = {
@@ -383,6 +388,22 @@ describe('theme store', () => {
     store.setPreference('light')
 
     expect(read()).toEqual(expected(light))
+  })
+
+  it("writes Tasks' colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const read = (): string[] => TASK_COLOURS.map(
+      name => document.documentElement.style
+        .getPropertyValue(`--color-tasks-${name}`))
+
+    expect(read()).toEqual(
+      TASK_COLOURS.map(name => dark.tasks[name])
+    )
+    store.setPreference('light')
+    expect(read()).toEqual(
+      TASK_COLOURS.map(name => light.tasks[name])
+    )
   })
 
   it("writes the Sleep Timeline's colours", () => {

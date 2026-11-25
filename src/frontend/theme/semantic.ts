@@ -6,6 +6,7 @@ import {
   PILL_PARTS,
   SLEEP_COLOURS,
   SPEND_COLOURS,
+  TASK_COLOURS,
   WEIGHT_LINE_STOPS,
   type Palette,
   type PillColours,
@@ -68,6 +69,7 @@ type ScaleRef = readonly [
     | 'habit-board'
     | 'spend'
     | 'category'
+    | 'tasks'
     | Single
   >,
   Shade
@@ -223,6 +225,12 @@ export const applyPalette = (
     el.style.setProperty(
       `--color-category-${name}`,
       palette.category[name]
+    )
+  }
+  for (const name of TASK_COLOURS) {
+    el.style.setProperty(
+      `--color-tasks-${name}`,
+      palette.tasks[name]
     )
   }
   el.style.colorScheme = scheme
