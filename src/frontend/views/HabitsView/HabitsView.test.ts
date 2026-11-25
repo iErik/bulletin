@@ -71,7 +71,7 @@ describe('HabitsView', () => {
     document.body.innerHTML = ''
   })
 
-  it('shows Habits in bottom-left and Overview in side',
+  it('places Habits, Overview and By Weekday in the grid',
     async () => {
       const { view: page } = await mountView()
 
@@ -83,7 +83,11 @@ describe('HabitsView', () => {
         page.find('.page-grid > .side > .habit-overview')
           .exists()
       ).toBe(true)
-      for (const cell of ['wide', 'middle', 'right']) {
+      expect(
+        page.find('.page-grid > .middle > .habits-by-weekday')
+          .exists()
+      ).toBe(true)
+      for (const cell of ['wide', 'right']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
@@ -135,6 +139,10 @@ describe('HabitsView', () => {
       expect(api.habits.listEntries).toHaveBeenCalledWith({
         from: '2026-10-01',
         to: '2026-10-31'
+      })
+      expect(api.habits.listEntries).toHaveBeenCalledWith({
+        from: '2026-07-24',
+        to: '2026-10-15'
       })
       expect(pill(page, 15).attributes('aria-label'))
         .toBe('Oct 15 · Done')
