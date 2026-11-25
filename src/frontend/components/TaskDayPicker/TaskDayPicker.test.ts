@@ -11,13 +11,15 @@ import TaskDayPicker from './TaskDayPicker.vue'
 // Today is 2026-11-09 (Monday); tomorrow is 2026-11-10.
 const mountPicker = (
   modelValue: LocalDate | null,
-  someday = true
+  someday = true,
+  onLayout?: () => void
 ): VueWrapper => {
   const wrapper: VueWrapper = mount(TaskDayPicker, {
     props: {
       modelValue,
       today,
       someday,
+      ...(onLayout ? { onLayout } : {}),
       'onUpdate:modelValue': async (
         next: LocalDate | null
       ) => {
@@ -79,15 +81,33 @@ describe('TaskDayPicker', () => {
       expect(wrapper.emitted('layout')).toHaveLength(1)
     })
 
-  it('opens DatePicker from Someday defaulting to today',
+  it('opens DatePicker from Someday and emits layout post-DOM',
     async () => {
-      const wrapper = mountPicker(null)
+      const seen: boolean[] = []
+      const wrapper = mountPicker(null, true, () => {
+        seen.push(wrapper.find('.date-picker').exists())
+      })
 
       await wrapper.get('.chip.-date').trigger('click')
       expect(wrapper.emitted('update:modelValue')?.at(-1))
         .toEqual(['2026-11-09'])
+      expect(seen).toEqual([true])
+
+      // Picking Today keeps DatePicker open with calendar icon.
+      await wrapper.get('select[aria-label="Day"]')
+        .setValue('15')
+      expect(wrapper.get('.chip.-date').text()).toBe('Sun 15')
+      await wrapper.get('select[aria-label="Day"]')
+        .setValue('9')
       expect(wrapper.find('.date-picker').exists()).toBe(true)
-      expect(wrapper.emitted('layout')).toHaveLength(1)
+      expect(chip(wrapper, 'Today').classes())
+        .toContain('-active')
+      expect(wrapper.find('.chip.-date .app-icon').exists())
+        .toBe(true)
+
+      // Clicking the open Date chip collapses DatePicker.
+      await wrapper.get('.chip.-date').trigger('click')
+      expect(seen).toEqual([true, false])
     })
 
   it('hides Someday when someday is false', () => {

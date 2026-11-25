@@ -17,12 +17,14 @@ describe('TaskCheckbox', () => {
       expect(wrapper.text()).toBe('Done')
       expect(wrapper.get('.box').classes())
         .not.toContain('-checked')
+      expect(wrapper.find('.app-icon').exists()).toBe(false)
 
       await wrapper.get('input').setValue(true)
       expect(wrapper.emitted('update:modelValue'))
         .toEqual([[true]])
       expect(wrapper.get('.box').classes())
         .toContain('-checked')
+      expect(wrapper.find('.app-icon').exists()).toBe(true)
     })
 
   it('forwards aria-label and disabled for standalone use',

@@ -58,6 +58,8 @@ const checked = defineModel<boolean>({ required: true })
 
   > .native {
     position: absolute;
+    width: 0;
+    height: 0;
     opacity: 0;
     pointer-events: none;
   }
@@ -74,6 +76,11 @@ const checked = defineModel<boolean>({ required: true })
       in sRGB, var(--color-tasks-accent) 30%, transparent
     );
     border-radius: $radius-small;
+
+    > .app-icon {
+      width: rem(9px);
+      height: auto;
+    }
 
     &.-checked {
       background: color-mix(

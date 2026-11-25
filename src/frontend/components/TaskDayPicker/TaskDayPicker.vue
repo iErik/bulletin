@@ -2,7 +2,7 @@
 // Task editor DAY section (Figma 4139:7884): Today,
 // Tomorrow, optional Someday, and a Date chip that
 // opens the recessed DatePicker for any other date.
-import { computed, ref, useId } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { localDate } from '@shared/dates'
 import type { LocalDate } from '@shared/storage'
 import DatePicker
@@ -61,18 +61,16 @@ const customDate = computed(() =>
     : null
 )
 
+watch(dateOpen, () => emit('layout'), { flush: 'post' })
+
 const pickQuick = (next: QuickChoice): void => {
   model.value = dayOf(next, props.today)
-  if (dateOpen.value) {
-    dateOpen.value = false
-    emit('layout')
-  }
+  dateOpen.value = false
 }
 
 const toggleDate = (): void => {
   if (model.value === null) model.value = todayDay.value
   dateOpen.value = !dateOpen.value
-  emit('layout')
 }
 </script>
 
@@ -199,6 +197,7 @@ const toggleDate = (): void => {
     border-radius: $radius-large;
 
     > .field {
+      min-width: 0;
       height: rem(36px);
       padding: 0 rem(10px);
       font-size: rem(13px);

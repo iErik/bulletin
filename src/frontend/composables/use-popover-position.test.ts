@@ -69,5 +69,50 @@ describe('usePopoverPosition', () => {
       await flushPromises()
       expect((wrapper.element as HTMLElement).style.left)
         .toBe('96px')
+
+      // Capture scroll repositions; unmount removes listeners.
+      vw = 1200
+      document.dispatchEvent(new Event('scroll'))
+      await nextTick()
+      expect((wrapper.element as HTMLElement).style.left)
+        .toBe('588px')
+
+      const off = vi.spyOn(window, 'removeEventListener')
+      wrapper.unmount()
+      expect(off).toHaveBeenCalledWith(
+        'resize', expect.any(Function)
+      )
+      expect(off).toHaveBeenCalledWith(
+        'scroll', expect.any(Function), true
+      )
+    })
+
+  it('positions a panel mounted conditionally via v-if',
+    async () => {
+      vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(600)
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(600)
+      const anchor = document.createElement('button')
+      vi.spyOn(anchor, 'getBoundingClientRect')
+        .mockReturnValue(rect({ left: 420, right: 580, top: 80 }))
+      vi.spyOn(Element.prototype, 'getBoundingClientRect')
+        .mockReturnValue(rect({ width: 316, height: 260 }))
+
+      const open = ref(false)
+      const Host = defineComponent({
+        setup() {
+          const panel = ref<HTMLElement | null>(null)
+          const { position } = usePopoverPosition(
+            panel, () => anchor
+          )
+          return { open, panel, position }
+        },
+        template: '<div v-if="open" ref="panel" :style="{ left: `${position.left}px` }" />'
+      })
+
+      const wrapper = mount(Host, { attachTo: document.body })
+      open.value = true
+      await flushPromises()
+      expect((wrapper.element as HTMLElement).style.left)
+        .toBe('96px')
     })
 })

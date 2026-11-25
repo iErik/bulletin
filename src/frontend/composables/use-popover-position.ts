@@ -38,7 +38,7 @@ export const usePopoverPosition = (
     )
   }
 
-  watch([anchor, ...deps], update, { flush: 'post' })
+  watch([panel, anchor, ...deps], update, { flush: 'post' })
 
   onMounted(() => {
     update()
