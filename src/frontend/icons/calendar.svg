@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="calendar" clip-path="url(#clip0_0_29)">
+<path id="Vector" d="M3.1 2.5H8.9C9.78366 2.5 10.5 3.21634 10.5 4.1V8.9C10.5 9.78366 9.78366 10.5 8.9 10.5H3.1C2.21634 10.5 1.5 9.78366 1.5 8.9V4.1C1.5 3.21634 2.21634 2.5 3.1 2.5Z" stroke-width="1.2" stroke="currentColor"/>
+<g id="Vector_2">
+<path d="M1.5 5H10.5ZM4 1.3V3.5ZM8 1.3V3.5Z" fill="black"/>
+<path d="M1.5 5H10.5M4 1.3V3.5M8 1.3V3.5" stroke-width="1.2" stroke-linecap="round" stroke="currentColor"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_29">
+<rect width="12" height="12" fill="white"/>
+</clipPath>
+</defs>
+</svg>

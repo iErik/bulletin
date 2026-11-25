@@ -33,7 +33,7 @@ const fullTask = (
   moves = 0
 ): Task => ({
   id: 1, title: 'One-off', day, time: '10:00', doneAt,
-  created: at('2026-11-01', 9), moves
+  created: at('2026-11-01', 9), moves, reminder: null
 })
 
 const occurrence = (
@@ -43,7 +43,8 @@ const occurrence = (
   moves = 0
 ): Occurrence => ({
   ruleId: 1, scheduled: day, title: 'Recurring', day, time,
-  doneAt, moves, created: at('2026-10-01', 9)
+  doneAt, moves, created: at('2026-10-01', 9),
+  reminder: null
 })
 
 const many = (

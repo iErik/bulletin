@@ -102,6 +102,18 @@ export const HABIT_BOARD_COLOURS: readonly HabitBoardColour[] =
     'dim', 'selected', 'streak', 'best', 'low'
   ]
 
+/** The Task editor's colours, from Figma's frame. */
+export type TaskColour =
+  | 'field'
+  | 'text'
+  | 'accent'
+  | 'on-accent'
+  | 'danger'
+
+export const TASK_COLOURS: readonly TaskColour[] = [
+  'field', 'text', 'accent', 'on-accent', 'danger'
+]
+
 /**
  * Spend changes' colours, shared by the By Category
  * and Insights Widgets (Figma's Expenses frames).
@@ -234,6 +246,8 @@ export interface Palette {
   readonly category: Readonly<
     Record<CategoryColour, string>
   >
+  /** Tasks' colours, as `--color-tasks-<key>`. */
+  readonly tasks: Readonly<Record<TaskColour, string>>
 }
 
 /** A named visual identity: one Palette per Scheme. */

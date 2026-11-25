@@ -161,6 +161,14 @@ export const defaultTheme: Theme = {
         'bar-glow': 'rgb(255 255 255 / 35%)',
         note: 'rgb(165 165 165 / 30%)'
       },
+      // Figma's Task Editor frame.
+      tasks: {
+        field: '#1f1f1f',
+        text: '#d9d9d9',
+        accent: '#ffffff',
+        'on-accent': '#141414',
+        danger: '#ff7070'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -319,6 +327,14 @@ export const defaultTheme: Theme = {
         'bar-top': 'rgb(0 0 0 / 85%)',
         'bar-glow': 'rgb(0 0 0 / 35%)',
         note: 'rgb(90 90 90 / 30%)'
+      },
+      // The dark Task Editor frame's, mirrored for light.
+      tasks: {
+        field: '#ffffff',
+        text: '#262626',
+        accent: '#1a1a1a',
+        'on-accent': '#fbfaf7',
+        danger: '#c4373b'
       },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
