@@ -30,8 +30,7 @@ const mood = (date: string, key: MoodKey): MoodEntry =>
 
 const mountWidget = async (
   moods: MoodEntry[] = [],
-  periods: SleepPeriod[] = [],
-  revision = 0
+  periods: SleepPeriod[] = []
 ): Promise<{ wrapper: VueWrapper; api: BulletinApi }> => {
   const api = stubBulletin()
   vi.mocked(api.mood.list)
@@ -41,7 +40,6 @@ const mountWidget = async (
   const pinia = createPinia()
   setActivePinia(pinia)
   widget = mount(SleepMoodWidget, {
-    props: { revision },
     attachTo: document.body,
     global: { plugins: [pinia] }
   })
@@ -92,10 +90,33 @@ describe('SleepMoodWidget', () => {
     expect(empty.wrapper.find('.headline').exists()).toBe(false)
     expect(empty.wrapper.findAll('.track.-empty')).toHaveLength(4)
 
+    const calls = vi.mocked(empty.api.sleep.list).mock.calls
+      .length
+    await empty.api.weight.delete('2026-11-09')
+    await flushPromises()
+    expect(vi.mocked(empty.api.sleep.list).mock.calls.length)
+      .toBe(calls)
+
+    await empty.api.sleep.create({
+      start: at(8, 23), end: at(9, 6, 30)
+    })
+    await flushPromises()
+    expect(vi.mocked(empty.api.sleep.list).mock.calls.length)
+      .toBe(calls + 1)
+
+    await empty.api.mood.create({
+      date: '2026-11-09', mood: 'happy'
+    })
+    await flushPromises()
+    expect(vi.mocked(empty.api.sleep.list).mock.calls.length)
+      .toBe(calls + 2)
+
     vi.mocked(empty.api.mood.list).mockResolvedValue({
       ok: false, error: { code: 'internal' }
     })
-    await empty.wrapper.setProps({ revision: 1 })
+    await empty.api.mood.create({
+      date: '2026-11-09', mood: 'okay'
+    })
     await flushPromises()
     expect(empty.wrapper.get('[role="alert"]').text())
       .toContain('Couldn’t load')

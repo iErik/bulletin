@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Sleep & Mood (Figma 3859:6840): all-time Night ×
 // Mood shares by asleep length. Night.day ↔ Mood
-// (ADR 0004). `revision` reloads after Timeline edits.
+// (ADR 0004). Reloads on Sleep or Mood changes.
 import { computed, ref, shallowRef, watch } from 'vue'
 import {
   MOODS,
@@ -10,6 +10,8 @@ import {
 } from '@shared/mood'
 import { localDate } from '@shared/dates'
 import Widget from '@/components/Widget/Widget.vue'
+import { useDataVersion }
+  from '@/composables/use-data-version'
 import { moodColour } from '@/theme/semantic'
 import {
   sleepMood,
@@ -24,7 +26,7 @@ import {
 import { useSelectedDateStore }
   from '@/stores/selected-date'
 
-const props = defineProps<{ revision?: number }>()
+const version = useDataVersion('sleep', 'mood')
 const store = useSelectedDateStore()
 const empty: SleepMoodView = {
   buckets: sleepMood([], []).buckets, headline: null
@@ -57,7 +59,7 @@ const load = async (): Promise<void> => {
 }
 
 watch(
-  () => [localDate(store.day), props.revision ?? 0] as const,
+  () => [localDate(store.day), version.value] as const,
   () => { void load() }, { immediate: true }
 )
 

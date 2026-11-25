@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Sleep Schedule (Figma 3859:6828): Locale-week
 // bedtime/wake dots, averages, ± consistency.
-// `revision` reloads after Timeline edits.
+// Reloads when the Sleep Data Source changes.
 import {
   computed,
   ref,
@@ -11,6 +11,8 @@ import {
 import { parseISO, startOfDay, startOfWeek } from 'date-fns'
 import { localDate } from '@shared/dates'
 import Widget from '@/components/Widget/Widget.vue'
+import { useDataVersion }
+  from '@/composables/use-data-version'
 import {
   firstDayOfWeek,
   formatDate
@@ -63,7 +65,7 @@ const emptyChart = (axis: ScheduleAxis): ChartView => ({
   deviationMin: null
 })
 
-const props = defineProps<{ revision?: number }>()
+const version = useDataVersion('sleep')
 const store = useSelectedDateStore()
 const chart = shallowRef(emptyChart(scheduleAxis([])))
 const failed = ref(false)
@@ -145,7 +147,7 @@ const load = async (): Promise<void> => {
 }
 
 watch(
-  () => [localDate(store.day), props.revision ?? 0] as const,
+  () => [localDate(store.day), version.value] as const,
   () => { void load() },
   { immediate: true }
 )
