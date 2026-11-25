@@ -42,14 +42,16 @@ const BAR_RADIUS = 3
 const REST_HEIGHT = 2
 const REST_RADIUS = 1
 
-// Room above a capped bar for `↑` and its glow, and
-// below the baseline for the day labels (10px down).
-const PAD_TOP = 14
+// Figma puts the full bar's top 8px below the header,
+// with `↑` 12px above it, overflowing into the header
+// row; the day labels sit 10px below the baseline, and
+// the room under them pads the Widget's bottom.
+const PAD_TOP = 8
 const CAP_Y = PAD_TOP - 7
 const BASELINE = PAD_TOP + BAR_MAX_HEIGHT
 const REST_Y = BASELINE - REST_HEIGHT
 const LABEL_Y = BASELINE + 15.5
-const SVG_HEIGHT = BASELINE + 24
+const SVG_HEIGHT = BASELINE + 30
 
 const root = useTemplateRef<HTMLElement>('root')
 const width = ref(DEFAULT_WIDTH)
