@@ -22,6 +22,10 @@ import {
   type RecurringTasksApi
 } from '@shared/recurring-tasks'
 import {
+  REMINDERS_CHANNELS,
+  type RemindersApi
+} from '@shared/reminders'
+import {
   SLEEP_CHANNELS,
   type SleepApi
 } from '@shared/sleep'
@@ -109,7 +113,9 @@ const api: BulletinApi = {
     TASKS_CHANNELS, DATA_SOURCE_WRITES.tasks),
   recurringTasks: invoker<RecurringTasksApi>(
     RECURRING_TASKS_CHANNELS,
-    DATA_SOURCE_WRITES.recurringTasks)
+    DATA_SOURCE_WRITES.recurringTasks),
+  reminders: invoker<RemindersApi>(
+    REMINDERS_CHANNELS, DATA_SOURCE_WRITES.reminders)
 }
 
 contextBridge.exposeInMainWorld(BRIDGE_KEY, api)

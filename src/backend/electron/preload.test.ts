@@ -78,7 +78,8 @@ describe('preload', () => {
     ['habits', 'createEntry', 'habitEntries'],
     ['expenses', 'createCategory', 'categories'],
     ['expenses', 'setBudget', 'budget'],
-    ['tasks', 'setDone', 'tasks']
+    ['tasks', 'setDone', 'tasks'],
+    ['reminders', 'markNotified', 'tasks']
   ] as const)(
     'signals %s.%s as %s when ok',
     async (ns, method, expected) => {

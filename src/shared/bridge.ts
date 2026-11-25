@@ -5,6 +5,7 @@ import type { MoodApi } from './mood'
 import type {
   RecurringTasksApi
 } from './recurring-tasks'
+import type { RemindersApi } from './reminders'
 import type { SleepApi } from './sleep'
 import type { SleepQualityApi } from './sleep-quality'
 import type { TasksApi } from './tasks'
@@ -63,6 +64,8 @@ export interface BulletinApi {
   readonly tasks: TasksApi
   /** Recurring Tasks and their Occurrences. */
   readonly recurringTasks: RecurringTasksApi
+  /** Due Task and Occurrence Reminders. */
+  readonly reminders: RemindersApi
 }
 
 export const BRIDGE_KEY = 'bulletin'

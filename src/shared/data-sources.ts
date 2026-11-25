@@ -98,5 +98,9 @@ export const DATA_SOURCE_WRITES = {
     updateOccurrence: 'tasks',
     setOccurrenceDone: 'tasks',
     skipOccurrence: 'tasks'
+  },
+  reminders: {
+    listDue: null,
+    markNotified: 'tasks'
   }
 } as const satisfies DataSourceWrites

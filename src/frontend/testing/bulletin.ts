@@ -23,6 +23,7 @@ import type {
   RecurringTasksApi,
   RecurringTaskUpdate
 } from '@shared/recurring-tasks'
+import type { RemindersApi } from '@shared/reminders'
 import {
   SLEEP_GOAL_DEFAULT_MINUTES,
   type NewSleepPeriod,
@@ -224,6 +225,12 @@ const fakeRecurringTasks = (): RecurringTasksApi => {
   }
 }
 
+/** Empty Reminders: none due; markNotified resolves to 1. */
+const fakeReminders = (): RemindersApi => ({
+  listDue: resolves([]),
+  markNotified: resolves(1)
+})
+
 type AnyFn = (...args: unknown[]) => unknown
 
 // Maps a wrapped Proxy back to its target so spreading
@@ -306,6 +313,7 @@ export const fakeBulletin = (
     expenses: fakeExpenses(),
     tasks: fakeTasks(),
     recurringTasks: fakeRecurringTasks(),
+    reminders: fakeReminders(),
     ...overrides
   }
   const wrapped = { ...api } as Record<string, unknown>
