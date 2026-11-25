@@ -29,6 +29,8 @@ import { useSelectedDateStore }
   from '@/stores/selected-date'
 
 interface Data {
+  /** The Selected Date this was loaded for. */
+  readonly day: Date
   readonly transactions: Transaction[]
   readonly budget: Budget | null
   readonly categories: Category[]
@@ -60,7 +62,8 @@ const periods = computed(() => spendPeriods(store.day))
 const load = async (): Promise<void> => {
   const asked = ++generation
   const { expenses, mood } = window.bulletin
-  const { period, comparison } = periods.value
+  const day = store.day
+  const { period, comparison } = spendPeriods(day)
   const [listed, budget, categories, moods] =
     await Promise.all([
       expenses.list({ from: comparison.from, to: period.to }),
@@ -76,6 +79,7 @@ const load = async (): Promise<void> => {
   }
   failed.value = false
   data.value = {
+    day,
     transactions: listed.value,
     budget: budget.value,
     categories: categories.value,
@@ -151,9 +155,9 @@ const rowOf = (found: InsightRow, vsMonth: string): Row => {
 const rows = computed((): Row[] => {
   const d = data.value
   if (!d) return []
-  const day = store.day
+  const { day } = d
   const vsMonth = formatDate(
-    parseISO(periods.value.comparison.from), 'monthShort'
+    parseISO(spendPeriods(day).comparison.from), 'monthShort'
   )
   return insightRows({
     categories: categoryRows(d.transactions, d.categories, day),
@@ -168,7 +172,7 @@ const rows = computed((): Row[] => {
 const empty = computed((): string | null => {
   const d = data.value
   if (!d || rows.value.length) return null
-  return periodExpenses(d.transactions, store.day).length
+  return periodExpenses(d.transactions, d.day).length
     ? 'No insights yet'
     : 'No spending this month'
 })

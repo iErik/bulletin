@@ -226,11 +226,17 @@ describe('ExpensesInsightsWidget', () => {
       .toBe('No insights yet')
   })
 
-  it('reports a failed load', async () => {
+  it('reports a failed load till a good one', async () => {
     const api = stubBulletin()
-    vi.mocked(api.mood.list).mockResolvedValue(
-      { ok: false, error: { code: 'internal' } }
-    )
+    const fail = (): void => void vi.mocked(api.mood.list)
+      .mockResolvedValueOnce({ ok: false, error: { code: 'internal' } })
+    const alert = (): boolean | undefined =>
+      widget?.find('[role="alert"]').exists()
+    const reload = async (): Promise<void> => {
+      await api.mood.create({ date: '2026-11-03', mood: 'okay' })
+      await flushPromises()
+    }
+    fail()
     const pinia = createPinia()
     setActivePinia(pinia)
     widget = mount(ExpensesInsightsWidget, {
@@ -241,6 +247,14 @@ describe('ExpensesInsightsWidget', () => {
     expect(widget.get('[role="alert"]').text())
       .toBe('Couldn’t load Insights.')
     expect(widget.find('.rows').exists()).toBe(false)
+
+    await reload()
+    expect(alert()).toBe(false)
+    fail()
+    await reload()
+    expect(alert()).toBe(true)
+    await reload()
+    expect(alert()).toBe(false)
   })
 
   it('reloads when the Selected Date changes', async () => {
@@ -254,29 +268,51 @@ describe('ExpensesInsightsWidget', () => {
     )
     expect(api.expenses.getBudget)
       .toHaveBeenLastCalledWith('2026-03')
+    expect(api.mood.list).toHaveBeenLastCalledWith(
+      { from: '2026-03-01', to: '2026-03-31' }
+    )
   })
 
-  it('reloads after Transaction and Mood writes',
-    async () => {
-      const { api } = await mountWidget()
-      const loads = (): number =>
-        vi.mocked(api.expenses.list).mock.calls.length
-
-      const before = loads()
-      await api.expenses.create({
+  it('reloads after Transaction, Budget, Category and Mood'
+    + ' writes', async () => {
+    const { api } = await mountWidget()
+    const writes = [
+      () => api.expenses.create({
         date: '2026-11-03',
         description: 'Lunch',
         categoryId: FOOD.id,
         amount: -3_000
-      })
+      }),
+      () => api.expenses.setBudget(BUDGET),
+      () => api.expenses.createCategory('Pets'),
+      () => api.mood.create({ date: '2026-11-03', mood: 'okay' })
+    ]
+    for (const write of writes) {
+      vi.mocked(api.expenses.list).mockClear()
+      await write()
       await flushPromises()
-      expect(loads()).toBe(before + 1)
+      expect(api.expenses.list).toHaveBeenCalledOnce()
+    }
+  })
 
-      await api.mood.create(
-        { date: '2026-11-03', mood: 'okay' }
+  it('keeps the old rows till the new date loads',
+    async () => {
+      const { wrapper, api } = await mountWidget()
+      const shown = rowsOf(wrapper)
+      let release: () => void = () => {}
+      vi.mocked(api.expenses.list).mockImplementationOnce(
+        () => new Promise(resolve => {
+          release = () => resolve({ ok: true, value: [] })
+        })
       )
+      useSelectedDateStore().setDay(new Date(2026, 9, 5))
       await flushPromises()
-      expect(loads()).toBe(before + 2)
+      expect(rowsOf(wrapper)).toEqual(shown)
+
+      release()
+      await flushPromises()
+      expect(wrapper.get('.message').text())
+        .toBe('No spending this month')
     })
 
   it('drops a load a newer one overtook', async () => {
