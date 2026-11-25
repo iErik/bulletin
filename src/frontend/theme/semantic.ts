@@ -35,6 +35,7 @@ type Single =
   | 'widget-title'
   | 'stat-value'
   | 'improvement'
+  | 'worsening'
   | 'sidebar'
   | 'sidebar-active'
   | 'sidebar-icon'
@@ -147,6 +148,7 @@ export const applyPalette = (
     'widget-title',
     'stat-value',
     'improvement',
+    'worsening',
     'sidebar',
     'sidebar-active',
     'sidebar-icon',

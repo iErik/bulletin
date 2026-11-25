@@ -151,6 +151,8 @@ export interface Palette {
   readonly 'stat-value': string
   /** A change for the better, `--color-improvement`. */
   readonly improvement: string
+  /** A change for the worse, `--color-worsening`. */
+  readonly worsening: string
   /** The Sidebar's strip, as `--color-sidebar`. */
   readonly sidebar: string
   /** The current Page's button, `--color-sidebar-active`. */

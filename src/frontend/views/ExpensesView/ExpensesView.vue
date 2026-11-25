@@ -2,6 +2,8 @@
 // The Expenses Page. Month Pace fills the wide cell and
 // the Expenses Widget sits in the side cell; By Category,
 // Recurring and Insights fill the bottom row later.
+import ExpensesInsightsWidget
+  from '@/components/ExpensesInsightsWidget/ExpensesInsightsWidget.vue'
 import ExpensesWidget
   from '@/components/ExpensesWidget/ExpensesWidget.vue'
 import MonthPaceWidget
@@ -21,6 +23,9 @@ import RecurringWidget
     </template>
     <template #middle>
       <RecurringWidget />
+    </template>
+    <template #right>
+      <ExpensesInsightsWidget />
     </template>
   </PageGrid>
 </template>

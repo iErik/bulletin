@@ -71,9 +71,11 @@ export const defaultTheme: Theme = {
       'tile-icon': '#a5a5a5',
       'widget-title': 'rgb(165 165 165 / 34%)',
       // Figma's Mood Overview values and its green for
-      // a change for the better.
+      // a change for the better; Insights' red for a
+      // change for the worse.
       'stat-value': '#bbbbbb',
       improvement: '#88ba7a',
+      worsening: '#ff7070',
       // Figma's Sidebar.
       sidebar: 'rgb(226 226 226 / 6%)',
       'sidebar-active': 'rgb(217 217 217 / 11%)',
@@ -215,10 +217,11 @@ export const defaultTheme: Theme = {
       tile: 'rgb(38 38 38 / 8%)',
       'tile-icon': '#5a5a5a',
       'widget-title': 'rgb(90 90 90 / 60%)',
-      // The dark grey inverted; the green deepened, as
-      // the light Mood colours are.
+      // The dark grey inverted; the green and red
+      // deepened, as the light Mood colours are.
       'stat-value': '#444444',
       improvement: '#4a8a3c',
+      worsening: '#c24a4a',
       // The dark Sidebar's, each channel inverted.
       sidebar: 'rgb(29 29 29 / 6%)',
       'sidebar-active': 'rgb(38 38 38 / 11%)',
