@@ -165,6 +165,8 @@ export const defaultTheme: Theme = {
       // Figma's Habits / By Weekday frame.
       'weekday-cell': '#ffffff',
       'weekday-low': 'rgb(255 112 112 / 60%)',
+      // Figma's Mood / By Weekday frame.
+      'weekday-best': 'rgb(165 165 165 / 80%)',
       pill: {
         happy: pill('#77ca6e', '#77ca6e'),
         okay: pill('#6b85be', '#9095f4'),
@@ -299,6 +301,7 @@ export const defaultTheme: Theme = {
       weekday: 'rgb(90 90 90 / 55%)',
       'weekday-cell': '#000000',
       'weekday-low': 'rgb(196 55 59 / 70%)',
+      'weekday-best': 'rgb(90 90 90 / 90%)',
       pill: {
         happy: pill('#65b25c', '#3f9a36'),
         okay: pill('#7f86e3', '#5a62d8'),

@@ -48,6 +48,7 @@ type Single =
   | 'weekday'
   | 'weekday-cell'
   | 'weekday-low'
+  | 'weekday-best'
 
 type ScaleRef = readonly [
   Exclude<
@@ -154,7 +155,8 @@ export const applyPalette = (
     'pill-outline',
     'weekday',
     'weekday-cell',
-    'weekday-low'
+    'weekday-low',
+    'weekday-best'
   ]
   for (const name of singles)
     el.style.setProperty(`--color-${name}`, palette[name])
