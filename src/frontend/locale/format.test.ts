@@ -36,17 +36,19 @@ describe('format', () => {
   })
 
   it.each([
-    ['en-US', 'Sep 14', 'September', 'Mon', 'Mon 14'],
-    ['pt-BR', '14 de set.', 'setembro', 'seg.', 'seg. 14']
+    ['en-US', 'Sep 14', 'September', 'Mon', 'M', 'Mon 14'],
+    ['pt-BR', '14 de set.', 'setembro', 'seg.', 'S', 'seg. 14']
   ])(
     'writes short dates and names in %s',
-    async (tag, short, month, weekday, weekdayDay) => {
+    async (tag, short, month, weekday, narrow, weekdayDay) => {
       const { formatDate } = await loadIn(tag)
 
       expect(formatDate(SEP_14, 'short')).toBe(short)
       expect(formatDate(SEP_14, 'month')).toBe(month)
       expect(formatDate(SEP_14, 'weekday'))
         .toBe(weekday)
+      expect(formatDate(SEP_14, 'weekdayNarrow'))
+        .toBe(narrow)
       expect(formatDate(SEP_14, 'weekdayDay'))
         .toBe(weekdayDay)
     }

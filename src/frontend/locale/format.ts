@@ -55,6 +55,7 @@ const dateLocale = (): DateLocale => {
  * - `monthShort`: "Sep", "set.";
  * - `monthYear`: "September 2026", "setembro de 2026";
  * - `weekday`: "Mon", "seg.";
+ * - `weekdayNarrow`: "M", "S";
  * - `weekdayDay`: "Sat 14";
  * - `ordinal`: the day of the month alone, "8th",
  *   "8º".
@@ -66,6 +67,7 @@ export type DateStyle =
   | 'monthShort'
   | 'monthYear'
   | 'weekday'
+  | 'weekdayNarrow'
   | 'weekdayDay'
   | 'ordinal'
 
@@ -77,7 +79,8 @@ const INTL_STYLES: Readonly<Record<
   month: { month: 'long' },
   monthShort: { month: 'short' },
   monthYear: { month: 'long', year: 'numeric' },
-  weekday: { weekday: 'short' }
+  weekday: { weekday: 'short' },
+  weekdayNarrow: { weekday: 'narrow' }
 }
 
 /** Weekday then day, even when Intl swaps them. */

@@ -152,6 +152,10 @@ export interface Palette {
   readonly 'pill-outline': string
   /** Month Grid weekdays, as `--color-weekday`. */
   readonly weekday: string
+  /** By Weekday cell base, `--color-weekday-cell`. */
+  readonly 'weekday-cell': string
+  /** By Weekday < 35% outline, `--color-weekday-low`. */
+  readonly 'weekday-low': string
   /** Filled Day Pills', as `--color-pill-<key>-<part>`. */
   readonly pill: Readonly<Record<PillKey, PillColours>>
   /** The Sleep Timeline's, as `--color-sleep-<key>`. */

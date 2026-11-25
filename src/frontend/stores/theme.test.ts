@@ -56,6 +56,8 @@ vi.mock('@/theme/themes', async original => {
       'pill-flat-empty': colour,
       'pill-outline': colour,
       weekday: colour,
+      'weekday-cell': colour,
+      'weekday-low': colour,
       pill: Object.fromEntries(
         [
           ...MOODS.map(mood => mood.key),
@@ -246,7 +248,12 @@ describe('theme store', () => {
   it("writes the Habits header's colours", () => {
     mockSystemScheme(true)
     const store = useThemeStore()
-    const names = ['habit-pill', 'habit-pill-text'] as const
+    const names = [
+      'habit-pill',
+      'habit-pill-text',
+      'weekday-cell',
+      'weekday-low'
+    ] as const
     const read = (): string[] => names.map(name =>
       document.documentElement.style
         .getPropertyValue(`--color-${name}`))
