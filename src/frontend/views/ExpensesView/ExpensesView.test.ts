@@ -48,7 +48,7 @@ describe('ExpensesView', () => {
     document.body.innerHTML = ''
   })
 
-  it('places Month Pace, Expenses and Recurring',
+  it('places Month Pace, Expenses, Recurring and Insights',
     async () => {
       stubBulletin()
       const page = (await mountView()).view
@@ -65,10 +65,11 @@ describe('ExpensesView', () => {
         page.find('.page-grid > .middle > .recurring-widget')
           .exists()
       ).toBe(true)
-      for (const cell of ['left', 'right']) {
-        expect(page.get(`.${cell}`).element.children)
-          .toHaveLength(0)
-      }
+      expect(
+        page.find('.page-grid > .right > .expenses-insights-widget')
+          .exists()
+      ).toBe(true)
+      expect(page.get('.left').element.children).toHaveLength(0)
     })
 
   it('puts the date header in the Title Bar', async () => {

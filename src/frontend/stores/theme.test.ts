@@ -47,6 +47,7 @@ vi.mock('@/theme/themes', async original => {
       'widget-title': colour,
       'stat-value': colour,
       improvement: colour,
+      worsening: colour,
       sidebar: colour,
       'sidebar-active': colour,
       'sidebar-icon': colour,
@@ -243,7 +244,9 @@ describe('theme store', () => {
   it("writes the Overview's stat colours", () => {
     mockSystemScheme(true)
     const store = useThemeStore()
-    const names = ['stat-value', 'improvement'] as const
+    const names = [
+      'stat-value', 'improvement', 'worsening'
+    ] as const
     const read = (): string[] => names.map(name =>
       document.documentElement.style
         .getPropertyValue(`--color-${name}`))
