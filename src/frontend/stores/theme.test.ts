@@ -11,6 +11,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { MOODS } from '@shared/mood'
 import { defaultTheme } from '@/theme/themes'
 import {
+  HABIT_BOARD_COLOURS,
   MONTH_PACE_COLOURS,
   PILL_PARTS,
   SLEEP_COLOURS,
@@ -27,6 +28,7 @@ vi.mock('@/theme/themes', async original => {
     await original<typeof import('@/theme/themes')>()
   // Mocks are hoisted above the imports.
   const {
+    HABIT_BOARD_COLOURS,
     MONTH_PACE_COLOURS,
     SLEEP_COLOURS,
     WEIGHT_LINE_STOPS
@@ -81,7 +83,10 @@ vi.mock('@/theme/themes', async original => {
       ) as Palette['weight'],
       'month-pace': Object.fromEntries(
         MONTH_PACE_COLOURS.map(name => [name, colour])
-      ) as Palette['month-pace']
+      ) as Palette['month-pace'],
+      'habit-board': Object.fromEntries(
+        HABIT_BOARD_COLOURS.map(name => [name, colour])
+      ) as Palette['habit-board']
     }
   }
   const other: Theme = {
@@ -298,6 +303,24 @@ describe('theme store', () => {
 
     expect(pace()).toEqual(MONTH_PACE_COLOURS.map(
       name => light['month-pace'][name]
+    ))
+  })
+
+  it("writes Habit Board's colours", () => {
+    mockSystemScheme(true)
+    const store = useThemeStore()
+    const board = (): string[] => HABIT_BOARD_COLOURS.map(
+      name => document.documentElement.style
+        .getPropertyValue(`--color-habit-board-${name}`))
+
+    expect(board()).toEqual(HABIT_BOARD_COLOURS.map(
+      name => dark['habit-board'][name]
+    ))
+
+    store.setPreference('light')
+
+    expect(board()).toEqual(HABIT_BOARD_COLOURS.map(
+      name => light['habit-board'][name]
     ))
   })
 

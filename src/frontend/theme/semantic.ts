@@ -1,5 +1,6 @@
 import { MOODS, type Mood } from '@shared/mood'
 import {
+  HABIT_BOARD_COLOURS,
   MONTH_PACE_COLOURS,
   PILL_PARTS,
   SLEEP_COLOURS,
@@ -56,6 +57,7 @@ type ScaleRef = readonly [
     | 'sleep'
     | 'weight'
     | 'month-pace'
+    | 'habit-board'
     | Single
   >,
   Shade
@@ -186,6 +188,12 @@ export const applyPalette = (
     el.style.setProperty(
       `--color-month-pace-${name}`,
       palette['month-pace'][name]
+    )
+  }
+  for (const name of HABIT_BOARD_COLOURS) {
+    el.style.setProperty(
+      `--color-habit-board-${name}`,
+      palette['habit-board'][name]
     )
   }
   el.style.colorScheme = scheme

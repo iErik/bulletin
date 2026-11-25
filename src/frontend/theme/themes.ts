@@ -130,6 +130,20 @@ export const defaultTheme: Theme = {
         rest: 'rgb(255 255 255 / 6%)',
         cap: 'rgb(165 165 165 / 60%)'
       },
+      // Figma's Habits / Habit Board frame.
+      'habit-board': {
+        today: 'rgb(165 165 165 / 70%)',
+        row: 'rgb(255 255 255 / 3%)',
+        name: '#d9d9d9',
+        slipping: 'rgb(255 112 112 / 80%)',
+        done: 'rgb(255 255 255 / 85%)',
+        glow: 'rgb(255 255 255 / 35%)',
+        dim: 'rgb(255 255 255 / 6%)',
+        selected: 'rgb(255 255 255 / 60%)',
+        streak: '#ffffff',
+        best: 'rgb(187 187 187 / 60%)',
+        low: '#ff7070'
+      },
       // The Figma mood picker's swatches.
       mood: {
         happy: '#77ca6e',
@@ -252,6 +266,20 @@ export const defaultTheme: Theme = {
         'bar-glow': 'rgb(0 0 0 / 35%)',
         rest: 'rgb(0 0 0 / 6%)',
         cap: 'rgb(90 90 90 / 60%)'
+      },
+      // The dark Habit Board frame's, mirrored for light.
+      'habit-board': {
+        today: 'rgb(90 90 90 / 70%)',
+        row: 'rgb(0 0 0 / 3%)',
+        name: '#262626',
+        slipping: 'rgb(196 55 59 / 80%)',
+        done: 'rgb(0 0 0 / 85%)',
+        glow: 'rgb(0 0 0 / 25%)',
+        dim: 'rgb(0 0 0 / 6%)',
+        selected: 'rgb(0 0 0 / 60%)',
+        streak: '#000000',
+        best: 'rgb(68 68 68 / 60%)',
+        low: '#c4373b'
       },
       // Deeper than the dark ones, to stay distinct and
       // visible on light surfaces.
