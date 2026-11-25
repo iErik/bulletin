@@ -12,6 +12,7 @@ import {
   type OccurrenceKey,
   type OccurrenceUpdate,
   type RecurringTask,
+  type RecurringTaskUpdate,
   type TaskSchedule,
   type Weekday
 } from '@shared/recurring-tasks'
@@ -20,7 +21,11 @@ import { moveIncrement } from '@shared/tasks'
 import type { Database } from './database'
 import { dateRangeSchema, localDateSchema } from './dates'
 import { parse, StorageFailure } from './errors'
-import { occurrences, recurringTasks } from './schema'
+import {
+  occurrences,
+  recurringTasks,
+  recurringTaskVersions
+} from './schema'
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6]
 const localTimeSchema = z.string()
@@ -68,6 +73,20 @@ const newRecurringTaskSchema = z.strictObject({
   firstDay: localDateSchema
 })
 
+const recurringTaskUpdateSchema = z.strictObject({
+  id: idSchema,
+  title: z.string().trim().min(1).optional(),
+  time: localTimeSchema.nullable().optional(),
+  schedule: scheduleSchema.optional(),
+  firstDay: localDateSchema.optional()
+}).refine(
+  ({ title, time, schedule, firstDay }) => title !== undefined
+    || time !== undefined
+    || schedule !== undefined
+    || firstDay !== undefined,
+  'Nothing to change'
+)
+
 const occurrenceKeySchema = z.strictObject({
   ruleId: idSchema,
   scheduled: localDateSchema
@@ -94,6 +113,7 @@ const occurrenceDoneSchema = z.strictObject({
 
 type Reader = Pick<Database, 'select'>
 type OccurrenceRow = typeof occurrences.$inferSelect
+type VersionRow = typeof recurringTaskVersions.$inferSelect
 
 const encodeWeekdays = (days: readonly Weekday[]): number =>
   days.reduce<number>((m, d) => m | (1 << d), 0)
@@ -106,6 +126,16 @@ type ScheduleCols = Pick<
   typeof recurringTasks.$inferInsert,
   'kind' | 'every' | 'weekdays' | 'month' | 'monthDay'
 >
+type ScheduleRow = Pick<
+  Row, 'kind' | 'every' | 'weekdays' | 'month' | 'monthDay'
+>
+type RuleFields = ScheduleCols & Pick<
+  typeof recurringTasks.$inferInsert,
+  'title' | 'time' | 'firstDay'
+>
+interface RuleVersion extends RecurringTask {
+  readonly from: LocalDate
+}
 
 const emptyCols = {
   every: null, weekdays: null, month: null, monthDay: null
@@ -126,7 +156,7 @@ const toColumns = (s: TaskSchedule): ScheduleCols => {
   }
 }
 
-const toSchedule = (row: Row): TaskSchedule => {
+const toSchedule = (row: ScheduleRow): TaskSchedule => {
   switch (row.kind) {
     case 'days': return { kind: 'days', every: row.every! }
     case 'weekly': return {
@@ -150,6 +180,81 @@ const toRecurringTask = (row: Row): RecurringTask => ({
   lastDay: row.lastDay,
   created: row.created
 })
+
+const shiftDay = (date: LocalDate, delta: number): LocalDate => {
+  const [y, m, d] = date.split('-').map(Number)
+  const shifted = new Date(Date.UTC(y, m - 1, d + delta))
+  return [
+    shifted.getUTCFullYear(),
+    String(shifted.getUTCMonth() + 1).padStart(2, '0'),
+    String(shifted.getUTCDate()).padStart(2, '0')
+  ].join('-')
+}
+
+const maxDate = (a: LocalDate, b: LocalDate): LocalDate =>
+  a > b ? a : b
+
+const clampLast = (
+  a: LocalDate | null,
+  b: LocalDate | null
+): LocalDate | null => {
+  if (a === null) return b
+  if (b === null) return a
+  return a < b ? a : b
+}
+
+const sameRule = (a: Row, b: RuleFields): boolean =>
+  a.title === b.title
+  && a.time === b.time
+  && a.kind === b.kind
+  && a.every === b.every
+  && a.weekdays === b.weekdays
+  && a.month === b.month
+  && a.monthDay === b.monthDay
+  && a.firstDay === b.firstDay
+
+const ruleVersions = (
+  rule: RecurringTask,
+  past: readonly VersionRow[]
+): RuleVersion[] => {
+  const versions: RuleVersion[] = []
+  let prevLast: LocalDate | null = null
+  for (const row of past) {
+    const from = prevLast === null
+      ? row.firstDay
+      : maxDate(shiftDay(prevLast, 1), row.firstDay)
+    const lastDay = clampLast(row.lastDay, rule.lastDay)
+    if (lastDay === null || from <= lastDay) {
+      versions.push({
+        id: rule.id,
+        title: row.title,
+        time: row.time,
+        schedule: toSchedule(row),
+        firstDay: row.firstDay,
+        from,
+        lastDay,
+        created: rule.created
+      })
+    }
+    prevLast = row.lastDay
+  }
+  const from = prevLast === null
+    ? rule.firstDay
+    : maxDate(shiftDay(prevLast, 1), rule.firstDay)
+  if (rule.lastDay === null || from <= rule.lastDay)
+    versions.push({ ...rule, from })
+  return versions
+}
+
+const versionOn = (
+  versions: readonly RuleVersion[],
+  day: LocalDate
+): RuleVersion | undefined =>
+  versions.find(v =>
+    day >= v.from
+    && (v.lastDay === null || day <= v.lastDay)
+    && occursOn(v, day)
+  )
 
 /** Every Recurring Task, stopped ones included. */
 export const listRecurringTasks = async (
@@ -175,6 +280,103 @@ export const createRecurringTask = async (
     firstDay, lastDay: null, created: now.getTime()
   }).returning()
   return toRecurringTask(row)
+}
+
+/**
+ * Changes a Recurring Task from today on. Started rules
+ * snapshot prior values into `recurring_task_versions`,
+ * and future Occurrences off the new schedule are dropped.
+ */
+export const updateRecurringTask = async (
+  db: Database,
+  value: unknown,
+  now = new Date()
+): Promise<RecurringTask> => {
+  const changes: RecurringTaskUpdate =
+    parse(recurringTaskUpdateSchema, value)
+  const today = localDate(now)
+  return db.transaction(tx => {
+    const existing = tx.select().from(recurringTasks)
+      .where(eq(recurringTasks.id, changes.id)).get()
+    if (!existing)
+      throw new StorageFailure({ code: 'not-found' })
+
+    const past = tx.select().from(recurringTaskVersions)
+      .where(eq(recurringTaskVersions.ruleId, existing.id))
+      .orderBy(asc(recurringTaskVersions.lastDay)).all()
+    const started = existing.firstDay <= today || past.length > 0
+    if (started
+      && changes.firstDay !== undefined
+      && changes.firstDay < today) {
+      throw new StorageFailure({
+        code: 'invalid-payload', field: 'firstDay'
+      })
+    }
+
+    const next: RuleFields = {
+      title: changes.title ?? existing.title,
+      time: changes.time !== undefined
+        ? changes.time
+        : existing.time,
+      ...(changes.schedule !== undefined
+        ? toColumns(changes.schedule)
+        : {
+            kind: existing.kind,
+            every: existing.every,
+            weekdays: existing.weekdays,
+            month: existing.month,
+            monthDay: existing.monthDay
+          }),
+      firstDay: changes.firstDay ?? existing.firstDay
+    }
+    if (sameRule(existing, next))
+      return toRecurringTask(existing)
+
+    const yesterday = shiftDay(today, -1)
+    const prevLast = past.at(-1)?.lastDay ?? null
+    const currentStart = prevLast === null
+      ? existing.firstDay
+      : maxDate(shiftDay(prevLast, 1), existing.firstDay)
+    const closedLast = clampLast(yesterday, existing.lastDay)!
+    if (currentStart <= closedLast) {
+      const snapshot = tx.insert(recurringTaskVersions).values({
+        ruleId: existing.id,
+        title: existing.title,
+        time: existing.time,
+        kind: existing.kind,
+        every: existing.every,
+        weekdays: existing.weekdays,
+        month: existing.month,
+        monthDay: existing.monthDay,
+        firstDay: existing.firstDay,
+        lastDay: closedLast
+      }).returning().get()
+      past.push(snapshot)
+    }
+
+    const row = tx.update(recurringTasks)
+      .set(next)
+      .where(eq(recurringTasks.id, existing.id))
+      .returning().get()!
+    const updated = toRecurringTask(row)
+    const versions = ruleVersions(updated, past)
+    const futureRows = tx
+      .select({ scheduled: occurrences.scheduled })
+      .from(occurrences)
+      .where(and(
+        eq(occurrences.ruleId, existing.id),
+        gte(occurrences.scheduled, today)
+      )).all()
+    for (const { scheduled } of futureRows) {
+      if (!versionOn(versions, scheduled)) {
+        tx.delete(occurrences).where(and(
+          eq(occurrences.ruleId, existing.id),
+          eq(occurrences.scheduled, scheduled)
+        )).run()
+      }
+    }
+    return updated
+  })
 }
 
 /**
@@ -235,13 +437,18 @@ const resolveOccurrence = (
 const requireOccurrence = (
   tx: Reader,
   { ruleId, scheduled }: OccurrenceKey
-): { rule: RecurringTask; existing: OccurrenceRow | undefined } => {
+): { rule: RuleVersion; existing: OccurrenceRow | undefined } => {
   const ruleRow = tx.select().from(recurringTasks)
     .where(eq(recurringTasks.id, ruleId)).get()
   if (!ruleRow)
     throw new StorageFailure({ code: 'not-found' })
-  const rule = toRecurringTask(ruleRow)
-  if (!occursOn(rule, scheduled))
+  const past = tx.select().from(recurringTaskVersions)
+    .where(eq(recurringTaskVersions.ruleId, ruleId))
+    .orderBy(asc(recurringTaskVersions.lastDay)).all()
+  const rule = versionOn(
+    ruleVersions(toRecurringTask(ruleRow), past), scheduled
+  )
+  if (!rule)
     throw new StorageFailure({ code: 'not-found' })
   const existing = tx.select().from(occurrences)
     .where(and(
@@ -266,7 +473,19 @@ export const listOccurrences = async (
     const rules = tx.select().from(recurringTasks)
       .orderBy(asc(recurringTasks.id)).all()
       .map(toRecurringTask)
-    const rulesById = new Map(rules.map(r => [r.id, r]))
+    const pastByRule = new Map<number, VersionRow[]>()
+    for (const v of tx.select().from(recurringTaskVersions)
+      .orderBy(
+        asc(recurringTaskVersions.ruleId),
+        asc(recurringTaskVersions.lastDay)
+      ).all()) {
+      const list = pastByRule.get(v.ruleId)
+      if (list) list.push(v)
+      else pastByRule.set(v.ruleId, [v])
+    }
+    const versionsByRule = new Map(
+      rules.map(r => [r.id, ruleVersions(r, pastByRule.get(r.id) ?? [])])
+    )
     const rows = tx.select().from(occurrences).where(or(
       and(
         gte(occurrences.scheduled, range.from),
@@ -284,7 +503,7 @@ export const listOccurrences = async (
     const seen = new Set<string>()
     const result: Occurrence[] = []
     const add = (
-      rule: RecurringTask,
+      rule: RuleVersion,
       scheduled: LocalDate,
       row?: OccurrenceRow
     ): void => {
@@ -297,13 +516,19 @@ export const listOccurrences = async (
     }
 
     for (const rule of rules) {
-      for (const scheduled of scheduledDays(rule, range))
-        add(rule, scheduled, byKey.get(occKey(rule.id, scheduled)))
+      for (const version of versionsByRule.get(rule.id)!) {
+        const from = maxDate(range.from, version.from)
+        if (from > range.to) continue
+        for (const scheduled of scheduledDays(version, {
+          from, to: range.to
+        }))
+          add(version, scheduled, byKey.get(occKey(rule.id, scheduled)))
+      }
     }
     for (const row of rows) {
-      const rule = rulesById.get(row.ruleId)
-      if (rule && occursOn(rule, row.scheduled))
-        add(rule, row.scheduled, row)
+      const versions = versionsByRule.get(row.ruleId)
+      const version = versions && versionOn(versions, row.scheduled)
+      if (version) add(version, row.scheduled, row)
     }
     return result.sort((a, b) =>
       compareForDay(a, b)

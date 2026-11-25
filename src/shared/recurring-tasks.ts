@@ -199,6 +199,15 @@ export interface NewRecurringTask {
   readonly firstDay: LocalDate
 }
 
+/** Changes to a Recurring Task from today on. */
+export interface RecurringTaskUpdate {
+  readonly id: number
+  readonly title?: string
+  readonly time?: LocalTime | null
+  readonly schedule?: TaskSchedule
+  readonly firstDay?: LocalDate
+}
+
 /** Identifies one Occurrence of a Recurring Task. */
 export interface OccurrenceKey {
   readonly ruleId: number
@@ -224,6 +233,10 @@ export interface RecurringTasksApi {
   /** Creates a Recurring Task; `created` is now. */
   create(
     task: NewRecurringTask
+  ): Promise<StorageResult<RecurringTask>>
+  /** Changes a rule from today on; past keeps old values. */
+  update(
+    changes: RecurringTaskUpdate
   ): Promise<StorageResult<RecurringTask>>
   /** Sets `lastDay` to today, keeping today's. */
   stop(id: number): Promise<StorageResult<RecurringTask>>
@@ -251,6 +264,7 @@ export interface RecurringTasksApi {
 export const RECURRING_TASKS_CHANNELS = {
   list: 'recurring-tasks:list',
   create: 'recurring-tasks:create',
+  update: 'recurring-tasks:update',
   stop: 'recurring-tasks:stop',
   delete: 'recurring-tasks:delete',
   listOccurrences: 'recurring-tasks:list-occurrences',

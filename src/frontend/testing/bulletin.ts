@@ -20,7 +20,8 @@ import type {
   OccurrenceDone,
   OccurrenceUpdate,
   RecurringTask,
-  RecurringTasksApi
+  RecurringTasksApi,
+  RecurringTaskUpdate
 } from '@shared/recurring-tasks'
 import {
   SLEEP_GOAL_DEFAULT_MINUTES,
@@ -187,6 +188,8 @@ const fakeRecurringTasks = (): RecurringTasksApi => {
     list: resolves([]),
     create: echoes((value: NewRecurringTask) =>
       ({ ...rule, ...value })),
+    update: echoes((changes: RecurringTaskUpdate) =>
+      ({ ...rule, ...changes })),
     stop: resolves({ ...rule, lastDay: '2026-01-01' }),
     delete: resolves(null),
     listOccurrences: resolves([]),
