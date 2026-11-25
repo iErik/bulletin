@@ -386,3 +386,47 @@ export const recurringTasks = sqliteTable(
     )
   ]
 )
+
+/**
+ * Per-Occurrence overrides and skips for a Recurring Task,
+ * keyed by `(rule_id, scheduled)`. Unchanged fields stay
+ * null so they inherit the rule. `time_changed` tells a
+ * cleared time (`null`, "any time") from an unchanged one.
+ */
+export const occurrences = sqliteTable(
+  'occurrences',
+  {
+    ruleId: integer('rule_id')
+      .notNull()
+      .references(() => recurringTasks.id, {
+        onDelete: 'cascade'
+      }),
+    scheduled: text().notNull(),
+    title: text(),
+    time: text(),
+    timeChanged: integer('time_changed').notNull().default(0),
+    day: text(),
+    doneAt: integer('done_at'),
+    moves: integer().notNull().default(0),
+    skipped: integer().notNull().default(0)
+  },
+  table => [
+    primaryKey({
+      columns: [table.ruleId, table.scheduled]
+    }),
+    index('occurrences_day').on(table.day),
+    check(
+      'occurrences_title_not_blank',
+      sql`${table.title} IS NULL OR trim(${table.title}) <> ''`
+    ),
+    check(
+      'occurrences_moves_not_negative',
+      sql`${table.moves} >= 0`
+    ),
+    check(
+      'occurrences_flags',
+      sql`${table.timeChanged} IN (0, 1)
+        AND ${table.skipped} IN (0, 1)`
+    )
+  ]
+)

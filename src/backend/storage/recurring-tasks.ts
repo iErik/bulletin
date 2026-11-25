@@ -1,21 +1,26 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq, gte, lte, or } from 'drizzle-orm'
 import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import { localDate } from '@shared/dates'
 import {
   compareForDay,
+  occursOn,
   scheduledDays,
   type NewRecurringTask,
   type Occurrence,
+  type OccurrenceDone,
+  type OccurrenceKey,
+  type OccurrenceUpdate,
   type RecurringTask,
   type TaskSchedule,
   type Weekday
 } from '@shared/recurring-tasks'
-import type { DateRange } from '@shared/storage'
+import type { DateRange, LocalDate } from '@shared/storage'
+import { moveIncrement } from '@shared/tasks'
 import type { Database } from './database'
 import { dateRangeSchema, localDateSchema } from './dates'
 import { parse, StorageFailure } from './errors'
-import { recurringTasks } from './schema'
+import { occurrences, recurringTasks } from './schema'
 
 const WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6]
 const localTimeSchema = z.string()
@@ -62,6 +67,33 @@ const newRecurringTaskSchema = z.strictObject({
   schedule: scheduleSchema,
   firstDay: localDateSchema
 })
+
+const occurrenceKeySchema = z.strictObject({
+  ruleId: idSchema,
+  scheduled: localDateSchema
+})
+
+const occurrenceUpdateSchema = z.strictObject({
+  ruleId: idSchema,
+  scheduled: localDateSchema,
+  title: z.string().trim().min(1).optional(),
+  day: localDateSchema.optional(),
+  time: localTimeSchema.nullable().optional()
+}).refine(
+  ({ title, day, time }) => title !== undefined
+    || day !== undefined
+    || time !== undefined,
+  'Nothing to change'
+)
+
+const occurrenceDoneSchema = z.strictObject({
+  ruleId: idSchema,
+  scheduled: localDateSchema,
+  done: z.boolean()
+})
+
+type Reader = Pick<Database, 'select'>
+type OccurrenceRow = typeof occurrences.$inferSelect
 
 const encodeWeekdays = (days: readonly Weekday[]): number =>
   days.reduce<number>((m, d) => m | (1 << d), 0)
@@ -185,21 +217,194 @@ export const deleteRecurringTask = async (
   return null
 }
 
+const resolveOccurrence = (
+  rule: RecurringTask,
+  scheduled: LocalDate,
+  row?: OccurrenceRow
+): Occurrence => ({
+  ruleId: rule.id,
+  scheduled,
+  title: row?.title ?? rule.title,
+  day: row?.day ?? scheduled,
+  time: row?.timeChanged ? row.time : rule.time,
+  doneAt: row?.doneAt ?? null,
+  moves: row?.moves ?? 0,
+  created: rule.created
+})
+
+const requireOccurrence = (
+  tx: Reader,
+  { ruleId, scheduled }: OccurrenceKey
+): { rule: RecurringTask; existing: OccurrenceRow | undefined } => {
+  const ruleRow = tx.select().from(recurringTasks)
+    .where(eq(recurringTasks.id, ruleId)).get()
+  if (!ruleRow)
+    throw new StorageFailure({ code: 'not-found' })
+  const rule = toRecurringTask(ruleRow)
+  if (!occursOn(rule, scheduled))
+    throw new StorageFailure({ code: 'not-found' })
+  const existing = tx.select().from(occurrences)
+    .where(and(
+      eq(occurrences.ruleId, ruleId),
+      eq(occurrences.scheduled, scheduled)
+    )).get()
+  if (existing?.skipped)
+    throw new StorageFailure({ code: 'not-found' })
+  return { rule, existing }
+}
+
+const occKey = (ruleId: number, scheduled: LocalDate): string =>
+  `${ruleId}:${scheduled}`
+
 /** Expands every rule over the span, in day order. */
 export const listOccurrences = async (
   db: Database,
   value: unknown
 ): Promise<Occurrence[]> => {
   const range: DateRange = parse(dateRangeSchema, value)
-  const rows = await db.select().from(recurringTasks)
-    .orderBy(asc(recurringTasks.id))
-  const occurrences = rows.flatMap(row => {
-    const r = toRecurringTask(row)
-    return scheduledDays(r, range).map(scheduled => ({
-      ruleId: r.id, scheduled, title: r.title, day: scheduled,
-      time: r.time, doneAt: null, moves: 0, created: r.created
-    }))
+  return db.transaction(tx => {
+    const rules = tx.select().from(recurringTasks)
+      .orderBy(asc(recurringTasks.id)).all()
+      .map(toRecurringTask)
+    const rulesById = new Map(rules.map(r => [r.id, r]))
+    const rows = tx.select().from(occurrences).where(or(
+      and(
+        gte(occurrences.scheduled, range.from),
+        lte(occurrences.scheduled, range.to)
+      ),
+      and(
+        gte(occurrences.day, range.from),
+        lte(occurrences.day, range.to)
+      )
+    )).all()
+
+    const byKey = new Map(
+      rows.map(r => [occKey(r.ruleId, r.scheduled), r])
+    )
+    const seen = new Set<string>()
+    const result: Occurrence[] = []
+    const add = (
+      rule: RecurringTask,
+      scheduled: LocalDate,
+      row?: OccurrenceRow
+    ): void => {
+      const key = occKey(rule.id, scheduled)
+      if (seen.has(key) || row?.skipped) return
+      seen.add(key)
+      const item = resolveOccurrence(rule, scheduled, row)
+      if (item.day >= range.from && item.day <= range.to)
+        result.push(item)
+    }
+
+    for (const rule of rules) {
+      for (const scheduled of scheduledDays(rule, range))
+        add(rule, scheduled, byKey.get(occKey(rule.id, scheduled)))
+    }
+    for (const row of rows) {
+      const rule = rulesById.get(row.ruleId)
+      if (rule && occursOn(rule, row.scheduled))
+        add(rule, row.scheduled, row)
+    }
+    return result.sort((a, b) =>
+      compareForDay(a, b)
+      || a.ruleId - b.ruleId
+      || a.scheduled.localeCompare(b.scheduled))
   })
-  return occurrences.sort((a, b) =>
-    compareForDay(a, b) || a.ruleId - b.ruleId)
+}
+
+/** Changes one Occurrence; a later day raises `moves`. */
+export const updateOccurrence = async (
+  db: Database,
+  value: unknown
+): Promise<Occurrence> => {
+  const changes: OccurrenceUpdate =
+    parse(occurrenceUpdateSchema, value)
+  const { ruleId, scheduled, title, day, time } = changes
+  return db.transaction(tx => {
+    const { rule, existing } =
+      requireOccurrence(tx, { ruleId, scheduled })
+    const currentDay = existing?.day ?? scheduled
+    const nextDay = day !== undefined
+      ? (day === scheduled ? null : day)
+      : (existing?.day ?? null)
+    const moves = (existing?.moves ?? 0)
+      + (day !== undefined ? moveIncrement(currentDay, day) : 0)
+    const nextTitle = title ?? existing?.title ?? null
+    const nextTimeChanged = time !== undefined
+      ? 1
+      : (existing?.timeChanged ?? 0)
+    const nextTime = time !== undefined
+      ? time
+      : (existing?.time ?? null)
+
+    const row = tx.insert(occurrences).values({
+      ruleId,
+      scheduled,
+      title: nextTitle,
+      time: nextTime,
+      timeChanged: nextTimeChanged,
+      day: nextDay,
+      doneAt: existing?.doneAt ?? null,
+      moves,
+      skipped: 0
+    }).onConflictDoUpdate({
+      target: [occurrences.ruleId, occurrences.scheduled],
+      set: {
+        title: nextTitle,
+        time: nextTime,
+        timeChanged: nextTimeChanged,
+        day: nextDay,
+        moves
+      }
+    }).returning().get()
+    return resolveOccurrence(rule, scheduled, row)
+  })
+}
+
+/** Sets or clears `doneAt`; redone keeps the first. */
+export const setOccurrenceDone = async (
+  db: Database,
+  value: unknown,
+  now = new Date()
+): Promise<Occurrence> => {
+  const { ruleId, scheduled, done }: OccurrenceDone =
+    parse(occurrenceDoneSchema, value)
+  return db.transaction(tx => {
+    const { rule, existing } =
+      requireOccurrence(tx, { ruleId, scheduled })
+    let doneAt = existing?.doneAt ?? null
+    if (!done) doneAt = null
+    else if (doneAt === null) doneAt = now.getTime()
+
+    const row = tx.insert(occurrences).values({
+      ruleId,
+      scheduled,
+      doneAt
+    }).onConflictDoUpdate({
+      target: [occurrences.ruleId, occurrences.scheduled],
+      set: { doneAt }
+    }).returning().get()
+    return resolveOccurrence(rule, scheduled, row)
+  })
+}
+
+/** Drops one Occurrence without changing the rule. */
+export const skipOccurrence = async (
+  db: Database,
+  value: unknown
+): Promise<null> => {
+  const { ruleId, scheduled }: OccurrenceKey =
+    parse(occurrenceKeySchema, value)
+  return db.transaction(tx => {
+    requireOccurrence(tx, { ruleId, scheduled })
+    tx.insert(occurrences).values({
+      ruleId,
+      scheduled,
+      skipped: 1
+    }).onConflictDoUpdate({
+      target: [occurrences.ruleId, occurrences.scheduled],
+      set: { skipped: 1 }
+    }).run()
+    return null
+  })
 }

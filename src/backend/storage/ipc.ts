@@ -46,7 +46,10 @@ import {
   deleteRecurringTask,
   listOccurrences,
   listRecurringTasks,
-  stopRecurringTask
+  setOccurrenceDone,
+  skipOccurrence,
+  stopRecurringTask,
+  updateOccurrence
 } from './recurring-tasks'
 import {
   createSleep,
@@ -154,7 +157,12 @@ const OPERATIONS: Record<string, Operation> = {
     stopRecurringTask(db, p),
   [RECURRING_TASKS_CHANNELS.delete]: deleteRecurringTask,
   [RECURRING_TASKS_CHANNELS.listOccurrences]:
-    listOccurrences
+    listOccurrences,
+  [RECURRING_TASKS_CHANNELS.updateOccurrence]:
+    updateOccurrence,
+  [RECURRING_TASKS_CHANNELS.setOccurrenceDone]: (db, p) =>
+    setOccurrenceDone(db, p),
+  [RECURRING_TASKS_CHANNELS.skipOccurrence]: skipOccurrence
 }
 
 /** Registers one `ipc.handle` per storage operation. */

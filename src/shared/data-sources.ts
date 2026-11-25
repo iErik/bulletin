@@ -93,6 +93,9 @@ export const DATA_SOURCE_WRITES = {
     create: 'tasks',
     stop: 'tasks',
     delete: 'tasks',
-    listOccurrences: null
+    listOccurrences: null,
+    updateOccurrence: 'tasks',
+    setOccurrenceDone: 'tasks',
+    skipOccurrence: 'tasks'
   }
 } as const satisfies DataSourceWrites

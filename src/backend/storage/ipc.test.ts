@@ -317,6 +317,17 @@ describe('handleStorage', () => {
       { ruleId: 1, scheduled: '2026-11-23' },
       { ruleId: 1, scheduled: '2026-11-26' }
     ]))
+    expect(await call(ch.updateOccurrence, {
+      ruleId: 1, scheduled: '2026-11-23', day: '2026-11-25'
+    })).toMatchObject(ok({ day: '2026-11-25', moves: 1 }))
+    expect(await call(ch.setOccurrenceDone, {
+      ruleId: 1, scheduled: '2026-11-23', done: true
+    })).toMatchObject(ok({
+      doneAt: expect.any(Number) as number
+    }))
+    expect(await call(ch.skipOccurrence, {
+      ruleId: 1, scheduled: '2026-11-26'
+    })).toEqual(ok(null))
     expect(await call(ch.stop, 1)).toMatchObject(ok({
       id: 1, lastDay: expect.any(String) as string
     }))
