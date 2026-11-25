@@ -309,6 +309,9 @@ describe('handleStorage', () => {
 
     expect(await call(ch.create, rule))
       .toMatchObject(ok({ id: 1, ...rule, lastDay: null }))
+    expect(await call(ch.update, {
+      id: 1, title: 'Workout'
+    })).toMatchObject(ok({ id: 1, title: 'Workout' }))
     expect(await call(ch.list, undefined))
       .toMatchObject(ok([{ id: 1 }]))
     expect(await call(ch.listOccurrences, {

@@ -64,13 +64,14 @@ describe('DATA_SOURCE_WRITES', () => {
     expect([
       sleep.setGoal, habits.createEntry, habits.setGoal,
       expenses.createCategory, expenses.setBudget,
-      tasks.setDone, recurringTasks.updateOccurrence,
+      tasks.setDone, recurringTasks.update,
+      recurringTasks.updateOccurrence,
       recurringTasks.setOccurrenceDone,
       recurringTasks.skipOccurrence
     ]).toEqual([
       'sleepGoal', 'habitEntries', 'habitGoal',
       'categories', 'budget', 'tasks', 'tasks',
-      'tasks', 'tasks'
+      'tasks', 'tasks', 'tasks'
     ])
   })
 })

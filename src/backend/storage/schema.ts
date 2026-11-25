@@ -388,6 +388,69 @@ export const recurringTasks = sqliteTable(
 )
 
 /**
+ * Past versions of a Recurring Task, saved when "edit
+ * all" changes a started rule. Each row covers up to
+ * `last_day`; its effective start is the day after the
+ * previous version's `last_day` (or `first_day` for
+ * the first). `first_day` also anchors `days` schedules.
+ */
+export const recurringTaskVersions = sqliteTable(
+  'recurring_task_versions',
+  {
+    ruleId: integer('rule_id')
+      .notNull()
+      .references(() => recurringTasks.id, {
+        onDelete: 'cascade'
+      }),
+    title: text().notNull(),
+    time: text(),
+    kind: text().notNull(),
+    every: integer(),
+    weekdays: integer(),
+    month: integer(),
+    monthDay: integer('month_day'),
+    firstDay: text('first_day').notNull(),
+    lastDay: text('last_day').notNull()
+  },
+  table => [
+    primaryKey({
+      columns: [table.ruleId, table.lastDay]
+    }),
+    check(
+      'recurring_task_versions_title_not_blank',
+      sql`trim(${table.title}) <> ''`
+    ),
+    check(
+      'recurring_task_versions_span',
+      sql`${table.lastDay} >= ${table.firstDay}`
+    ),
+    check(
+      'recurring_task_versions_schedule',
+      sql`(${table.kind} = 'days'
+        AND ${table.every} IS NOT NULL AND ${table.every} >= 1
+        AND ${table.weekdays} IS NULL
+        AND ${table.month} IS NULL AND ${table.monthDay} IS NULL)
+      OR (${table.kind} = 'weekly'
+        AND ${table.weekdays} IS NOT NULL
+        AND ${table.weekdays} BETWEEN 1 AND 127
+        AND ${table.every} IS NULL
+        AND ${table.month} IS NULL AND ${table.monthDay} IS NULL)
+      OR (${table.kind} = 'monthly'
+        AND ${table.monthDay} IS NOT NULL
+        AND ${table.monthDay} BETWEEN 1 AND 31
+        AND ${table.every} IS NULL
+        AND ${table.weekdays} IS NULL AND ${table.month} IS NULL)
+      OR (${table.kind} = 'yearly'
+        AND ${table.month} IS NOT NULL
+        AND ${table.month} BETWEEN 1 AND 12
+        AND ${table.monthDay} IS NOT NULL
+        AND ${table.monthDay} BETWEEN 1 AND 31
+        AND ${table.every} IS NULL AND ${table.weekdays} IS NULL)`
+    )
+  ]
+)
+
+/**
  * Per-Occurrence overrides and skips for a Recurring Task,
  * keyed by `(rule_id, scheduled)`. Unchanged fields stay
  * null so they inherit the rule. `time_changed` tells a

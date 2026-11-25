@@ -49,7 +49,8 @@ import {
   setOccurrenceDone,
   skipOccurrence,
   stopRecurringTask,
-  updateOccurrence
+  updateOccurrence,
+  updateRecurringTask
 } from './recurring-tasks'
 import {
   createSleep,
@@ -153,6 +154,8 @@ const OPERATIONS: Record<string, Operation> = {
   [RECURRING_TASKS_CHANNELS.list]: listRecurringTasks,
   [RECURRING_TASKS_CHANNELS.create]: (db, p) =>
     createRecurringTask(db, p),
+  [RECURRING_TASKS_CHANNELS.update]: (db, p) =>
+    updateRecurringTask(db, p),
   [RECURRING_TASKS_CHANNELS.stop]: (db, p) =>
     stopRecurringTask(db, p),
   [RECURRING_TASKS_CHANNELS.delete]: deleteRecurringTask,

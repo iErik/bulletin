@@ -91,6 +91,7 @@ export const DATA_SOURCE_WRITES = {
   recurringTasks: {
     list: null,
     create: 'tasks',
+    update: 'tasks',
     stop: 'tasks',
     delete: 'tasks',
     listOccurrences: null,
