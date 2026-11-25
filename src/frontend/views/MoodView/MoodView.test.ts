@@ -49,7 +49,8 @@ const pill = (
   wrapper: VueWrapper,
   day: number
 ): DOMWrapper<HTMLButtonElement> =>
-  wrapper.findAll<HTMLButtonElement>('.pill')[day - 1]
+  wrapper.get('.left')
+    .findAll<HTMLButtonElement>('.pill')[day - 1]
 
 describe('MoodView', () => {
   useFixedToday()
@@ -70,11 +71,18 @@ describe('MoodView', () => {
           + ' .month-grid'
         ).exists()
       ).toBe(true)
-      for (const cell of ['wide', 'middle', 'right']) {
+      for (const cell of ['middle', 'right']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
     })
+
+  it('shows Year in Mood in the wide cell', async () => {
+    const { view: page } = await mountView()
+
+    expect(page.find('.wide > .year-in-mood').exists())
+      .toBe(true)
+  })
 
   it('shows the Overview in the side cell', async () => {
     const { view: page } = await mountView()
