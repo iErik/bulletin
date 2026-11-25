@@ -71,8 +71,6 @@ describe('MoodView', () => {
           + ' .month-grid'
         ).exists()
       ).toBe(true)
-      expect(page.get('.middle').element.children)
-        .toHaveLength(0)
     })
 
   it('shows What moves your mood in the right cell',
@@ -87,6 +85,13 @@ describe('MoodView', () => {
     const { view: page } = await mountView()
 
     expect(page.find('.wide > .year-in-mood').exists())
+      .toBe(true)
+  })
+
+  it('shows By Weekday in the middle cell', async () => {
+    const { view: page } = await mountView()
+
+    expect(page.find('.middle > .mood-by-weekday').exists())
       .toBe(true)
   })
 

@@ -179,6 +179,8 @@ export interface Palette {
   readonly 'weekday-cell': string
   /** By Weekday < 35% outline, `--color-weekday-low`. */
   readonly 'weekday-low': string
+  /** Mood By Weekday's best, `--color-weekday-best`. */
+  readonly 'weekday-best': string
   /** Filled Day Pills', as `--color-pill-<key>-<part>`. */
   readonly pill: Readonly<Record<PillKey, PillColours>>
   /** The Sleep Timeline's, as `--color-sleep-<key>`. */

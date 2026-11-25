@@ -60,6 +60,7 @@ vi.mock('@/theme/themes', async original => {
       weekday: colour,
       'weekday-cell': colour,
       'weekday-low': colour,
+      'weekday-best': colour,
       pill: Object.fromEntries(
         [
           ...MOODS.map(mood => mood.key),
@@ -257,7 +258,8 @@ describe('theme store', () => {
       'habit-pill',
       'habit-pill-text',
       'weekday-cell',
-      'weekday-low'
+      'weekday-low',
+      'weekday-best'
     ] as const
     const read = (): string[] => names.map(name =>
       document.documentElement.style
