@@ -71,7 +71,7 @@ describe('HabitsView', () => {
     document.body.innerHTML = ''
   })
 
-  it('shows the Habits Widget in the bottom-left cell',
+  it('shows Habits in bottom-left and Overview in side',
     async () => {
       const { view: page } = await mountView()
 
@@ -79,12 +79,11 @@ describe('HabitsView', () => {
         page.find('.page-grid > .left > .habits-widget')
           .exists()
       ).toBe(true)
-      for (const cell of [
-        'wide',
-        'side',
-        'middle',
-        'right'
-      ]) {
+      expect(
+        page.find('.page-grid > .side > .habit-overview')
+          .exists()
+      ).toBe(true)
+      for (const cell of ['wide', 'middle', 'right']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
@@ -100,18 +99,26 @@ describe('HabitsView', () => {
     ).not.toBeNull()
   })
 
-  it('ticks a day as on the Dashboard', async () => {
+  it('ticks a day and refreshes Habit Overview', async () => {
     const { view: page, api } = await mountView()
+    const todayVal = (): string =>
+      page.get('.habit-overview .stat .value').text()
+    expect(todayVal()).toBe('0 / 1')
 
-    await pill(page, 4).trigger('click')
+    vi.mocked(api.habits.listEntries).mockResolvedValue({
+      ok: true,
+      value: [{ habitId: 1, date: '2026-11-09' }]
+    })
+    await pill(page, 9).trigger('click')
     await flushPromises()
 
     expect(api.habits.createEntry).toHaveBeenCalledWith({
       habitId: 1,
-      date: '2026-11-04'
+      date: '2026-11-09'
     })
-    expect(pill(page, 4).attributes('aria-label'))
-      .toBe('Nov 4 · Done')
+    expect(pill(page, 9).attributes('aria-label'))
+      .toBe('Nov 9 · Done')
+    expect(todayVal()).toBe('1 / 1')
   })
 
   it('follows the Selected Date to another month',
@@ -125,7 +132,7 @@ describe('HabitsView', () => {
       store.setDay(new Date(2026, 9, 15))
       await flushPromises()
 
-      expect(api.habits.listEntries).toHaveBeenLastCalledWith({
+      expect(api.habits.listEntries).toHaveBeenCalledWith({
         from: '2026-10-01',
         to: '2026-10-31'
       })
