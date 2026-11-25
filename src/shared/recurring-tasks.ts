@@ -1,3 +1,4 @@
+import type { ReminderOffset } from './reminders'
 import type {
   DateRange,
   LocalDate,
@@ -53,6 +54,7 @@ export interface RecurringTask extends Recurrence {
   /** Trimmed, not empty. */
   readonly title: string
   readonly time: LocalTime | null
+  readonly reminder: ReminderOffset | null
   /** Epoch ms when created. */
   readonly created: number
 }
@@ -69,6 +71,8 @@ export interface Occurrence {
   /** Where it shows: `scheduled`, or where it moved. */
   readonly day: LocalDate
   readonly time: LocalTime | null
+  /** Inherited from the Recurring Task's version. */
+  readonly reminder: ReminderOffset | null
   /** Epoch ms when marked done, or `null`. */
   readonly doneAt: number | null
   /** Later-day moves, as for a Task. */
@@ -195,6 +199,7 @@ export const compareForDay = (
 export interface NewRecurringTask {
   readonly title: string
   readonly time: LocalTime | null
+  readonly reminder?: ReminderOffset | null
   readonly schedule: TaskSchedule
   readonly firstDay: LocalDate
 }
@@ -204,6 +209,7 @@ export interface RecurringTaskUpdate {
   readonly id: number
   readonly title?: string
   readonly time?: LocalTime | null
+  readonly reminder?: ReminderOffset | null
   readonly schedule?: TaskSchedule
   readonly firstDay?: LocalDate
 }

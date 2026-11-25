@@ -54,6 +54,7 @@ const saved = (
   title: 'Buy milk',
   day: '2026-06-15',
   time: null,
+  reminder: null,
   doneAt: null,
   created,
   moves: 0,
@@ -89,12 +90,40 @@ describe('createTask', () => {
         .toMatchObject({ title: 'Walk' })
     })
 
+  it('saves minutes and days Reminders, Someday included',
+    async () => {
+      const m = { kind: 'minutes' as const, minutes: 30 as const }
+      const d = {
+        kind: 'days' as const,
+        days: 2 as const,
+        time: '18:00'
+      }
+      expect(await create(base({ reminder: m })))
+        .toEqual(saved({ id: 1, reminder: m }))
+      expect(await create(base({ day: null, reminder: d })))
+        .toEqual(saved({ id: 2, day: null, reminder: d }))
+    })
+
   it.each([
     ['title', { ...base(), title: '' }],
     ['title', { ...base(), title: '   ' }],
     ['day', { ...base(), day: '2026-02-30' }],
     ['time', { ...base(), time: '9:30' }],
     ['time', { ...base(), time: '24:00' }],
+    ['reminder.kind', {
+      ...base(), reminder: { kind: 'hours', hours: 1 }
+    }],
+    ['reminder.minutes', {
+      ...base(), reminder: { kind: 'minutes', minutes: 10 }
+    }],
+    ['reminder.days', {
+      ...base(),
+      reminder: { kind: 'days', days: 3, time: '18:00' }
+    }],
+    ['reminder.time', {
+      ...base(),
+      reminder: { kind: 'days', days: 1, time: '24:00' }
+    }],
     ['', { ...base(), extra: true }],
     ['', null]
   ])('rejects an invalid %s: %j', (field, value) =>
@@ -167,6 +196,40 @@ describe('updateTask', () => {
         .toMatchObject({ moves: 1, day: '2026-06-10' })
     })
 
+  it('updates/clears reminder and resets notifiedAt on due change',
+    async () => {
+      const rem = { kind: 'minutes' as const, minutes: 15 as const }
+      const setNotified = (at: number): void => {
+        db.$client.prepare(
+          'UPDATE tasks SET reminder_notified_at = ? WHERE id = 1'
+        ).run(at)
+      }
+      const notifiedAt = (): unknown =>
+        (db.$client.prepare(
+          'SELECT reminder_notified_at FROM tasks WHERE id = 1'
+        ).get() as { reminder_notified_at: unknown })
+          .reminder_notified_at
+
+      await create(base({ time: '10:00', reminder: rem }))
+      setNotified(100)
+      await updateTask(db, { id: 1, title: 'Renamed' })
+      await updateTask(db, { id: 1, reminder: rem })
+      await setTaskDone(db, { id: 1, done: true }, now)
+      expect(notifiedAt()).toBe(100)
+
+      await updateTask(db, { id: 1, time: '11:00' })
+      expect(notifiedAt()).toBeNull()
+
+      setNotified(200)
+      await updateTask(db, { id: 1, day: '2026-06-16' })
+      expect(notifiedAt()).toBeNull()
+
+      setNotified(300)
+      expect(await updateTask(db, { id: 1, reminder: null }))
+        .toMatchObject({ reminder: null })
+      expect(notifiedAt()).toBeNull()
+    })
+
   it('rejects a missing Task or empty change', async () => {
     await failsWith(updateTask(db, { id: 1, title: 'X' }), {
       code: 'not-found'
@@ -233,6 +296,26 @@ describe('the tasks table', () => {
       -1
     )).toThrow(/CHECK constraint failed/)
   })
+  it('enforces the reminder CHECK constraint', () => {
+    const insert = db.$client.prepare(
+      'INSERT INTO tasks (title, reminder_minutes, '
+      + 'reminder_days, reminder_time, created, moves) '
+      + 'VALUES (?, ?, ?, ?, ?, 0)'
+    )
+    insert.run('Ok', 0, null, null, created)
+    insert.run('Ok', null, 1, '18:00', created)
+    for (const bad of [
+      [10, null, null],
+      [15, 1, null],
+      [15, null, '18:00'],
+      [null, 3, '18:00'],
+      [null, 1, null],
+      [null, null, '18:00']
+    ]) {
+      expect(() => insert.run('Ok', ...bad, created))
+        .toThrow(/CHECK constraint failed/)
+    }
+  })
 })
 
 describe('tasks migration', () => {
@@ -254,13 +337,19 @@ describe('tasks migration', () => {
     })
     expect(pendingMigrations(first.$client, folder))
       .toEqual([])
+    const reminder = {
+      kind: 'minutes' as const,
+      minutes: 30 as const
+    }
     expect(await createTask(first, base({
       title: 'Ship',
-      time: '14:00'
+      time: '14:00',
+      reminder
     }), now)).toEqual(saved({
       id: 1,
       title: 'Ship',
-      time: '14:00'
+      time: '14:00',
+      reminder
     }))
     first.$client.close()
     const second = openDatabase({
@@ -273,7 +362,8 @@ describe('tasks migration', () => {
     })).toEqual([saved({
       id: 1,
       title: 'Ship',
-      time: '14:00'
+      time: '14:00',
+      reminder
     })])
     expect(await deleteTask(second, 1)).toBeNull()
     second.$client.close()

@@ -58,12 +58,14 @@ const base = (
 })
 const saved = (
   o: Partial<RecurringTask> & Pick<RecurringTask, 'id'>
-): RecurringTask => ({ ...base(), lastDay: null, created, ...o })
+): RecurringTask => ({
+  ...base(), reminder: null, lastDay: null, created, ...o
+})
 const occ = (
   o: Partial<Occurrence> & Pick<Occurrence, 'scheduled'>
 ): Occurrence => ({
   ruleId: 1, title: 'Gym', day: o.scheduled, time: null,
-  doneAt: null, moves: 0, created, ...o
+  reminder: null, doneAt: null, moves: 0, created, ...o
 })
 const sched = (schedule: object): object => ({ ...base(), schedule })
 
@@ -678,6 +680,73 @@ describe('updateRecurringTask', () => {
     expect(leftover).toEqual([])
   })
 
+  it('snapshots Reminder on edit all and clears future notifiedAt',
+    async () => {
+      const m15 = { kind: 'minutes' as const, minutes: 15 as const }
+      const d1 = {
+        kind: 'days' as const, days: 1 as const, time: '18:00'
+      }
+      await create(base({ time: '07:30', reminder: m15 }))
+      // Seed notifiedAt on past Mon, future Thu, and future Mon
+      // (future Mon has an overridden time).
+      const seed = db.$client.prepare(
+        'INSERT INTO occurrences (rule_id, scheduled, time, '
+        + 'time_changed, reminder_notified_at) VALUES (1, ?, ?, ?, ?)'
+      )
+      seed.run('2026-11-23', null, 0, 100)
+      seed.run('2026-11-26', null, 0, 200)
+      seed.run('2026-11-30', '09:00', 1, 300)
+
+      const notified = (day: string): unknown =>
+        (db.$client.prepare(
+          'SELECT reminder_notified_at FROM occurrences '
+          + 'WHERE rule_id = 1 AND scheduled = ?'
+        ).get(day) as { reminder_notified_at: unknown })
+          .reminder_notified_at
+
+      // Rule time change clears only non-overridden future rows.
+      await update(
+        { id: 1, time: '08:00' },
+        new Date(2026, 10, 25)
+      )
+      expect([
+        notified('2026-11-23'),
+        notified('2026-11-26'),
+        notified('2026-11-30')
+      ]).toEqual([100, null, 300])
+
+      // Rule reminder change clears all future rows, keeps past.
+      await update(
+        { id: 1, reminder: d1 },
+        new Date(2026, 10, 25)
+      )
+      expect([
+        notified('2026-11-23'),
+        notified('2026-11-30')
+      ]).toEqual([100, null])
+      expect(await listOccurrences(db, {
+        from: '2026-11-23', to: '2026-11-30'
+      })).toEqual([
+        occ({ scheduled: '2026-11-23', time: '07:30', reminder: m15 }),
+        occ({ scheduled: '2026-11-26', time: '08:00', reminder: d1 }),
+        occ({ scheduled: '2026-11-30', time: '09:00', reminder: d1 })
+      ])
+
+      // Occurrence title edit keeps notifiedAt; day/time clears it.
+      db.$client.prepare(
+        'UPDATE occurrences SET reminder_notified_at = 400 '
+        + 'WHERE rule_id = 1 AND scheduled = ?'
+      ).run('2026-11-26')
+      await updateOccurrence(db, {
+        ruleId: 1, scheduled: '2026-11-26', title: 'Swim'
+      })
+      expect(notified('2026-11-26')).toBe(400)
+      await updateOccurrence(db, {
+        ruleId: 1, scheduled: '2026-11-26', day: '2026-11-27'
+      })
+      expect(notified('2026-11-26')).toBeNull()
+    })
+
   it('rejects missing rule or invalid payloads', async () => {
     await create(base())
     await failsWith(
@@ -765,6 +834,27 @@ describe('the recurring_tasks table', () => {
         99, 'Ok', 'days', 1, null, null, null, '2026-11-23', '2026-11-25'
       )).toThrow(/FOREIGN KEY constraint failed/)
     })
+  it('enforces reminder CHECK on rules and versions', async () => {
+    await create(base())
+    const badRule = db.$client.prepare(
+      'INSERT INTO recurring_tasks (title, kind, every, '
+      + 'first_day, created, reminder_minutes, reminder_days, '
+      + 'reminder_time) VALUES (\'Ok\', \'days\', 1, '
+      + '\'2026-11-24\', ?, ?, ?, ?)'
+    )
+    expect(() => badRule.run(created, 5, null, null))
+      .toThrow(/CHECK constraint failed/)
+    expect(() => badRule.run(created, null, 1, null))
+      .toThrow(/CHECK constraint failed/)
+    const badVer = db.$client.prepare(
+      'INSERT INTO recurring_task_versions (rule_id, title, '
+      + 'kind, every, first_day, last_day, reminder_minutes, '
+      + 'reminder_days, reminder_time) VALUES (1, \'Ok\', '
+      + '\'days\', 1, \'2026-11-23\', \'2026-11-25\', ?, ?, ?)'
+    )
+    expect(() => badVer.run(15, 1, null))
+      .toThrow(/CHECK constraint failed/)
+  })
 })
 
 describe('recurring_tasks migration', () => {
@@ -782,13 +872,18 @@ describe('recurring_tasks migration', () => {
     cpSync(migrationsFolder, folder, { recursive: true })
     const first = openDatabase({ file, migrationsFolder: folder })
     expect(pendingMigrations(first.$client, folder)).toEqual([])
+    const reminder = {
+      kind: 'days' as const,
+      days: 1 as const,
+      time: '18:00'
+    }
     expect(await createRecurringTask(
-      first, base({ time: '07:30' }), now
-    )).toEqual(saved({ id: 1, time: '07:30' }))
+      first, base({ time: '07:30', reminder }), now
+    )).toEqual(saved({ id: 1, time: '07:30', reminder }))
     first.$client.close()
     const second = openDatabase({ file, migrationsFolder: folder })
     expect(await listRecurringTasks(second))
-      .toEqual([saved({ id: 1, time: '07:30' })])
+      .toEqual([saved({ id: 1, time: '07:30', reminder })])
     second.$client.close()
   })
 })

@@ -142,6 +142,7 @@ const fakeTasks = (): TasksApi => {
     title: 'Task',
     day: '2026-01-01' as const,
     time: null,
+    reminder: null,
     doneAt: null,
     created: 0,
     moves: 0
@@ -149,8 +150,11 @@ const fakeTasks = (): TasksApi => {
   return {
     list: resolves([]),
     listSomeday: resolves([]),
-    create: echoes((value: NewTask) =>
-      ({ ...task, ...value })),
+    create: echoes((value: NewTask) => ({
+      ...task,
+      ...value,
+      reminder: value.reminder ?? null
+    })),
     update: echoes(changes => ({ ...task, ...changes })),
     setDone: vi.fn(async ({ id, done }: TaskDone) => ({
       ok: true as const,
@@ -166,6 +170,7 @@ const fakeRecurringTasks = (): RecurringTasksApi => {
     id: 1,
     title: 'Recurring Task',
     time: null,
+    reminder: null,
     schedule: { kind: 'days', every: 1 },
     firstDay: '2026-01-01',
     lastDay: null,
@@ -180,14 +185,18 @@ const fakeRecurringTasks = (): RecurringTasksApi => {
     title: rule.title,
     day: scheduled,
     time: rule.time,
+    reminder: rule.reminder,
     doneAt: null,
     moves: 0,
     created: rule.created
   })
   return {
     list: resolves([]),
-    create: echoes((value: NewRecurringTask) =>
-      ({ ...rule, ...value })),
+    create: echoes((value: NewRecurringTask) => ({
+      ...rule,
+      ...value,
+      reminder: value.reminder ?? null
+    })),
     update: echoes((changes: RecurringTaskUpdate) =>
       ({ ...rule, ...changes })),
     stop: resolves({ ...rule, lastDay: '2026-01-01' }),
