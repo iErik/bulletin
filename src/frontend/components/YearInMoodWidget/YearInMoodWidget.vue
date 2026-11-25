@@ -2,8 +2,20 @@
 // Year in Mood (Figma 3889:7442): the Selected Date's
 // year as twelve compact Month Grids with each month's
 // Happy share and Mood mix. It reloads when the Mood
-// Data Source changes (ADR 0007).
-import { computed, ref, shallowRef, watch } from 'vue'
+// Data Source changes (ADR 0007). Clicking a day up to
+// the Selected Date opens MoodPicker in a floating card
+// next to it; Escape or a click outside closes it and
+// returns focus to that Day Pill.
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  useTemplateRef,
+  watch,
+  type CSSProperties
+} from 'vue'
 import { isAfter } from 'date-fns'
 import { localDate } from '@shared/dates'
 import {
@@ -16,6 +28,8 @@ import {
 import type { LocalDate } from '@shared/storage'
 import MonthGrid
   from '@/components/MonthGrid/MonthGrid.vue'
+import MoodPicker
+  from '@/components/MoodPicker/MoodPicker.vue'
 import Widget from '@/components/Widget/Widget.vue'
 import { useDataVersion }
   from '@/composables/use-data-version'
@@ -26,6 +40,13 @@ import { useSelectedDateStore }
   from '@/stores/selected-date'
 import { moodColour } from '@/theme/semantic'
 import type { PillColours } from '@/theme/types'
+
+// The Dashboard Mood card's size, and the popover's
+// distance from its Day Pill and from the card's edges.
+const PICKER_W = 356
+const PICKER_H = 208
+const PICKER_GAP = 8
+const PICKER_MARGIN = 10
 
 const store = useSelectedDateStore()
 const version = useDataVersion('mood')
@@ -120,6 +141,127 @@ const pill = (day: Date): PillColours | undefined => {
 const isAfterSelected = (day: Date): boolean =>
   isAfter(day, store.day)
 
+/** The day being edited in the floating picker, if any. */
+const editing = shallowRef<Date | null>(null)
+const popoverStyle = ref<CSSProperties>({})
+// The click that opened the picker on another Day Pill,
+// which the outside-click handler must not close it on.
+let ignoreClick: Event | null = null
+
+const widget = useTemplateRef<
+  InstanceType<typeof Widget>
+>('widget')
+const popover = useTemplateRef<HTMLElement>('popover')
+const picker = useTemplateRef<
+  InstanceType<typeof MoodPicker>
+>('picker')
+const grids = new Map<
+  number,
+  InstanceType<typeof MonthGrid>
+>()
+
+const registerGrid = (month: number, el: unknown): void => {
+  if (el && typeof el === 'object' && 'focusDay' in el)
+    grids.set(month, el as InstanceType<typeof MonthGrid>)
+  else grids.delete(month)
+}
+
+const clamp = (
+  value: number,
+  min: number,
+  max: number
+): number => Math.min(Math.max(value, min), Math.max(min, max))
+
+const px = (left: number, top: number): CSSProperties => ({
+  left: `${Math.round(left)}px`,
+  top: `${Math.round(top)}px`
+})
+
+// Beside the Day Pill, right if it fits, else left,
+// else centred below or above it, kept inside the card.
+const placePopover = (day: Date): CSSProperties => {
+  const cardEl = widget.value?.$el as HTMLElement | undefined
+  const gridEl = grids.get(day.getMonth())?.$el as
+    HTMLElement | undefined
+  const pillEl = gridEl?.querySelectorAll<HTMLElement>(
+    '.pill'
+  )[day.getDate() - 1]
+  const card = cardEl?.getBoundingClientRect()
+  if (!pillEl || !card || card.width === 0)
+    return px(PICKER_MARGIN, PICKER_MARGIN)
+  const rect = pillEl.getBoundingClientRect()
+
+  const pLeft = rect.left - card.left
+  const pRight = rect.right - card.left
+  const pTop = rect.top - card.top
+  const pBottom = rect.bottom - card.top
+  const maxLeft = card.width - PICKER_W - PICKER_MARGIN
+  const maxTop = card.height - PICKER_H - PICKER_MARGIN
+  const sideTop = clamp(pTop - 16, PICKER_MARGIN, maxTop)
+
+  if (pRight + PICKER_GAP + PICKER_W <= maxLeft + PICKER_W)
+    return px(pRight + PICKER_GAP, sideTop)
+  if (pLeft - PICKER_GAP - PICKER_W >= PICKER_MARGIN)
+    return px(pLeft - PICKER_GAP - PICKER_W, sideTop)
+  const left = clamp(
+    (pLeft + pRight - PICKER_W) / 2,
+    PICKER_MARGIN,
+    maxLeft
+  )
+  const top = pBottom + PICKER_GAP <= maxTop
+    ? pBottom + PICKER_GAP
+    : clamp(pTop - PICKER_GAP - PICKER_H, PICKER_MARGIN, maxTop)
+  return px(left, top)
+}
+
+const open = (day: Date): void => {
+  if (picker.value?.busy) return
+  popoverStyle.value = placePopover(day)
+  editing.value = day
+}
+
+const close = async (): Promise<void> => {
+  const day = editing.value
+  editing.value = null
+  await nextTick()
+  if (day) await grids.get(day.getMonth())?.focusDay(day)
+}
+
+const onMonthsClick = (event: MouseEvent): void => {
+  if (!editing.value) return
+  const target = event.target instanceof Element
+    ? event.target.closest('.pill:not(.-disabled)')
+    : null
+  if (target) ignoreClick = event
+}
+
+const onDocumentClick = (event: Event): void => {
+  if (event === ignoreClick) {
+    ignoreClick = null
+    return
+  }
+  if (!editing.value || picker.value?.busy) return
+  if (popover.value
+    && event.composedPath().includes(popover.value))
+    return
+  void close()
+}
+
+watch(editing, day => {
+  const method = day
+    ? 'addEventListener'
+    : 'removeEventListener'
+  document[method]('click', onDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocumentClick)
+})
+
+watch(date, () => {
+  editing.value = null
+})
+
 watch(
   [date, version],
   () => { void load() },
@@ -129,6 +271,7 @@ watch(
 
 <template>
   <Widget
+    ref="widget"
     class="year-in-mood"
     title="Year in Mood"
     icon="mood"
@@ -142,7 +285,7 @@ watch(
       Couldn’t load Year in Mood.
     </p>
     <div v-else class="content">
-      <div class="months">
+      <div class="months" @click="onMonthsClick">
         <section
           v-for="m in months"
           :key="m.month"
@@ -164,11 +307,13 @@ watch(
             </span>
           </div>
           <MonthGrid
+            :ref="el => registerGrid(m.month, el)"
             :month="m.date"
             :label="label"
             :pill="pill"
             :disabled="isAfterSelected"
             compact
+            @activate="open"
           />
           <div
             v-if="m.mix.length"
@@ -202,7 +347,25 @@ watch(
             <span class="label">{{ item.label }}</span>
           </li>
         </ul>
+        <p class="hint">
+          Click a day to set its Mood
+        </p>
       </footer>
+    </div>
+    <div
+      v-if="editing"
+      ref="popover"
+      class="picker-popover"
+      :style="popoverStyle"
+    >
+      <MoodPicker
+        :key="localDate(editing)"
+        ref="picker"
+        :date="editing"
+        :current="moodOf(editing)"
+        @saved="close"
+        @close="close"
+      />
     </div>
   </Widget>
 </template>
@@ -212,6 +375,8 @@ watch(
 
 .widget-frame.year-in-mood {
   --widget-gap: #{rem(12px)};
+
+  position: relative;
 
   > .header > .actions > .summary {
     margin: 0 rem(4px) 0 0;
@@ -345,6 +510,26 @@ watch(
         in sRGB, var(--color-tile-icon) 50%, transparent
       );
     }
+  }
+
+  .hint {
+    font-size: rem(9px);
+    font-weight: 700;
+    line-height: rem(11px);
+    text-transform: uppercase;
+    color: var(--color-widget-title);
+  }
+
+  .picker-popover {
+    position: absolute;
+    z-index: 10;
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    width: rem(356px);
+    height: rem(208px);
+    border: 1px solid var(--color-border);
+    border-radius: $radius-large;
+    box-shadow: 0 rem(8px) rem(24px) rgb(0 0 0 / 45%);
   }
 }
 </style>
