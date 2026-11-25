@@ -17,6 +17,7 @@ const props = defineProps<{
   label: string
   ariaLabel: string
   ariaValueText: string
+  labelPosition?: 'on' | 'above'
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +27,7 @@ const emit = defineEmits<{
 
 const root = useTemplateRef<HTMLElement>('root')
 const draft = ref(props.value)
+const start = ref(props.value)
 const dragging = ref(false)
 
 watch(() => props.value, next => {
@@ -78,6 +80,7 @@ const onUp = (): void => {
 const onDown = (e: PointerEvent): void => {
   if (e.button !== 0) return
   e.preventDefault()
+  start.value = props.value
   dragging.value = true
   root.value?.setPointerCapture?.(e.pointerId)
   setDraft(valueAt(e.clientY))
@@ -95,8 +98,8 @@ const onKey = (e: KeyboardEvent): void => {
     emit('commit', draft.value)
   } else if (e.key === 'Escape' && dragging.value) {
     e.preventDefault()
-    draft.value = props.value
-    emit('preview', props.value)
+    draft.value = start.value
+    emit('preview', start.value)
     dragging.value = false
     release()
   }
@@ -109,6 +112,7 @@ onBeforeUnmount(release)
   <div
     ref="root"
     class="goal-line"
+    :class="{ '-above': labelPosition === 'above' }"
     role="slider"
     tabindex="0"
     :aria-label="ariaLabel"
@@ -159,5 +163,27 @@ onBeforeUnmount(release)
   text-transform: uppercase;
   background: var(--color-surface-raised);
   transform: translateY(-50%);
+}
+
+.goal-line.-above > .rule {
+  border-top-color: color-mix(
+    in sRGB, var(--color-text) 45%, transparent
+  );
+
+  > .label {
+    position: absolute;
+    right: 0;
+    bottom: rem(4px);
+    padding: 0;
+    font-family: inherit;
+    font-size: rem(9px);
+    font-weight: 700;
+    line-height: 1;
+    color: color-mix(
+      in sRGB, var(--color-tile-icon) 60%, transparent
+    );
+    background: none;
+    transform: none;
+  }
 }
 </style>

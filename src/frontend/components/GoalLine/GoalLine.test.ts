@@ -26,7 +26,9 @@ const base = {
 let wrapper: VueWrapper | undefined
 
 const mountLine = (
-  overrides: Partial<typeof base> = {}
+  overrides: Partial<typeof base> & {
+    labelPosition?: 'on' | 'above'
+  } = {}
 ): VueWrapper => {
   wrapper = mount(GoalLine, {
     attachTo: document.body,
@@ -98,4 +100,10 @@ describe('GoalLine', () => {
         .toEqual([480])
       expect(cancel.emitted('commit')).toBeUndefined()
     })
+
+  it('supports placing the label above the dashed line', () => {
+    const w = mountLine({ labelPosition: 'above' })
+    expect(w.get('[role="slider"]').classes())
+      .toContain('-above')
+  })
 })
