@@ -235,7 +235,7 @@ const rows = computed((): Row[] => {
   );
   border-radius: rem(5px);
 
-  &[data-tone='good'] { --tone: var(--color-mood-happy); }
+  &[data-tone='good'] { --tone: var(--color-improvement); }
   &[data-tone='bad'] { --tone: var(--color-danger); }
 
   > .dot {
