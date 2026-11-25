@@ -70,9 +70,8 @@ describe('ExpensesView', () => {
           .exists()
       ).toBe(true)
       expect(
-        page.find(
-          '.page-grid > .left > .expenses-by-category'
-        ).exists()
+        page.find('.page-grid > .left > .expenses-by-category')
+          .exists()
       ).toBe(true)
     })
 

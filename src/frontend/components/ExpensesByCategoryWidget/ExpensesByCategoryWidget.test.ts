@@ -20,13 +20,9 @@ import ExpensesByCategoryWidget
 
 let widget: VueWrapper | undefined
 
-const CATEGORIES: Category[] = [
-  { id: 1, name: 'Equipment' },
-  { id: 2, name: 'Food' },
-  { id: 3, name: 'Cats' },
-  { id: 4, name: 'Taxes' },
-  { id: 5, name: 'Rent' }
-]
+const CATEGORIES: Category[] =
+  ['Equipment', 'Food', 'Cats', 'Taxes', 'Rent']
+    .map((name, index) => ({ id: index + 1, name }))
 
 let nextId = 1
 
@@ -35,11 +31,7 @@ const tx = (
   date: string,
   amount: number
 ): Transaction => ({
-  id: nextId++,
-  date,
-  description: 'Spend',
-  categoryId,
-  amount
+  id: nextId++, date, categoryId, amount, description: 'Spend'
 })
 
 // Today is Nov 9th: the period is Nov 1–9, compared
@@ -85,6 +77,16 @@ const rowTexts = (wrapper: VueWrapper): string[][] =>
     row.get('.change').text()
   ])
 
+// Holds the next list till the returned call resolves it.
+const holdList = (api: BulletinApi): (() => void) => {
+  let finish = (): void => {}
+  vi.mocked(api.expenses.list).mockImplementationOnce(
+    () => new Promise(done => {
+      finish = () => done({ ok: true, value: SAMPLE })
+    }))
+  return () => finish()
+}
+
 describe('ExpensesByCategoryWidget', () => {
   useFixedToday()
 
@@ -94,28 +96,25 @@ describe('ExpensesByCategoryWidget', () => {
     document.body.innerHTML = ''
   })
 
-  it('loads both periods and the Categories', async () => {
-    const { api } = await mountWidget()
-
-    expect(api.expenses.list).toHaveBeenCalledWith(
-      { from: '2026-10-01', to: '2026-11-09' }
-    )
-    expect(api.expenses.listCategories).toHaveBeenCalled()
-  })
-
-  it('titles the Widget and compares with last month',
+  it('loads both periods and compares with last month',
     async () => {
-      const { wrapper } = await mountWidget()
+      const { wrapper, api } = await mountWidget()
 
+      expect(api.expenses.list).toHaveBeenCalledWith(
+        { from: '2026-10-01', to: '2026-11-09' }
+      )
+      expect(api.expenses.listCategories).toHaveBeenCalled()
       expect(wrapper.get('.title').text())
         .toBe('By Category')
       expect(wrapper.get('.actions > .versus').text())
         .toBe('vs Oct')
     })
 
-  it('lists every Category by spend with its change',
+  it('lists and colours every Category’s change',
     async () => {
       const { wrapper } = await mountWidget()
+      const tones = wrapper.findAll('.change')
+        .map(change => change.attributes('data-tone'))
 
       expect(rowTexts(wrapper)).toEqual([
         ['Equipment', 'R$16,000.00', 'new'],
@@ -123,41 +122,26 @@ describe('ExpensesByCategoryWidget', () => {
         ['Cats', 'R$400.00', '0%'],
         ['Taxes', 'R$0.00', '↓100%']
       ])
+      expect(tones).toEqual(['muted', 'rise', 'muted', 'fall'])
     })
 
-  it('colours rises, falls and the rest', async () => {
-    const { wrapper } = await mountWidget()
-    const tones = wrapper.findAll('.change')
-      .map(change => change.attributes('data-tone'))
-
-    expect(tones).toEqual(['muted', 'rise', 'muted', 'fall'])
-  })
-
-  it('draws bars on a square-root scale', async () => {
-    const { wrapper } = await mountWidget([
-      tx(1, '2026-11-03', -40_000),
-      tx(2, '2026-11-04', -10_000),
-      tx(4, '2026-10-06', -10_000)
-    ])
-    const bars = wrapper.findAll('.row').map(row =>
-      row.find('.bar').exists()
-        ? (row.get('.bar').element as HTMLElement)
-            .style.width
-        : null)
-
-    expect(bars).toEqual(['100%', '50%', null])
-  })
-
-  it('highlights the largest Categories’ bars',
+  it('draws square-root bars, highlighting the largest',
     async () => {
       const { wrapper } = await mountWidget([
         tx(1, '2026-11-03', -40_000),
         tx(2, '2026-11-04', -40_000),
-        tx(3, '2026-11-05', -10_000)
+        tx(3, '2026-11-05', -10_000),
+        tx(4, '2026-10-06', -10_000)
       ])
+      const bars = wrapper.findAll('.row').map(row =>
+        row.find('.bar').exists()
+          ? (row.get('.bar').element as HTMLElement)
+              .style.width
+          : null)
       const top = wrapper.findAll('.bar')
         .map(bar => bar.classes('-top'))
 
+      expect(bars).toEqual(['100%', '100%', '50%', null])
       expect(top).toEqual([true, true, false])
     })
 
@@ -195,26 +179,51 @@ describe('ExpensesByCategoryWidget', () => {
     expect(wrapper.find('.rows').exists()).toBe(false)
   })
 
-  it('reloads when the Selected Date changes',
-    async () => {
-      const { wrapper, api, store } = await mountWidget()
+  it('reloads when the Selected Date changes', async () => {
+    const { wrapper, api, store } = await mountWidget()
 
-      store.setDay(new Date(2026, 2, 31))
-      await flushPromises()
+    store.setDay(new Date(2026, 2, 31))
+    await flushPromises()
 
-      expect(api.expenses.list).toHaveBeenLastCalledWith(
-        { from: '2026-02-01', to: '2026-03-31' }
-      )
-      expect(wrapper.get('.versus').text()).toBe('vs Feb')
-    })
+    expect(api.expenses.list).toHaveBeenLastCalledWith(
+      { from: '2026-02-01', to: '2026-03-31' }
+    )
+    expect(wrapper.get('.versus').text()).toBe('vs Feb')
+  })
+
+  it('keeps old rows till the new day loads', async () => {
+    const { wrapper, api, store } = await mountWidget()
+    const before = rowTexts(wrapper)
+    holdList(api)
+
+    store.setDay(new Date(2026, 8, 3))
+    await flushPromises()
+
+    expect(rowTexts(wrapper)).toEqual(before)
+    expect(wrapper.get('.versus').text()).toBe('vs Oct')
+  })
+
+  it('drops a load a newer one overtook', async () => {
+    const { wrapper, api, store } = await mountWidget([])
+    const finish = holdList(api)
+
+    store.setDay(new Date(2026, 9, 9))
+    await flushPromises()
+    store.setDay(new Date(2026, 10, 8))
+    await flushPromises()
+    finish()
+    await flushPromises()
+
+    expect(wrapper.find('.rows').exists()).toBe(false)
+    expect(wrapper.get('.versus').text()).toBe('vs Oct')
+  })
 
   it('reloads when a Transaction is written', async () => {
     const { wrapper, api } = await mountWidget([])
     expect(wrapper.find('.message').exists()).toBe(true)
 
     vi.mocked(api.expenses.list).mockResolvedValue({
-      ok: true,
-      value: [tx(2, '2026-11-04', -84_000)]
+      ok: true, value: [tx(2, '2026-11-04', -84_000)]
     })
     await api.expenses.create({
       date: '2026-11-04',
@@ -231,14 +240,12 @@ describe('ExpensesByCategoryWidget', () => {
 
   it('reloads when a Category is created', async () => {
     const { api } = await mountWidget()
-    const calls = vi.mocked(api.expenses.listCategories)
-      .mock.calls.length
+    const { calls } = vi.mocked(api.expenses.listCategories).mock
+    const before = calls.length
 
     await api.expenses.createCategory('Gifts')
     await flushPromises()
 
-    expect(
-      vi.mocked(api.expenses.listCategories).mock.calls
-    ).toHaveLength(calls + 1)
+    expect(calls).toHaveLength(before + 1)
   })
 })

@@ -34,6 +34,8 @@ import { useSelectedDateStore }
   from '@/stores/selected-date'
 
 interface Data {
+  /** The Selected Date the load was asked for. */
+  readonly day: Date
   readonly transactions: readonly Transaction[]
   readonly categories: readonly Category[]
 }
@@ -41,8 +43,6 @@ interface Data {
 const store = useSelectedDateStore()
 const version = useDataVersion('transactions', 'categories')
 const scroller = useTemplateRef<HTMLElement>('scroller')
-
-const periods = computed(() => spendPeriods(store.day))
 
 const data = shallowRef<Data | null>(null)
 const failed = ref(false)
@@ -54,7 +54,8 @@ let generation = 0
 const load = async (): Promise<void> => {
   const asked = ++generation
   const { expenses } = window.bulletin
-  const { period, comparison } = periods.value
+  const day = store.day
+  const { period, comparison } = spendPeriods(day)
   const [listed, categories] = await Promise.all([
     expenses.list({ from: comparison.from, to: period.to }),
     expenses.listCategories()
@@ -67,6 +68,7 @@ const load = async (): Promise<void> => {
   }
   failed.value = false
   data.value = {
+    day,
     transactions: listed.value,
     categories: categories.value
   }
@@ -79,7 +81,8 @@ watch(
 )
 
 const versus = computed(() => `vs ${formatDate(
-  parseISO(periods.value.comparison.from),
+  parseISO(spendPeriods(data.value?.day ?? store.day)
+    .comparison.from),
   'monthShort'
 )}`)
 
@@ -102,7 +105,7 @@ const rows = computed(() => {
   const found = categoryRows(
     data.value.transactions,
     data.value.categories,
-    store.day
+    data.value.day
   )
   const top = found[0]?.spend ?? 0
   return found.map(row => ({
