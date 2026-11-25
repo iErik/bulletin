@@ -7,6 +7,7 @@ import { MOOD_CHANNELS } from '@shared/mood'
 import {
   RECURRING_TASKS_CHANNELS
 } from '@shared/recurring-tasks'
+import { REMINDERS_CHANNELS } from '@shared/reminders'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import {
   SLEEP_QUALITY_CHANNELS
@@ -52,6 +53,10 @@ import {
   updateOccurrence,
   updateRecurringTask
 } from './recurring-tasks'
+import {
+  listDueReminders,
+  markReminderNotified
+} from './due-reminders'
 import {
   createSleep,
   deleteSleep,
@@ -165,7 +170,10 @@ const OPERATIONS: Record<string, Operation> = {
     updateOccurrence,
   [RECURRING_TASKS_CHANNELS.setOccurrenceDone]: (db, p) =>
     setOccurrenceDone(db, p),
-  [RECURRING_TASKS_CHANNELS.skipOccurrence]: skipOccurrence
+  [RECURRING_TASKS_CHANNELS.skipOccurrence]: skipOccurrence,
+  [REMINDERS_CHANNELS.listDue]: listDueReminders,
+  [REMINDERS_CHANNELS.markNotified]: (db, p) =>
+    markReminderNotified(db, p)
 }
 
 /** Registers one `ipc.handle` per storage operation. */

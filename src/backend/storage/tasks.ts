@@ -62,7 +62,7 @@ const doneSchema = z.strictObject({
   done: z.boolean()
 })
 
-const toTask = (row: typeof tasks.$inferSelect): Task => ({
+export const toTask = (row: typeof tasks.$inferSelect): Task => ({
   id: row.id,
   title: row.title,
   day: row.day,

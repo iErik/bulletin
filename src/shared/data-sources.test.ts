@@ -10,6 +10,7 @@ import { MOOD_CHANNELS } from './mood'
 import {
   RECURRING_TASKS_CHANNELS
 } from './recurring-tasks'
+import { REMINDERS_CHANNELS } from './reminders'
 import { SLEEP_CHANNELS } from './sleep'
 import { SLEEP_QUALITY_CHANNELS } from './sleep-quality'
 import { TASKS_CHANNELS } from './tasks'
@@ -23,7 +24,8 @@ const CHANNELS = {
   habits: HABITS_CHANNELS,
   expenses: EXPENSES_CHANNELS,
   tasks: TASKS_CHANNELS,
-  recurringTasks: RECURRING_TASKS_CHANNELS
+  recurringTasks: RECURRING_TASKS_CHANNELS,
+  reminders: REMINDERS_CHANNELS
 } as const
 
 describe('DATA_SOURCE_WRITES', () => {
@@ -54,24 +56,28 @@ describe('DATA_SOURCE_WRITES', () => {
 
   it('marks reads null and maps sub-source writes', () => {
     const {
-      sleep, habits, expenses, tasks, recurringTasks
+      sleep, habits, expenses, tasks, recurringTasks, reminders
     } = DATA_SOURCE_WRITES
     expect([
       sleep.list, sleep.getGoal, habits.listEntries,
       expenses.listCategories, expenses.getBudget,
-      tasks.listSomeday, recurringTasks.listOccurrences
-    ]).toEqual([null, null, null, null, null, null, null])
+      tasks.listSomeday, recurringTasks.listOccurrences,
+      reminders.listDue
+    ]).toEqual([
+      null, null, null, null, null, null, null, null
+    ])
     expect([
       sleep.setGoal, habits.createEntry, habits.setGoal,
       expenses.createCategory, expenses.setBudget,
       tasks.setDone, recurringTasks.update,
       recurringTasks.updateOccurrence,
       recurringTasks.setOccurrenceDone,
-      recurringTasks.skipOccurrence
+      recurringTasks.skipOccurrence,
+      reminders.markNotified
     ]).toEqual([
       'sleepGoal', 'habitEntries', 'habitGoal',
       'categories', 'budget', 'tasks', 'tasks',
-      'tasks', 'tasks', 'tasks'
+      'tasks', 'tasks', 'tasks', 'tasks'
     ])
   })
 })

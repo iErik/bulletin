@@ -5,6 +5,7 @@ import { MOOD_CHANNELS } from '@shared/mood'
 import {
   RECURRING_TASKS_CHANNELS
 } from '@shared/recurring-tasks'
+import { REMINDERS_CHANNELS } from '@shared/reminders'
 import { SLEEP_CHANNELS } from '@shared/sleep'
 import {
   SLEEP_QUALITY_CHANNELS
@@ -335,6 +336,29 @@ describe('handleStorage', () => {
       id: 1, lastDay: expect.any(String) as string
     }))
     expect(await call(ch.delete, 1)).toEqual(ok(null))
+  })
+
+  it('handles every Reminders channel', async () => {
+    const call = serve()
+    await call(TASKS_CHANNELS.create, {
+      title: 'Dentist',
+      day: '2026-11-26',
+      time: '10:00',
+      reminder: { kind: 'minutes', minutes: 30 }
+    })
+    const dueAt = new Date(2026, 10, 26, 9, 30).getTime()
+    expect(await call(REMINDERS_CHANNELS.listDue, {
+      from: dueAt, to: dueAt
+    })).toMatchObject({
+      ok: true,
+      value: [{ kind: 'task', dueAt, notifiedAt: null }]
+    })
+    expect(await call(REMINDERS_CHANNELS.markNotified, {
+      kind: 'task', id: 1
+    })).toMatchObject({
+      ok: true,
+      value: expect.any(Number) as number
+    })
   })
 
   it('rejects invalid payloads', async () => {

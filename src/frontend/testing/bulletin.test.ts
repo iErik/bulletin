@@ -19,9 +19,11 @@ describe('fakeBulletin', () => {
       await api.sleep.create({ start: 1, end: 2 })
       await api.sleep.setGoal(480)
       await api.expenses.createCategory('Food')
+      await api.reminders.listDue({ from: 0, to: 1 })
+      await api.reminders.markNotified({ kind: 'task', id: 1 })
 
       expect(seen).toEqual([
-        'sleep', 'sleepGoal', 'categories'
+        'sleep', 'sleepGoal', 'categories', 'tasks'
       ])
     })
 

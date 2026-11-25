@@ -474,7 +474,7 @@ const resolveOccurrence = (
   created: rule.created
 })
 
-const requireOccurrence = (
+export const requireOccurrence = (
   tx: Reader,
   { ruleId, scheduled }: OccurrenceKey
 ): { rule: RuleVersion; existing: OccurrenceRow | undefined } => {
@@ -503,78 +503,98 @@ const requireOccurrence = (
 const occKey = (ruleId: number, scheduled: LocalDate): string =>
   `${ruleId}:${scheduled}`
 
+/** One expanded Occurrence with its Reminder notified moment. */
+export interface ExpandedOccurrence {
+  readonly occurrence: Occurrence
+  readonly notifiedAt: number | null
+}
+
+/** Expands every rule over `range` inside a transaction. */
+export const expandOccurrences = (
+  tx: Reader,
+  range: DateRange
+): ExpandedOccurrence[] => {
+  const rules = tx.select().from(recurringTasks)
+    .orderBy(asc(recurringTasks.id)).all()
+    .map(toRecurringTask)
+  const pastByRule = new Map<number, VersionRow[]>()
+  for (const v of tx.select().from(recurringTaskVersions)
+    .orderBy(
+      asc(recurringTaskVersions.ruleId),
+      asc(recurringTaskVersions.lastDay)
+    ).all()) {
+    const list = pastByRule.get(v.ruleId)
+    if (list) list.push(v)
+    else pastByRule.set(v.ruleId, [v])
+  }
+  const versionsByRule = new Map(
+    rules.map(r => [r.id, ruleVersions(r, pastByRule.get(r.id) ?? [])])
+  )
+  const rows = tx.select().from(occurrences).where(or(
+    and(
+      gte(occurrences.scheduled, range.from),
+      lte(occurrences.scheduled, range.to)
+    ),
+    and(
+      gte(occurrences.day, range.from),
+      lte(occurrences.day, range.to)
+    )
+  )).all()
+
+  const byKey = new Map(
+    rows.map(r => [occKey(r.ruleId, r.scheduled), r])
+  )
+  const seen = new Set<string>()
+  const result: ExpandedOccurrence[] = []
+  const add = (
+    rule: RuleVersion,
+    scheduled: LocalDate,
+    row?: OccurrenceRow
+  ): void => {
+    const key = occKey(rule.id, scheduled)
+    if (seen.has(key) || row?.skipped) return
+    seen.add(key)
+    const occurrence = resolveOccurrence(rule, scheduled, row)
+    if (occurrence.day >= range.from && occurrence.day <= range.to) {
+      result.push({
+        occurrence,
+        notifiedAt: row?.reminderNotifiedAt ?? null
+      })
+    }
+  }
+
+  for (const rule of rules) {
+    for (const version of versionsByRule.get(rule.id)!) {
+      const from = maxDate(range.from, version.from)
+      if (from > range.to) continue
+      for (const scheduled of scheduledDays(version, {
+        from, to: range.to
+      }))
+        add(version, scheduled, byKey.get(occKey(rule.id, scheduled)))
+    }
+  }
+  for (const row of rows) {
+    const versions = versionsByRule.get(row.ruleId)
+    const version = versions && versionOn(versions, row.scheduled)
+    if (version) add(version, row.scheduled, row)
+  }
+  return result.sort((a, b) =>
+    compareForDay(a.occurrence, b.occurrence)
+    || a.occurrence.ruleId - b.occurrence.ruleId
+    || a.occurrence.scheduled.localeCompare(
+      b.occurrence.scheduled
+    ))
+}
+
 /** Expands every rule over the span, in day order. */
 export const listOccurrences = async (
   db: Database,
   value: unknown
 ): Promise<Occurrence[]> => {
   const range: DateRange = parse(dateRangeSchema, value)
-  return db.transaction(tx => {
-    const rules = tx.select().from(recurringTasks)
-      .orderBy(asc(recurringTasks.id)).all()
-      .map(toRecurringTask)
-    const pastByRule = new Map<number, VersionRow[]>()
-    for (const v of tx.select().from(recurringTaskVersions)
-      .orderBy(
-        asc(recurringTaskVersions.ruleId),
-        asc(recurringTaskVersions.lastDay)
-      ).all()) {
-      const list = pastByRule.get(v.ruleId)
-      if (list) list.push(v)
-      else pastByRule.set(v.ruleId, [v])
-    }
-    const versionsByRule = new Map(
-      rules.map(r => [r.id, ruleVersions(r, pastByRule.get(r.id) ?? [])])
-    )
-    const rows = tx.select().from(occurrences).where(or(
-      and(
-        gte(occurrences.scheduled, range.from),
-        lte(occurrences.scheduled, range.to)
-      ),
-      and(
-        gte(occurrences.day, range.from),
-        lte(occurrences.day, range.to)
-      )
-    )).all()
-
-    const byKey = new Map(
-      rows.map(r => [occKey(r.ruleId, r.scheduled), r])
-    )
-    const seen = new Set<string>()
-    const result: Occurrence[] = []
-    const add = (
-      rule: RuleVersion,
-      scheduled: LocalDate,
-      row?: OccurrenceRow
-    ): void => {
-      const key = occKey(rule.id, scheduled)
-      if (seen.has(key) || row?.skipped) return
-      seen.add(key)
-      const item = resolveOccurrence(rule, scheduled, row)
-      if (item.day >= range.from && item.day <= range.to)
-        result.push(item)
-    }
-
-    for (const rule of rules) {
-      for (const version of versionsByRule.get(rule.id)!) {
-        const from = maxDate(range.from, version.from)
-        if (from > range.to) continue
-        for (const scheduled of scheduledDays(version, {
-          from, to: range.to
-        }))
-          add(version, scheduled, byKey.get(occKey(rule.id, scheduled)))
-      }
-    }
-    for (const row of rows) {
-      const versions = versionsByRule.get(row.ruleId)
-      const version = versions && versionOn(versions, row.scheduled)
-      if (version) add(version, row.scheduled, row)
-    }
-    return result.sort((a, b) =>
-      compareForDay(a, b)
-      || a.ruleId - b.ruleId
-      || a.scheduled.localeCompare(b.scheduled))
-  })
+  return db.transaction(tx =>
+    expandOccurrences(tx, range).map(item => item.occurrence)
+  )
 }
 
 /** Changes one Occurrence; a later day raises `moves`. */
