@@ -53,20 +53,24 @@ describe('DATA_SOURCE_WRITES', () => {
   })
 
   it('marks reads null and maps sub-source writes', () => {
-    const { sleep, habits, expenses, tasks } =
-      DATA_SOURCE_WRITES
+    const {
+      sleep, habits, expenses, tasks, recurringTasks
+    } = DATA_SOURCE_WRITES
     expect([
       sleep.list, sleep.getGoal, habits.listEntries,
       expenses.listCategories, expenses.getBudget,
-      tasks.listSomeday
-    ]).toEqual([null, null, null, null, null, null])
+      tasks.listSomeday, recurringTasks.listOccurrences
+    ]).toEqual([null, null, null, null, null, null, null])
     expect([
       sleep.setGoal, habits.createEntry, habits.setGoal,
       expenses.createCategory, expenses.setBudget,
-      tasks.setDone
+      tasks.setDone, recurringTasks.updateOccurrence,
+      recurringTasks.setOccurrenceDone,
+      recurringTasks.skipOccurrence
     ]).toEqual([
       'sleepGoal', 'habitEntries', 'habitGoal',
-      'categories', 'budget', 'tasks'
+      'categories', 'budget', 'tasks', 'tasks',
+      'tasks', 'tasks'
     ])
   })
 })

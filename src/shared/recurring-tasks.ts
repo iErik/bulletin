@@ -199,6 +199,24 @@ export interface NewRecurringTask {
   readonly firstDay: LocalDate
 }
 
+/** Identifies one Occurrence of a Recurring Task. */
+export interface OccurrenceKey {
+  readonly ruleId: number
+  readonly scheduled: LocalDate
+}
+
+/** Changes to an Occurrence's title, day, time, or any mix. */
+export interface OccurrenceUpdate extends OccurrenceKey {
+  readonly title?: string
+  readonly day?: LocalDate
+  readonly time?: LocalTime | null
+}
+
+/** Mark an Occurrence done or not. */
+export interface OccurrenceDone extends OccurrenceKey {
+  readonly done: boolean
+}
+
 /** `window.bulletin.recurringTasks`. */
 export interface RecurringTasksApi {
   /** Every Recurring Task, stopped ones included. */
@@ -215,6 +233,18 @@ export interface RecurringTasksApi {
   listOccurrences(
     range: DateRange
   ): Promise<StorageResult<Occurrence[]>>
+  /** Changes one Occurrence; a later day raises `moves`. */
+  updateOccurrence(
+    changes: OccurrenceUpdate
+  ): Promise<StorageResult<Occurrence>>
+  /** Sets or clears `doneAt`; redone keeps the first. */
+  setOccurrenceDone(
+    done: OccurrenceDone
+  ): Promise<StorageResult<Occurrence>>
+  /** Drops one Occurrence without changing the rule. */
+  skipOccurrence(
+    key: OccurrenceKey
+  ): Promise<StorageResult<null>>
 }
 
 /** IPC channel per `RecurringTasksApi` method. */
@@ -223,5 +253,8 @@ export const RECURRING_TASKS_CHANNELS = {
   create: 'recurring-tasks:create',
   stop: 'recurring-tasks:stop',
   delete: 'recurring-tasks:delete',
-  listOccurrences: 'recurring-tasks:list-occurrences'
+  listOccurrences: 'recurring-tasks:list-occurrences',
+  updateOccurrence: 'recurring-tasks:update-occurrence',
+  setOccurrenceDone: 'recurring-tasks:set-occurrence-done',
+  skipOccurrence: 'recurring-tasks:skip-occurrence'
 } as const satisfies Record<keyof RecurringTasksApi, string>

@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import type {
   NewRecurringTask,
   Occurrence,
+  OccurrenceKey,
   RecurringTask
 } from '@shared/recurring-tasks'
 import {
@@ -23,7 +24,10 @@ import {
   deleteRecurringTask,
   listOccurrences,
   listRecurringTasks,
-  stopRecurringTask
+  setOccurrenceDone,
+  skipOccurrence,
+  stopRecurringTask,
+  updateOccurrence
 } from './recurring-tasks'
 import { memoryDatabase, migrationsFolder } from './testing'
 
@@ -198,13 +202,20 @@ describe('stopRecurringTask / deleteRecurringTask', () => {
     })).map(o => o.day)).toEqual(['2026-11-23', '2026-11-26'])
   })
 
-  it('deletes a rule and its occurrences', async () => {
+  it('deletes a rule and cascades its occurrences', async () => {
     await create(base())
+    await updateOccurrence(db, {
+      ruleId: 1, scheduled: '2026-11-23', title: 'Legs'
+    })
     expect(await deleteRecurringTask(db, 1)).toBeNull()
     expect(await listRecurringTasks(db)).toEqual([])
     expect(await listOccurrences(db, {
       from: '2026-11-23', to: '2026-12-06'
     })).toEqual([])
+    const leftover = db.$client
+      .prepare('SELECT * FROM occurrences WHERE rule_id = 1')
+      .all()
+    expect(leftover).toEqual([])
   })
 
   it('rejects missing or invalid ids', async () => {
@@ -214,6 +225,218 @@ describe('stopRecurringTask / deleteRecurringTask', () => {
       code: 'invalid-payload', field: ''
     })
   })
+})
+
+describe('occurrence changes', () => {
+  const key = (scheduled: string): OccurrenceKey =>
+    ({ ruleId: 1, scheduled })
+
+  it('changes only the one Occurrence, not others or the rule',
+    async () => {
+      await create(base({ time: '07:30' }))
+      const t1 = new Date(2026, 10, 23, 8)
+      const edited = await updateOccurrence(db, {
+        ...key('2026-11-23'),
+        title: '  Leg day  ',
+        day: '2026-11-25',
+        time: '09:00'
+      })
+      const done = await setOccurrenceDone(db, {
+        ...key('2026-11-23'), done: true
+      }, t1)
+
+      expect(edited).toEqual(occ({
+        scheduled: '2026-11-23',
+        title: 'Leg day',
+        day: '2026-11-25',
+        time: '09:00',
+        moves: 1
+      }))
+      expect(done).toEqual({ ...edited, doneAt: t1.getTime() })
+      expect(await listRecurringTasks(db))
+        .toEqual([saved({ id: 1, time: '07:30' })])
+      expect(await listOccurrences(db, {
+        from: '2026-11-23', to: '2026-11-26'
+      })).toEqual([
+        done,
+        occ({ scheduled: '2026-11-26', time: '07:30' })
+      ])
+    })
+
+  it('counts only later-day moves', async () => {
+    await create(base())
+    const s = key('2026-11-23')
+    expect(await updateOccurrence(db, {
+      ...s, day: '2026-11-23'
+    })).toMatchObject({ day: '2026-11-23', moves: 0 })
+    expect(await updateOccurrence(db, {
+      ...s, day: '2026-11-22'
+    })).toMatchObject({ day: '2026-11-22', moves: 0 })
+    expect(await updateOccurrence(db, {
+      ...s, day: '2026-11-25'
+    })).toMatchObject({ day: '2026-11-25', moves: 1 })
+    expect(await updateOccurrence(db, {
+      ...s, day: '2026-11-23'
+    })).toMatchObject({ day: '2026-11-23', moves: 1 })
+    expect(await updateOccurrence(db, {
+      ...s, day: '2026-11-24'
+    })).toMatchObject({ day: '2026-11-24', moves: 2 })
+  })
+
+  it('keeps the first doneAt when redone and clears on false',
+    async () => {
+      await create(base())
+      const t1 = new Date(2026, 10, 23, 8)
+      const t2 = new Date(2026, 10, 23, 9)
+      const s = key('2026-11-23')
+      await updateOccurrence(db, { ...s, title: 'Swim' })
+
+      expect(await setOccurrenceDone(db, { ...s, done: true }, t1))
+        .toMatchObject({ title: 'Swim', doneAt: t1.getTime() })
+      expect(await setOccurrenceDone(db, { ...s, done: true }, t2))
+        .toMatchObject({ title: 'Swim', doneAt: t1.getTime() })
+      expect(await setOccurrenceDone(db, { ...s, done: false }, t2))
+        .toMatchObject({ title: 'Swim', doneAt: null })
+    })
+
+  it('distinguishes time cleared to null from unchanged time',
+    async () => {
+      await create(base({ time: '07:30' }))
+      const s = key('2026-11-23')
+      await updateOccurrence(db, { ...s, title: 'Cardio' })
+      expect(await listOccurrences(db, {
+        from: '2026-11-23', to: '2026-11-23'
+      })).toEqual([occ({
+        scheduled: '2026-11-23', title: 'Cardio', time: '07:30'
+      })])
+
+      await updateOccurrence(db, { ...s, time: null })
+      await updateOccurrence(db, { ...s, title: 'Run' })
+      expect(await listOccurrences(db, {
+        from: '2026-11-23', to: '2026-11-23'
+      })).toEqual([occ({
+        scheduled: '2026-11-23', title: 'Run', time: null
+      })])
+    })
+
+  it('includes moved-in and drops moved-out Occurrences',
+    async () => {
+      await create(base())
+      await updateOccurrence(db, {
+        ...key('2026-11-23'), day: '2026-11-25'
+      })
+      await updateOccurrence(db, {
+        ...key('2026-11-26'), day: '2026-11-28'
+      })
+      expect((await listOccurrences(db, {
+        from: '2026-11-24', to: '2026-11-27'
+      })).map(o => [o.scheduled, o.day]))
+        .toEqual([['2026-11-23', '2026-11-25']])
+      expect((await listOccurrences(db, {
+        from: '2026-11-28', to: '2026-11-29'
+      })).map(o => [o.scheduled, o.day]))
+        .toEqual([['2026-11-26', '2026-11-28']])
+    })
+
+  it('skips only that Occurrence and rejects later changes',
+    async () => {
+      await create(base())
+      const s = key('2026-11-23')
+      expect(await skipOccurrence(db, s)).toBeNull()
+      expect((await listOccurrences(db, {
+        from: '2026-11-23', to: '2026-11-26'
+      })).map(o => o.scheduled)).toEqual(['2026-11-26'])
+
+      await failsWith(skipOccurrence(db, s), { code: 'not-found' })
+      await failsWith(
+        updateOccurrence(db, { ...s, title: 'X' }),
+        { code: 'not-found' }
+      )
+      await failsWith(
+        setOccurrenceDone(db, { ...s, done: true }),
+        { code: 'not-found' }
+      )
+    })
+
+  it('keeps past/today changes on stop and drops future ones',
+    async () => {
+      await create(base())
+      const doneAt = new Date(2026, 10, 23, 8)
+      await updateOccurrence(db, {
+        ...key('2026-11-23'), title: 'Done gym'
+      })
+      await setOccurrenceDone(db, {
+        ...key('2026-11-23'), done: true
+      }, doneAt)
+      await updateOccurrence(db, {
+        ...key('2026-11-26'), day: '2026-11-27'
+      })
+      // Future Occurrence moved earlier before today:
+      await updateOccurrence(db, {
+        ...key('2026-11-30'), day: '2026-11-24'
+      })
+      await stopRecurringTask(db, 1, new Date(2026, 10, 26, 15))
+
+      expect(await listOccurrences(db, {
+        from: '2026-11-23', to: '2026-12-06'
+      })).toEqual([
+        occ({
+          scheduled: '2026-11-23',
+          title: 'Done gym',
+          doneAt: doneAt.getTime()
+        }),
+        occ({
+          scheduled: '2026-11-26',
+          day: '2026-11-27',
+          moves: 1
+        })
+      ])
+      await failsWith(
+        updateOccurrence(db, {
+          ...key('2026-11-30'), title: 'Nope'
+        }),
+        { code: 'not-found' }
+      )
+    })
+
+  it('rejects unknown rule, off-schedule day, or invalid payloads',
+    async () => {
+      await create(base())
+      await failsWith(
+        updateOccurrence(db, {
+          ruleId: 9, scheduled: '2026-11-23', title: 'X'
+        }),
+        { code: 'not-found' }
+      )
+      await failsWith(
+        updateOccurrence(db, {
+          ruleId: 1, scheduled: '2026-11-24', title: 'X'
+        }),
+        { code: 'not-found' }
+      )
+      await failsWith(
+        skipOccurrence(db, { ruleId: 1, scheduled: '2026-11-22' }),
+        { code: 'not-found' }
+      )
+      await failsWith(
+        updateOccurrence(db, {
+          ruleId: 1, scheduled: '2026-11-23', day: null
+        }),
+        { code: 'invalid-payload', field: 'day' }
+      )
+      await failsWith(
+        updateOccurrence(db, {
+          ruleId: 1, scheduled: '2026-11-23', title: '   '
+        }),
+        { code: 'invalid-payload', field: 'title' }
+      )
+      await failsWith(
+        updateOccurrence(db, {
+          ruleId: 1, scheduled: '2026-11-23'
+        }),
+        { code: 'invalid-payload', field: '' }
+      )
+    })
 })
 
 describe('the recurring_tasks table', () => {
@@ -243,6 +466,23 @@ describe('the recurring_tasks table', () => {
       )).toThrow(/CHECK constraint failed/)
     }
   })
+
+  it('enforces occurrences CHECK and foreign-key constraints',
+    async () => {
+      await create(base())
+      const insert = db.$client.prepare(
+        'INSERT INTO occurrences (rule_id, scheduled, title, '
+        + 'time_changed, moves, skipped) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      expect(() => insert.run(1, '2026-11-23', '  ', 0, 0, 0))
+        .toThrow(/CHECK constraint failed/)
+      expect(() => insert.run(1, '2026-11-23', null, 0, -1, 0))
+        .toThrow(/CHECK constraint failed/)
+      expect(() => insert.run(1, '2026-11-23', null, 2, 0, 0))
+        .toThrow(/CHECK constraint failed/)
+      expect(() => insert.run(99, '2026-11-23', null, 0, 0, 0))
+        .toThrow(/FOREIGN KEY constraint failed/)
+    })
 })
 
 describe('recurring_tasks migration', () => {

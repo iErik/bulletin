@@ -133,6 +133,7 @@ export const openDatabase = ({
     }
     const db = drizzle({ client })
     migrate(db, { migrationsFolder })
+    client.exec('PRAGMA foreign_keys = ON')
     return db
   } catch (error) {
     client.close()

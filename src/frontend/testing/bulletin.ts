@@ -16,6 +16,9 @@ import {
 import type { MoodApi } from '@shared/mood'
 import type {
   NewRecurringTask,
+  Occurrence,
+  OccurrenceDone,
+  OccurrenceUpdate,
   RecurringTask,
   RecurringTasksApi
 } from '@shared/recurring-tasks'
@@ -167,13 +170,45 @@ const fakeRecurringTasks = (): RecurringTasksApi => {
     lastDay: null,
     created: 0
   }
+  const occ = (
+    ruleId: number,
+    scheduled: string
+  ): Occurrence => ({
+    ruleId,
+    scheduled,
+    title: rule.title,
+    day: scheduled,
+    time: rule.time,
+    doneAt: null,
+    moves: 0,
+    created: rule.created
+  })
   return {
     list: resolves([]),
     create: echoes((value: NewRecurringTask) =>
       ({ ...rule, ...value })),
     stop: resolves({ ...rule, lastDay: '2026-01-01' }),
     delete: resolves(null),
-    listOccurrences: resolves([])
+    listOccurrences: resolves([]),
+    updateOccurrence: vi.fn(
+      async (changes: OccurrenceUpdate) => ({
+        ok: true as const,
+        value: {
+          ...occ(changes.ruleId, changes.scheduled),
+          ...changes
+        }
+      })
+    ),
+    setOccurrenceDone: vi.fn(
+      async ({ ruleId, scheduled, done }: OccurrenceDone) => ({
+        ok: true as const,
+        value: {
+          ...occ(ruleId, scheduled),
+          doneAt: done ? 1 : null
+        }
+      })
+    ),
+    skipOccurrence: resolves(null)
   }
 }
 
