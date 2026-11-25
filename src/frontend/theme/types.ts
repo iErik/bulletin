@@ -80,6 +80,29 @@ export const MONTH_PACE_COLOURS: readonly MonthPaceColour[] = [
 ]
 
 /**
+ * The Habit Board Widget's colours, from Figma's
+ * "Habits / Habit Board" frame.
+ */
+export type HabitBoardColour =
+  | 'today'
+  | 'row'
+  | 'name'
+  | 'slipping'
+  | 'done'
+  | 'glow'
+  | 'dim'
+  | 'selected'
+  | 'streak'
+  | 'best'
+  | 'low'
+
+export const HABIT_BOARD_COLOURS: readonly HabitBoardColour[] =
+  [
+    'today', 'row', 'name', 'slipping', 'done', 'glow',
+    'dim', 'selected', 'streak', 'best', 'low'
+  ]
+
+/**
  * Whose Day Pill colours: a Mood's, a done Habit's, or
  * a Sleep Quality rating's.
  */
@@ -165,6 +188,10 @@ export interface Palette {
   /** Month Pace's, as `--color-month-pace-<key>`. */
   readonly 'month-pace': Readonly<
     Record<MonthPaceColour, string>
+  >
+  /** Habit Board's, as `--color-habit-board-<key>`. */
+  readonly 'habit-board': Readonly<
+    Record<HabitBoardColour, string>
   >
 }
 
