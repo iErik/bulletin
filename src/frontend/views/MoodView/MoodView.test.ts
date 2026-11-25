@@ -71,10 +71,16 @@ describe('MoodView', () => {
           + ' .month-grid'
         ).exists()
       ).toBe(true)
-      for (const cell of ['middle', 'right']) {
-        expect(page.get(`.${cell}`).element.children)
-          .toHaveLength(0)
-      }
+      expect(page.get('.middle').element.children)
+        .toHaveLength(0)
+    })
+
+  it('shows What moves your mood in the right cell',
+    async () => {
+      const { view: page } = await mountView()
+
+      expect(page.find('.right > .what-moves').exists())
+        .toBe(true)
     })
 
   it('shows Year in Mood in the wide cell', async () => {
