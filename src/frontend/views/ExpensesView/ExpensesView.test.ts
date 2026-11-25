@@ -48,18 +48,20 @@ describe('ExpensesView', () => {
     document.body.innerHTML = ''
   })
 
-  it('places the Expenses Widget in the side cell alone',
+  it('places Month Pace in wide and Expenses in side',
     async () => {
       stubBulletin()
       const page = (await mountView()).view
 
       expect(
+        page.find('.page-grid > .wide > .month-pace-widget')
+          .exists()
+      ).toBe(true)
+      expect(
         page.find('.page-grid > .side > .expenses-widget')
           .exists()
       ).toBe(true)
-      for (const cell of [
-        'wide', 'left', 'middle', 'right'
-      ]) {
+      for (const cell of ['left', 'middle', 'right']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
@@ -100,5 +102,7 @@ describe('ExpensesView', () => {
         .toHaveBeenLastCalledWith('2026-10')
       expect(page.get('.card.-expenses > .value').text())
         .toBe('R$1,200.00')
+      expect(page.get('.month-pace-widget .projected').text())
+        .toBe('Projected R$1,860.00')
     })
 })

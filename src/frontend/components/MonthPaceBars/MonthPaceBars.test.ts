@@ -141,7 +141,7 @@ describe('MonthPaceBars', () => {
       height: '2',
       rx: '1'
     })
-    // Baseline aligns with bars (y + height === 106).
+    // The dashes share the bars' baseline.
     const bar = barOf(wrapper, 1)
     const barBottom = Number(bar.attributes('y'))
       + Number(bar.attributes('height'))
