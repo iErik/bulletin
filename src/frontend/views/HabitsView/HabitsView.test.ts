@@ -71,7 +71,7 @@ describe('HabitsView', () => {
     document.body.innerHTML = ''
   })
 
-  it('places Board, Overview, Habits and By Weekday in the grid',
+  it('places all five Habits Widgets in the grid',
     async () => {
       const { view: page } = await mountView()
 
@@ -91,8 +91,10 @@ describe('HabitsView', () => {
         page.find('.page-grid > .middle > .habits-by-weekday')
           .exists()
       ).toBe(true)
-      expect(page.get('.right').element.children)
-        .toHaveLength(0)
+      expect(
+        page.find('.page-grid > .right > .habit-effects')
+          .exists()
+      ).toBe(true)
     })
 
   it('puts the date header in the Title Bar', async () => {

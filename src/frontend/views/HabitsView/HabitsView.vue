@@ -2,10 +2,12 @@
 // The Habits Page. Habit Board sits in the top-left
 // wide cell, Habit Overview in the top-right side cell,
 // the existing Habits Widget in the bottom-left cell,
-// and By Weekday in the bottom-middle cell. Habit
-// effects fills the remaining cell later.
+// By Weekday in the bottom-middle cell, and Habit
+// effects in the bottom-right cell.
 import HabitBoardWidget
   from '@/components/HabitBoardWidget/HabitBoardWidget.vue'
+import HabitEffectsWidget
+  from '@/components/HabitEffectsWidget/HabitEffectsWidget.vue'
 import HabitOverviewWidget
   from '@/components/HabitOverviewWidget/HabitOverviewWidget.vue'
 import HabitsByWeekdayWidget
@@ -28,6 +30,9 @@ import PageGrid from '@/components/PageGrid/PageGrid.vue'
     </template>
     <template #middle>
       <HabitsByWeekdayWidget />
+    </template>
+    <template #right>
+      <HabitEffectsWidget />
     </template>
   </PageGrid>
 </template>
