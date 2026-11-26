@@ -1,20 +1,25 @@
 <script setup lang="ts">
 // Habit Board (Figma 3889:9395, minus the Pattern card):
 // month-so-far daily cells per Habit, Streak, Best,
-// Rate and the Slipping tag. Read-only for now.
+// Rate, the Slipping tag, and inline "+ Add habit".
 import {
   computed,
+  nextTick,
   ref,
   shallowRef,
   useTemplateRef,
   watch
 } from 'vue'
+import { parseISO } from 'date-fns'
 import { localDate } from '@shared/dates'
 import {
   HABIT_GOAL,
   type Habit,
   type HabitEntry
 } from '@shared/habits'
+import type { LocalDate } from '@shared/storage'
+import HabitEditor
+  from '@/components/HabitEditor/HabitEditor.vue'
 import OverlayScrollbar
   from '@/components/OverlayScrollbar/OverlayScrollbar.vue'
 import Widget from '@/components/Widget/Widget.vue'
@@ -23,9 +28,11 @@ import {
 } from '@/composables/use-data-version'
 import {
   formatBoardRange,
-  habitBoard
+  habitBoard,
+  type BoardCell
 } from '@/habits/board'
 import { HABIT_ICON_COMPONENTS } from '@/habits/icons'
+import { formatDate } from '@/locale/format'
 import {
   useSelectedDateStore
 } from '@/stores/selected-date'
@@ -41,10 +48,47 @@ const entries = shallowRef<HabitEntry[]>([])
 const goal = ref<number>(HABIT_GOAL.default)
 const loaded = ref(false)
 const failed = ref(false)
+const actionError = ref<string | null>(null)
+const adding = ref(false)
+const editorBusy = ref(false)
 
 const scroller = useTemplateRef<HTMLElement>('scroller')
+const addButton = useTemplateRef<HTMLButtonElement>(
+  'addButton'
+)
 
 let generation = 0
+
+/** Desired done state for cells currently saving. */
+const writing = new Map<string, boolean>()
+
+const entryKey = (
+  habitId: number,
+  day: LocalDate
+): string => `${habitId} ${day}`
+
+/** Keeps in-flight optimistic toggles over a reload. */
+const mergeWriting = (
+  list: HabitEntry[]
+): HabitEntry[] => {
+  if (!writing.size) return list
+  const kept = list.filter(entry => {
+    const pending = writing.get(
+      entryKey(entry.habitId, entry.date)
+    )
+    return pending === undefined || pending
+  })
+  const seen = new Set(
+    kept.map(e => entryKey(e.habitId, e.date))
+  )
+  for (const [key, done] of writing) {
+    if (!done || seen.has(key)) continue
+    const [id, day] = key.split(' ')
+    kept.push({ habitId: Number(id), date: day })
+  }
+  return kept
+}
+
 const load = async (): Promise<void> => {
   const asked = ++generation
   const [hs, es, g] = await Promise.all([
@@ -63,14 +107,15 @@ const load = async (): Promise<void> => {
   }
   failed.value = false
   habits.value = hs.value
-  entries.value = es.value
+  entries.value = mergeWriting(es.value)
   goal.value = g.value
   loaded.value = true
 }
 
-watch([date, version], () => void load(), {
-  immediate: true
-})
+watch([date, version], () => {
+  actionError.value = null
+  void load()
+}, { immediate: true })
 
 const board = computed(() => habitBoard(
   habits.value,
@@ -82,6 +127,71 @@ const headerRange = computed(() =>
   formatBoardRange(board.value.range)
 )
 const dense = computed(() => board.value.days.length > 30)
+const dayLabels = computed(() => new Map(
+  board.value.days.map(day => [
+    day,
+    formatDate(parseISO(day), 'short')
+  ])
+))
+
+const cellLabel = (
+  habit: Habit,
+  cell: BoardCell
+): string => {
+  const day = dayLabels.value.get(cell.date) ?? cell.date
+  const state = cell.state === 'done' ? 'Done' : 'Not done'
+  return `${habit.name} · ${day} · ${state}`
+}
+
+const setEntry = (
+  habitId: number,
+  day: LocalDate,
+  done: boolean
+): void => {
+  const rest = entries.value.filter(
+    e => e.habitId !== habitId || e.date !== day
+  )
+  entries.value = done
+    ? [...rest, { habitId, date: day }]
+    : rest
+}
+
+const toggle = async (
+  habit: Habit,
+  cell: BoardCell
+): Promise<void> => {
+  if (!cell.interactive) return
+  const key = entryKey(habit.id, cell.date)
+  if (writing.has(key)) return
+  const was = cell.state === 'done'
+  writing.set(key, !was)
+  setEntry(habit.id, cell.date, !was)
+  actionError.value = null
+  const entry = { habitId: habit.id, date: cell.date }
+  const { habits: api } = window.bulletin
+  const result = was
+    ? await api.deleteEntry(entry)
+    : await api.createEntry(entry)
+  writing.delete(key)
+  if (result.ok) return
+  setEntry(habit.id, cell.date, was)
+  actionError.value = 'Couldn’t save that day. Try again.'
+}
+
+const closeEditor = async (): Promise<void> => {
+  if (editorBusy.value) return
+  adding.value = false
+  await nextTick()
+  addButton.value?.focus()
+}
+
+const onCreated = async (habit: Habit): Promise<void> => {
+  const exists = habits.value.some(h => h.id === habit.id)
+  habits.value = exists
+    ? habits.value.map(h => h.id === habit.id ? habit : h)
+    : [...habits.value, habit]
+  await closeEditor()
+}
 </script>
 
 <template>
@@ -130,7 +240,9 @@ const dense = computed(() => board.value.days.length > 30)
               <div class="habit">
                 <span class="tile">
                   <component
-                    :is="HABIT_ICON_COMPONENTS[row.habit.icon]"
+                    :is="HABIT_ICON_COMPONENTS[
+                      row.habit.icon
+                    ]"
                     class="icon"
                     aria-hidden="true"
                   />
@@ -145,16 +257,32 @@ const dense = computed(() => board.value.days.length > 30)
                 </div>
               </div>
               <div class="cells">
-                <span
+                <template
                   v-for="cell in row.cells"
                   :key="cell.date"
-                  class="cell"
-                  :class="[`-${cell.state}`, {
-                    '-streak': cell.inCurrentStreak,
-                    '-selected': cell.isSelected
-                  }]"
-                  aria-hidden="true"
-                />
+                >
+                  <button
+                    v-if="cell.interactive"
+                    class="cell"
+                    :class="[`-${cell.state}`, {
+                      '-streak': cell.inCurrentStreak,
+                      '-selected': cell.isSelected
+                    }]"
+                    type="button"
+                    :aria-pressed="cell.state === 'done'"
+                    :aria-label="cellLabel(row.habit, cell)"
+                    @click="toggle(row.habit, cell)"
+                  />
+                  <span
+                    v-else
+                    class="cell"
+                    :class="[`-${cell.state}`, {
+                      '-streak': cell.inCurrentStreak,
+                      '-selected': cell.isSelected
+                    }]"
+                    aria-hidden="true"
+                  />
+                </template>
               </div>
               <span
                 class="stat -streak"
@@ -171,6 +299,27 @@ const dense = computed(() => board.value.days.length > 30)
       </template>
       <p v-else class="empty">
         No habits yet
+      </p>
+      <div class="add-row" :class="{ '-editing': adding }">
+        <HabitEditor
+          v-if="adding"
+          v-model:busy="editorBusy"
+          @saved="onCreated"
+          @cancel="closeEditor"
+        />
+        <button
+          v-else
+          ref="addButton"
+          class="add-button"
+          type="button"
+          @click="adding = true"
+        >
+          <span class="plus" aria-hidden="true">+</span>
+          Add habit
+        </button>
+      </div>
+      <p v-if="actionError" class="message" role="alert">
+        {{ actionError }}
       </p>
     </div>
   </Widget>
@@ -201,10 +350,12 @@ const dense = computed(() => board.value.days.length > 30)
 .habit-board {
   .message,
   .empty {
-    padding: space(1) rem(4px) 0;
     font-size: rem(11px);
     color: var(--color-text-muted);
   }
+
+  .empty { padding: space(2) rem(4px) space(1); }
+  .message { padding: space(1) rem(4px) 0; }
 
   .content,
   .view,
@@ -344,6 +495,8 @@ const dense = computed(() => board.value.days.length > 30)
     flex: none;
     width: rem(10px);
     height: rem(22px);
+    padding: 0;
+    border: 0;
     border-radius: rem(3px);
     @include colour-transition;
 
@@ -361,6 +514,11 @@ const dense = computed(() => board.value.days.length > 30)
     }
   }
 
+  button.cell {
+    cursor: pointer;
+    @include focus-ring;
+  }
+
   .stat {
     font-family: $font-family-mono;
     font-size: rem(11px);
@@ -372,6 +530,54 @@ const dense = computed(() => board.value.days.length > 30)
     &.-best { color: var(--color-habit-board-best); }
     &.-good { color: var(--color-improvement); }
     &.-low { color: var(--color-habit-board-low); }
+  }
+
+  .add-row {
+    flex: none;
+    margin-top: rem(8px);
+    background: var(--color-habit-board-add-bg);
+    border: 1px dashed var(--color-habit-board-add-border);
+    border-radius: rem(8px);
+    @include colour-transition;
+
+    &.-editing {
+      padding: rem(2px) rem(8px) rem(2px) rem(4px);
+    }
+  }
+
+  .add-button {
+    display: flex;
+    gap: rem(6px);
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: rem(38px);
+    font-size: rem(11px);
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-habit-board-add-text);
+    border-radius: rem(8px);
+    @include colour-transition;
+    @include focus-ring;
+
+    &:hover { color: var(--color-text); }
+  }
+
+  .control {
+    display: grid;
+    place-items: center;
+    width: rem(22px);
+    height: rem(22px);
+    color: var(--color-text-muted);
+    border-radius: rem(6px);
+    @include focus-ring;
+
+    &:hover { background: var(--color-tile); }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+    }
   }
 }
 </style>

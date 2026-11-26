@@ -357,6 +357,11 @@ describe('theme store', () => {
       name => document.documentElement.style
         .getPropertyValue(`--color-habit-board-${name}`))
 
+    expect(HABIT_BOARD_COLOURS).toEqual(
+      expect.arrayContaining([
+        'add-bg', 'add-border', 'add-text'
+      ])
+    )
     expect(board()).toEqual(HABIT_BOARD_COLOURS.map(
       name => dark['habit-board'][name]
     ))

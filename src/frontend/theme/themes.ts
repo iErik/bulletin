@@ -144,7 +144,10 @@ export const defaultTheme: Theme = {
         selected: 'rgb(255 255 255 / 60%)',
         streak: '#ffffff',
         best: 'rgb(187 187 187 / 60%)',
-        low: '#ff7070'
+        low: '#ff7070',
+        'add-bg': 'rgb(255 255 255 / 1%)',
+        'add-border': 'rgb(255 255 255 / 15%)',
+        'add-text': 'rgb(165 165 165 / 45%)'
       },
       // Figma's Expenses frames: By Category and
       // Insights share these.
@@ -312,7 +315,10 @@ export const defaultTheme: Theme = {
         selected: 'rgb(0 0 0 / 60%)',
         streak: '#000000',
         best: 'rgb(68 68 68 / 60%)',
-        low: '#c4373b'
+        low: '#c4373b',
+        'add-bg': 'rgb(0 0 0 / 1%)',
+        'add-border': 'rgb(0 0 0 / 15%)',
+        'add-text': 'rgb(90 90 90 / 60%)'
       },
       // The dark spend colours, mirrored for light.
       spend: {

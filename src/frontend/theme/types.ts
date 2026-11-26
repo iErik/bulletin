@@ -95,11 +95,15 @@ export type HabitBoardColour =
   | 'streak'
   | 'best'
   | 'low'
+  | 'add-bg'
+  | 'add-border'
+  | 'add-text'
 
 export const HABIT_BOARD_COLOURS: readonly HabitBoardColour[] =
   [
     'today', 'row', 'name', 'slipping', 'done', 'glow',
-    'dim', 'selected', 'streak', 'best', 'low'
+    'dim', 'selected', 'streak', 'best', 'low',
+    'add-bg', 'add-border', 'add-text'
   ]
 
 /** The Task editor's colours, from Figma's frame. */
