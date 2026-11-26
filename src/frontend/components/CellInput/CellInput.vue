@@ -109,7 +109,7 @@ const onInput = (): void => {
     v-else
     class="cell-input"
     :text="text"
-    placement="above"
+    placement="top"
     truncated-only
   >
     <button
