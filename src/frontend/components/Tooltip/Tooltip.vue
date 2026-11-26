@@ -19,15 +19,22 @@ const props = withDefaults(
     text: string
     /** Milliseconds before it shows. */
     delay?: number
-    placement?: 'end' | 'above'
+    placement?: 'top' | 'bottom' | 'left' | 'right'
     truncatedOnly?: boolean
+    forceOpen?: boolean
+    position?: {
+      top?: string
+      left?: string
+      right?: string
+      bottom?: string
+    } | null
   }>(),
-  { delay: 400, placement: 'end' }
+  { delay: 400, placement: 'top', position: null }
 )
 
 const open = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-/** Where an `above` bubble goes, on the viewport. */
+const bubble = useTemplateRef<HTMLElement>('bubble')
 const anchor = ref<CSSProperties>({})
 let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -42,24 +49,51 @@ const truncated = (): boolean => {
     && trigger.scrollWidth > trigger.clientWidth
 }
 
+function getPosition(): { top: string; left: string } | null {
+  const rRect = root.value?.getBoundingClientRect()
+  const bRect = bubble.value?.getBoundingClientRect()
+
+  if (!rRect || !bRect) return null
+
+  switch (props.placement) {
+    case 'top': return {
+      top: `${rRect.top - bRect.height}px`,
+      left: `${(rRect.left + rRect.width / 2) - (bRect.width / 2)}px`
+    }
+    case 'bottom': return {
+      top: `${rRect.top + rRect.height}px`,
+      left: `${(rRect.left + rRect.width / 2) - (bRect.width / 2)}px`
+    }
+    case 'left': return {
+      top: `${(rRect.top + rRect.height / 2) - (bRect.height / 2)}px`,
+      left: `${rRect.left + rRect.width}px`
+    }
+    case 'right': return {
+      top: `${(rRect.top + rRect.height / 2) - (bRect.height / 2)}px`,
+      left: `${rRect.left - bRect.width}px`
+    }
+  }
+}
+
 function show(): void {
   clearTimeout(timer)
   if (props.truncatedOnly && !truncated()) return
+
   timer = setTimeout(() => {
-    const rect = root.value?.getBoundingClientRect()
-    if (rect) {
-      anchor.value = {
-        top: `${rect.top}px`,
-        left: `${rect.left + rect.width / 2}px`
-      }
-    }
+    const position = getPosition()
+
+    if (position)
+      anchor.value = position
+
     open.value = true
   }, props.delay)
+
   window.addEventListener('keydown', onKeydown)
 }
 
 function hide(): void {
   clearTimeout(timer)
+
   open.value = false
   window.removeEventListener('keydown', onKeydown)
 }
@@ -77,15 +111,19 @@ onBeforeUnmount(hide)
     @focusout="hide"
   >
     <slot />
-    <span
-      v-if="open"
-      class="bubble"
-      :class="`-${placement}`"
-      :style="placement === 'above' ? anchor : undefined"
-      aria-hidden="true"
-    >
-      {{ text }}
-    </span>
+
+    <Teleport to="body">
+      <span
+        v-if="open || props.forceOpen"
+        ref="bubble"
+        class="app-tooltip-bubble"
+        :class="`-${placement}`"
+        :style="props.position || anchor"
+        aria-hidden="true"
+      >
+        {{ text }}
+      </span>
+    </Teleport>
   </span>
 </template>
 
@@ -95,31 +133,25 @@ onBeforeUnmount(hide)
 .app-tooltip {
   position: relative;
   display: inline-flex;
+}
 
-  // Inverted colours, so it stands out over any
-  // surface in either Scheme.
-  > .bubble {
-    position: absolute;
-    top: 50%;
-    left: calc(100% + #{space(3)});
-    z-index: 10;
-    padding: space(1) space(2);
-    font-size: rem(12px);
-    line-height: 1.4;
-    white-space: nowrap;
-    color: var(--color-surface);
-    background: var(--color-text);
-    border-radius: $radius-small;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
+.app-tooltip-bubble {
+  position: fixed;
+  z-index: 10;
+  padding: space(1) space(2);
+  font-size: rem(12px);
+  line-height: 1.4;
+  color: var(--color-surface);
+  background: var(--color-text);
+  border-radius: $radius-small;
+  pointer-events: none;
+  max-width: rem(280px);
+  overflow-wrap: anywhere;
+  white-space: normal;
 
-  > .bubble.-above {
-    position: fixed;
-    max-width: rem(280px);
-    overflow-wrap: anywhere;
-    white-space: normal;
-    transform: translate(-50%, calc(-100% - #{space(1)}));
-  }
+  &.-top { transform: translateY(-10px); }
+  &.-bottom { transform: translateY(10px); }
+  &.-right { transform: translateX(-10px); }
+  &.-left { transform: translateX(10px); }
 }
 </style>
