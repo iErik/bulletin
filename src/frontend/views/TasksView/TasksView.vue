@@ -1,11 +1,16 @@
 <script setup lang="ts">
-// The Tasks Page. Its five Widgets fill the cells
-// later: This Week in #wide, Today in #side,
-// Recurring in #left, Reminders in #middle and
-// Insights in #right.
+// The Tasks Page. Insights fills #right; the other cells
+// wait for This Week (#wide), Today (#side), Recurring
+// (#left) and Reminders (#middle).
 import PageGrid from '@/components/PageGrid/PageGrid.vue'
+import TaskInsightsWidget
+  from '@/components/TaskInsightsWidget/TaskInsightsWidget.vue'
 </script>
 
 <template>
-  <PageGrid />
+  <PageGrid>
+    <template #right>
+      <TaskInsightsWidget />
+    </template>
+  </PageGrid>
 </template>
