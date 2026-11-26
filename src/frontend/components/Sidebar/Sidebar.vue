@@ -14,7 +14,7 @@ const route = useRoute()
   <nav class="app-sidebar" aria-label="Pages">
     <ul class="items">
       <li v-for="page in PAGES" :key="page.name">
-        <Tooltip :text="page.label">
+        <Tooltip :text="page.label" placement="left">
           <RouterLink
             v-slot="{ href, navigate }"
             custom
