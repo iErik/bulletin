@@ -6,26 +6,24 @@ import {
   it,
   vi
 } from 'vitest'
-import {
-  mount,
-  type DOMWrapper,
-  type VueWrapper
-} from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import Tooltip from './Tooltip.vue'
+
+type TooltipProps = InstanceType<typeof Tooltip>['$props']
 
 let tooltip: VueWrapper | undefined
 
-const mountTooltip = (delay?: number): VueWrapper =>
+const mountTooltip = (
+  props: Partial<TooltipProps> = {}
+): VueWrapper =>
   tooltip = mount(Tooltip, {
     attachTo: document.body,
-    props: { text: 'Sleep', delay },
+    props: { text: 'Sleep', ...props },
     slots: { default: '<a href="#">x</a>' }
   })
 
-const bubble = (
-  wrapper: VueWrapper
-): DOMWrapper<Element> =>
-  wrapper.find('.bubble')
+const bubble = (): HTMLElement | null =>
+  document.body.querySelector('.app-tooltip-bubble')
 
 describe('Tooltip', () => {
   beforeEach(() => {
@@ -45,20 +43,20 @@ describe('Tooltip', () => {
 
       await wrapper.trigger(event)
       await vi.advanceTimersByTimeAsync(399)
-      expect(bubble(wrapper).exists()).toBe(false)
+      expect(bubble()).toBeNull()
 
       await vi.advanceTimersByTimeAsync(1)
-      expect(bubble(wrapper).text()).toBe('Sleep')
+      expect(bubble()?.textContent?.trim()).toBe('Sleep')
     }
   )
 
   it('takes a custom delay', async () => {
-    const wrapper = mountTooltip(50)
+    const wrapper = mountTooltip({ delay: 50 })
 
     await wrapper.trigger('mouseenter')
     await vi.advanceTimersByTimeAsync(50)
 
-    expect(bubble(wrapper).exists()).toBe(true)
+    expect(bubble()).not.toBeNull()
   })
 
   it.each([
@@ -68,10 +66,11 @@ describe('Tooltip', () => {
     const wrapper = mountTooltip()
     await wrapper.trigger(enter)
     await vi.advanceTimersByTimeAsync(400)
+    expect(bubble()).not.toBeNull()
 
     await wrapper.trigger(leave)
 
-    expect(bubble(wrapper).exists()).toBe(false)
+    expect(bubble()).toBeNull()
   })
 
   it('never shows if left before the delay', async () => {
@@ -82,20 +81,21 @@ describe('Tooltip', () => {
     await wrapper.trigger('mouseleave')
     await vi.advanceTimersByTimeAsync(400)
 
-    expect(bubble(wrapper).exists()).toBe(false)
+    expect(bubble()).toBeNull()
   })
 
   it('hides on Escape', async () => {
     const wrapper = mountTooltip()
     await wrapper.trigger('mouseenter')
     await vi.advanceTimersByTimeAsync(400)
+    expect(bubble()).not.toBeNull()
 
     window.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape' })
     )
     await wrapper.vm.$nextTick()
 
-    expect(bubble(wrapper).exists()).toBe(false)
+    expect(bubble()).toBeNull()
   })
 
   it('is hidden from screen readers', async () => {
@@ -103,9 +103,69 @@ describe('Tooltip', () => {
     await wrapper.trigger('focusin')
     await vi.advanceTimersByTimeAsync(400)
 
-    expect(bubble(wrapper).attributes('aria-hidden'))
+    expect(bubble()?.getAttribute('aria-hidden'))
       .toBe('true')
   })
+
+  it('defaults placement to top', async () => {
+    const wrapper = mountTooltip()
+    await wrapper.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(400)
+
+    expect(bubble()?.classList.contains('-top')).toBe(true)
+  })
+
+  it.each(['top', 'bottom', 'left', 'right'] as const)(
+    'applies the -%s placement class',
+    async placement => {
+      const wrapper = mountTooltip({ placement })
+      await wrapper.trigger('mouseenter')
+      await vi.advanceTimersByTimeAsync(400)
+
+      expect(bubble()?.classList.contains(`-${placement}`))
+        .toBe(true)
+    }
+  )
+
+  it('stays open immediately when forceOpen is true',
+    async () => {
+      const wrapper = mountTooltip({ forceOpen: true })
+
+      expect(bubble()?.textContent?.trim()).toBe('Sleep')
+
+      await wrapper.trigger('mouseleave')
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape' })
+      )
+      await wrapper.vm.$nextTick()
+
+      expect(bubble()).not.toBeNull()
+    }
+  )
+
+  it('applies an explicit position to the bubble', () => {
+    mountTooltip({
+      forceOpen: true,
+      position: { top: '12px', left: '24px' }
+    })
+
+    expect(bubble()?.style.top).toBe('12px')
+    expect(bubble()?.style.left).toBe('24px')
+  })
+
+  it('removes the teleported bubble on unmount',
+    async () => {
+      const wrapper = mountTooltip()
+      await wrapper.trigger('mouseenter')
+      await vi.advanceTimersByTimeAsync(400)
+      expect(bubble()).not.toBeNull()
+
+      wrapper.unmount()
+      tooltip = undefined
+
+      expect(bubble()).toBeNull()
+    }
+  )
 
   describe('truncatedOnly', () => {
     /** A trigger whose text is `cut` off or not. */
@@ -114,7 +174,7 @@ describe('Tooltip', () => {
         attachTo: document.body,
         props: {
           text: 'Groceries',
-          placement: 'above',
+          placement: 'top',
           truncatedOnly: true
         },
         slots: { default: '<span>Groc…</span>' }
@@ -127,15 +187,19 @@ describe('Tooltip', () => {
       return wrapper
     }
 
-    it('shows above when the text is cut off', async () => {
-      const wrapper = mountTruncated(true)
+    it('shows at top when the text is cut off',
+      async () => {
+        const wrapper = mountTruncated(true)
 
-      await wrapper.trigger('focusin')
-      await vi.advanceTimersByTimeAsync(400)
+        await wrapper.trigger('focusin')
+        await vi.advanceTimersByTimeAsync(400)
 
-      expect(bubble(wrapper).classes()).toContain('-above')
-      expect(bubble(wrapper).text()).toBe('Groceries')
-    })
+        expect(bubble()?.classList.contains('-top'))
+          .toBe(true)
+        expect(bubble()?.textContent?.trim())
+          .toBe('Groceries')
+      }
+    )
 
     it('stays hidden when the text fits', async () => {
       const wrapper = mountTruncated(false)
@@ -143,7 +207,7 @@ describe('Tooltip', () => {
       await wrapper.trigger('mouseenter')
       await vi.advanceTimersByTimeAsync(400)
 
-      expect(bubble(wrapper).exists()).toBe(false)
+      expect(bubble()).toBeNull()
     })
   })
 })

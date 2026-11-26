@@ -118,7 +118,7 @@ const label = (choice: CategoryChoice): string =>
 
 <template>
   <span class="category-cell">
-    <Tooltip :text="name" placement="above" truncated-only>
+    <Tooltip :text="name" placement="top" truncated-only>
       <button
         ref="button"
         class="chip"
