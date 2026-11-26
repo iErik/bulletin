@@ -5,6 +5,7 @@
 import {
   computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   ref,
   useId,
@@ -139,24 +140,33 @@ const confirmDelete = async (): Promise<void> => {
   else emit('deleted')
 }
 
-const onKeydown = (event: KeyboardEvent): void => {
+const onEscape = (event: KeyboardEvent): void => {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
   event.stopPropagation()
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    if (busy.value) return
-    if (confirming.value) void setConfirm(false)
-    else emit('close')
-  } else if (event.key === 'Enter') {
-    if (
-      event.target instanceof HTMLButtonElement
-      || event.target instanceof HTMLSelectElement
-    ) return
-    event.preventDefault()
-    void save()
-  }
+  if (busy.value) return
+  if (confirming.value) void setConfirm(false)
+  else emit('close')
 }
 
-onMounted(() => titleEl.value?.focus())
+const onKeydown = (event: KeyboardEvent): void => {
+  event.stopPropagation()
+  if (event.key !== 'Enter' || confirming.value) return
+  if (
+    event.target instanceof HTMLButtonElement
+    || event.target instanceof HTMLSelectElement
+  ) return
+  event.preventDefault()
+  void save()
+}
+
+onMounted(() => {
+  titleEl.value?.focus()
+  window.addEventListener('keydown', onEscape, true)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onEscape, true)
+})
 </script>
 
 <template>
@@ -221,12 +231,18 @@ onMounted(() => titleEl.value?.focus())
           class="icon-btn"
           type="button"
           aria-label="Clear time"
+          :disabled="busy"
           @click="clearTime"
         >
           <Icon name="close" />
         </button>
       </div>
-      <TaskCheckbox v-model="done" class="done">
+      <TaskCheckbox
+        v-model="done"
+        class="done"
+        :disabled="busy"
+        @update:model-value="error = null"
+      >
         Done
       </TaskCheckbox>
       <p v-if="error" class="error" role="alert">
@@ -339,7 +355,8 @@ onMounted(() => titleEl.value?.focus())
     flex: none;
     width: rem(16px);
     height: rem(16px);
-    color: var(--te-chip);
+    margin: rem(-2px);
+    color: var(--color-tile-icon);
     border-radius: $radius-small;
 
     &:hover:not(:disabled) { color: var(--color-tasks-text); }
@@ -385,6 +402,10 @@ onMounted(() => titleEl.value?.focus())
   }
 
   .time-row > .label { margin-right: auto; }
+
+  .time-row > .icon-btn {
+    color: color-mix(in sRGB, var(--color-tile-icon) 60%, transparent);
+  }
 
   .done {
     display: flex;

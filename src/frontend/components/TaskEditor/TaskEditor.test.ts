@@ -155,7 +155,7 @@ describe('TaskEditor', () => {
       expect(dialog().textContent).toContain('Delete?')
       expect(document.activeElement).toBe(btn('Cancel'))
 
-      press(dialog(), 'Escape')
+      press(document.body, 'Escape')
       await nextTick()
       expect(dialog().textContent).not.toContain('Delete?')
       expect(wrapper.emitted('close')).toBeUndefined()
@@ -202,6 +202,7 @@ describe('TaskEditor', () => {
 
       document.body.querySelector('.task-editor-backdrop')!
         .dispatchEvent(new Event('pointerdown'))
-      expect(wrapper.emitted('close')).toHaveLength(1)
+      press(document.body, 'Escape')
+      expect(wrapper.emitted('close')).toHaveLength(2)
     })
 })
