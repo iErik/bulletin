@@ -49,6 +49,29 @@ export const reminderDueAt = (
     - offset.minutes * 60_000
   : localMoment(shiftDay(day, -offset.days), offset.time)
 
+/**
+ * "<title> now", "<title> in 15 min", "<title> in 1 hour"
+ * or "<title> (2 days before)". With `{ missed: true }`,
+ * prefixed with "Missed: " (as a missed-on-launch
+ * notification).
+ */
+export const formatReminderText = (
+  title: string,
+  offset: ReminderOffset,
+  options?: { missed?: boolean }
+): string => {
+  let text: string
+  if (offset.kind === 'minutes') {
+    if (offset.minutes === 0) text = `${title} now`
+    else if (offset.minutes === 60) text = `${title} in 1 hour`
+    else text = `${title} in ${offset.minutes} min`
+  } else {
+    const plural = offset.days === 1 ? '' : 's'
+    text = `${title} (${offset.days} day${plural} before)`
+  }
+  return options?.missed ? `Missed: ${text}` : text
+}
+
 /** Identifies one Task or Occurrence Reminder. */
 export type ReminderTarget =
   | { readonly kind: 'task'; readonly id: number }
