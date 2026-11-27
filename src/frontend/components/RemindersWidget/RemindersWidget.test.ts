@@ -152,7 +152,7 @@ describe('RemindersWidget', () => {
     expect(to - from).toBe(7 * 24 * 60 * 60 * 1000)
   })
 
-  it('shows Tasks only, soonest first', async () => {
+  it('shows Tasks and Occurrences, soonest first', async () => {
     const done = task('2026-11-09', {
       time: '17:00',
       reminder: { kind: 'minutes', minutes: 30 }
@@ -161,19 +161,51 @@ describe('RemindersWidget', () => {
     const { wrapper } = await mountWidget([
       taskReminder(done, { kind: 'minutes', minutes: 30 },
         at('2026-11-09', 16, 30)),
-      occurrenceReminder(recurring, {
-        kind: 'minutes', minutes: 30
-      }, at('2026-11-09', 17, 0))
+      occurrenceReminder(recurring, { kind: 'minutes', minutes: 30 },
+        at('2026-11-09', 17, 0))
     ])
 
-    expect(wrapper.findAll('.entry')).toHaveLength(1)
+    const all = wrapper.findAll('.entry')
+    expect(all).toHaveLength(2)
     expect(entries(wrapper)[0]).toContain('Dentist in 30 min')
+    expect(entries(wrapper)[1]).toContain('Recurring in 30 min')
   })
 
-  it('shows "Today 09:30 · Dentist in 30 min" at 09:00', async () => {
-    vi.useFakeTimers({
-      now: new Date(2026, 10, 9, 9, 0)
+  it('formats a 60-minute offset as an hour', async () => {
+    vi.useFakeTimers({ now: new Date(2026, 10, 9, 9, 0) })
+    const t = task('2026-11-09', {
+      time: '10:00',
+      reminder: { kind: 'minutes', minutes: 60 }
     })
+    const { wrapper } = await mountWidget([
+      taskReminder(t, { kind: 'minutes', minutes: 60 }, at('2026-11-09', 9, 0))
+    ])
+
+    expect(wrapper.get('.entry .text').text())
+      .toBe('Dentist in 1 hour')
+  })
+
+  it('shows an Occurrence entry without opening the editor', async () => {
+    const recurring = occurrence('2026-11-09')
+    const { wrapper } = await mountWidget([
+      occurrenceReminder(
+        recurring, { kind: 'minutes', minutes: 30 }, at('2026-11-09', 17, 0)
+      )
+    ])
+
+    const entry = wrapper.get('.entry')
+    expect(entry.attributes('tabindex')).toBeUndefined()
+    expect(entry.attributes('role')).toBeUndefined()
+    expect(entry.attributes('aria-label')).toBeUndefined()
+
+    await entry.trigger('click')
+    await flushPromises()
+
+    expect(document.querySelector('.task-editor')).toBeNull()
+  })
+
+  it('shows "Today 9:30 AM · Dentist in 30 min" at 09:00', async () => {
+    vi.useFakeTimers({ now: new Date(2026, 10, 9, 9, 0) })
     const t = task('2026-11-09', {
       time: '10:00',
       reminder: { kind: 'minutes', minutes: 30 }
@@ -183,12 +215,12 @@ describe('RemindersWidget', () => {
         at('2026-11-09', 9, 30))
     ])
 
-    expect(wrapper.get('.entry .label').text()).toBe('Today 09:30')
+    expect(wrapper.get('.entry .label').text()).toBe('Today 9:30 AM')
     expect(wrapper.get('.entry .text').text())
       .toBe('Dentist in 30 min')
   })
 
-  it('shows "Thu 18:00 · <Task> (2 days before)"', async () => {
+  it('shows "Thu 6:00 PM · <Task> (2 days before)"', async () => {
     const t = task('2026-11-14', {
       time: '20:00',
       reminder: { kind: 'days', days: 2, time: '18:00' }
@@ -198,7 +230,7 @@ describe('RemindersWidget', () => {
         at('2026-11-12', 18, 0))
     ])
 
-    expect(wrapper.get('.entry .label').text()).toBe('Thu 18:00')
+    expect(wrapper.get('.entry .label').text()).toBe('Thu 6:00 PM')
     expect(wrapper.get('.entry .text').text())
       .toBe('Dentist (2 days before)')
   })

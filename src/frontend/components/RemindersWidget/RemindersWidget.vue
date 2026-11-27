@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // Reminders (Figma 3889:8162): the Reminders due in
 // the next 7 days, soonest first, in a vertical
-// timeline; the soonest gets the bright dot. Clicking
-// an entry opens its Task in the editor. The window is
+// timeline; the soonest gets the bright dot. Clicking a
+// Task entry opens its Task in the editor; Occurrence
+// entries are shown but not interactive. The window is
 // real time, ignoring the Selected Date.
 import {
   computed,
@@ -20,16 +21,16 @@ import TaskEditor
 import Widget from '@/components/Widget/Widget.vue'
 import { useDataVersion }
   from '@/composables/use-data-version'
-import type { DueReminder } from '@shared/reminders'
+import { formatReminderText } from '@shared/reminders'
 import type { Task } from '@shared/tasks'
 import {
   reminderLabel,
-  reminderText,
   reminderWindow
 } from '@/tasks/reminders'
 
 interface Entry {
-  readonly task: Task
+  readonly id: string
+  readonly task: Task | null
   readonly dueAt: number
   readonly label: string
   readonly text: string
@@ -62,15 +63,21 @@ const load = async (): Promise<void> => {
   }
   failed.value = false
   loaded.value = true
-  entries.value = result.value
-    .filter((r): r is Extract<DueReminder, { kind: 'task' }> =>
-      r.kind === 'task')
-    .map(r => ({
-      task: r.task,
+  entries.value = result.value.map(r => {
+    const isTask = r.kind === 'task'
+    return {
+      id: isTask
+        ? `task-${r.task.id}`
+        : `occurrence-${r.occurrence.ruleId}-${r.occurrence.scheduled}`,
+      task: isTask ? r.task : null,
       dueAt: r.dueAt,
       label: reminderLabel(r.dueAt, now),
-      text: reminderText(r)
-    }))
+      text: formatReminderText(
+        isTask ? r.task.title : r.occurrence.title,
+        r.offset
+      )
+    }
+  })
 }
 
 watch(
@@ -94,7 +101,7 @@ const open = (
   entry: Entry,
   anchor: HTMLElement | null
 ): void => {
-  if (!anchor) return
+  if (!entry.task || !anchor) return
   editing.value = { task: entry.task, anchor }
 }
 
@@ -136,12 +143,15 @@ const onKeydown = (
         <ul ref="scroller" class="scroller">
           <li
             v-for="(entry, index) in entries"
-            :key="entry.task.id"
+            :key="entry.id"
             class="entry"
+            :class="{ occurrence: !entry.task }"
             :data-soonest="index === 0"
-            tabindex="0"
-            role="button"
-            :aria-label="`${entry.label}: ${entry.text}`"
+            :tabindex="entry.task ? 0 : undefined"
+            :role="entry.task ? 'button' : undefined"
+            :aria-label="entry.task
+              ? `${entry.label}: ${entry.text}`
+              : undefined"
             @click="open(entry, $event.currentTarget as HTMLElement)"
             @keydown="onKeydown(
               entry, $event.currentTarget as HTMLElement, $event)"
@@ -228,6 +238,10 @@ const onKeydown = (
     padding: rem(4px) rem(30px) 0 0;
     cursor: pointer;
     @include focus-ring;
+
+    &.occurrence {
+      cursor: default;
+    }
 
     // The timeline's spine: one segment per entry, so
     // it scrolls with the list. The first starts at its
