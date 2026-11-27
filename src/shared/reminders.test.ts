@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_REMINDER_TIME,
+  formatReminderText,
   reminderDueAt,
   type ReminderOffset
 } from './reminders'
@@ -73,5 +74,49 @@ describe('reminderDueAt', () => {
     expect(reminderDueAt('2026-01-01', null, {
       kind: 'days', days: 1, time: '20:00'
     })).toBe(at(2025, 12, 31, 20, 0))
+  })
+})
+
+describe('formatReminderText', () => {
+  it('formats a now offset', () => {
+    expect(formatReminderText('Dentist', {
+      kind: 'minutes', minutes: 0
+    })).toBe('Dentist now')
+  })
+
+  it('formats 15 and 30 minutes before', () => {
+    expect(formatReminderText('Dentist', {
+      kind: 'minutes', minutes: 15
+    })).toBe('Dentist in 15 min')
+    expect(formatReminderText('Dentist', {
+      kind: 'minutes', minutes: 30
+    })).toBe('Dentist in 30 min')
+  })
+
+  it('formats 60 minutes before as an hour', () => {
+    expect(formatReminderText('Dentist', {
+      kind: 'minutes', minutes: 60
+    })).toBe('Dentist in 1 hour')
+  })
+
+  it('singularizes one day before', () => {
+    expect(formatReminderText('Dentist', {
+      kind: 'days', days: 1, time: '18:00'
+    })).toBe('Dentist (1 day before)')
+  })
+
+  it('formats two days before', () => {
+    expect(formatReminderText('Dentist', {
+      kind: 'days', days: 2, time: '18:00'
+    })).toBe('Dentist (2 days before)')
+  })
+
+  it('prefixes a missed Reminder', () => {
+    expect(formatReminderText('Dentist', {
+      kind: 'minutes', minutes: 30
+    }, { missed: true })).toBe('Missed: Dentist in 30 min')
+    expect(formatReminderText('Dentist', {
+      kind: 'minutes', minutes: 0
+    }, { missed: true })).toBe('Missed: Dentist now')
   })
 })
