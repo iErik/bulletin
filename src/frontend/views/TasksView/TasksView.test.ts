@@ -31,18 +31,21 @@ describe('TasksView', () => {
     document.body.innerHTML = ''
   })
 
-  it('places Reminders in #middle and Task Insights in #right',
+  it('places This Week in #wide, Reminders in #middle and Task Insights in #right',
     async () => {
       const page = await mountView()
 
       expect(page.find('.page-grid').exists()).toBe(true)
+      expect(
+        page.get('.wide').find('.this-week-widget').exists()
+      ).toBe(true)
       expect(
         page.get('.middle').find('.reminders-widget').exists()
       ).toBe(true)
       expect(
         page.get('.right').find('.task-insights-widget').exists()
       ).toBe(true)
-      for (const cell of ['wide', 'side', 'left']) {
+      for (const cell of ['side', 'left']) {
         expect(page.get(`.${cell}`).element.children)
           .toHaveLength(0)
       }
