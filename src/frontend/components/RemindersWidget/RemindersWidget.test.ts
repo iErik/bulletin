@@ -1,21 +1,10 @@
-import {
-  afterEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
-import {
-  flushPromises,
-  mount,
-  type VueWrapper
-} from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount, type VueWrapper }
+  from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import type { BulletinApi } from '@shared/bridge'
-import type {
-  DueReminder,
-  ReminderOffset
-} from '@shared/reminders'
+import type { DueReminder, ReminderOffset }
+  from '@shared/reminders'
 import type { Occurrence } from '@shared/recurring-tasks'
 import type { LocalDate } from '@shared/storage'
 import type { LocalTime, Task } from '@shared/tasks'
@@ -79,6 +68,19 @@ const taskReminder = (
   dueAt,
   notifiedAt: null
 })
+
+// A 10:00 Task with a 30-minute offset, due at `dueAt`.
+const task10 = (day: LocalDate): MutableTask =>
+  task(day, {
+    time: '10:00',
+    reminder: { kind: 'minutes', minutes: 30 }
+  })
+
+const minutes30 = (
+  t: Task,
+  dueAt: number
+): Extract<DueReminder, { kind: 'task' }> =>
+  taskReminder(t, { kind: 'minutes', minutes: 30 }, dueAt)
 
 const occurrenceReminder = (
   o: Occurrence,
@@ -153,14 +155,10 @@ describe('RemindersWidget', () => {
   })
 
   it('shows Tasks and Occurrences, soonest first', async () => {
-    const done = task('2026-11-09', {
-      time: '17:00',
-      reminder: { kind: 'minutes', minutes: 30 }
-    })
+    const done = task10('2026-11-09')
     const recurring = occurrence('2026-11-09')
     const { wrapper } = await mountWidget([
-      taskReminder(done, { kind: 'minutes', minutes: 30 },
-        at('2026-11-09', 16, 30)),
+      minutes30(done, at('2026-11-09', 16, 30)),
       occurrenceReminder(recurring, { kind: 'minutes', minutes: 30 },
         at('2026-11-09', 17, 0))
     ])
@@ -172,13 +170,14 @@ describe('RemindersWidget', () => {
   })
 
   it('formats a 60-minute offset as an hour', async () => {
-    vi.useFakeTimers({ now: new Date(2026, 10, 9, 9, 0) })
+    vi.setSystemTime(new Date(2026, 10, 9, 9, 0))
     const t = task('2026-11-09', {
       time: '10:00',
       reminder: { kind: 'minutes', minutes: 60 }
     })
     const { wrapper } = await mountWidget([
-      taskReminder(t, { kind: 'minutes', minutes: 60 }, at('2026-11-09', 9, 0))
+      taskReminder(t, { kind: 'minutes', minutes: 60 },
+        at('2026-11-09', 9, 0))
     ])
 
     expect(wrapper.get('.entry .text').text())
@@ -205,14 +204,10 @@ describe('RemindersWidget', () => {
   })
 
   it('shows "Today 9:30 AM · Dentist in 30 min" at 09:00', async () => {
-    vi.useFakeTimers({ now: new Date(2026, 10, 9, 9, 0) })
-    const t = task('2026-11-09', {
-      time: '10:00',
-      reminder: { kind: 'minutes', minutes: 30 }
-    })
+    vi.setSystemTime(new Date(2026, 10, 9, 9, 0))
+    const t = task10('2026-11-09')
     const { wrapper } = await mountWidget([
-      taskReminder(t, { kind: 'minutes', minutes: 30 },
-        at('2026-11-09', 9, 30))
+      minutes30(t, at('2026-11-09', 9, 30))
     ])
 
     expect(wrapper.get('.entry .label').text()).toBe('Today 9:30 AM')
@@ -237,12 +232,8 @@ describe('RemindersWidget', () => {
 
   it('shows the first entry as soonest', async () => {
     const { wrapper } = await mountWidget([
-      taskReminder(task('2026-11-09'), {
-        kind: 'minutes', minutes: 30
-      }, at('2026-11-09', 16, 0)),
-      taskReminder(task('2026-11-09'), {
-        kind: 'minutes', minutes: 30
-      }, at('2026-11-10', 9, 0))
+      minutes30(task10('2026-11-09'), at('2026-11-09', 16, 0)),
+      minutes30(task10('2026-11-09'), at('2026-11-10', 9, 0))
     ])
 
     const entries = wrapper.findAll('.entry')
@@ -253,9 +244,7 @@ describe('RemindersWidget', () => {
 
   it('does not react to the Selected Date', async () => {
     const { wrapper } = await mountWidget([
-      taskReminder(task('2026-11-09'), {
-        kind: 'minutes', minutes: 30
-      }, at('2026-11-09', 16, 0))
+      minutes30(task10('2026-11-09'), at('2026-11-09', 16, 0))
     ])
     const before = entries(wrapper)
 
@@ -266,13 +255,9 @@ describe('RemindersWidget', () => {
   })
 
   it('drops a Reminder whose moment passed', async () => {
-    const t = task('2026-11-09', {
-      time: '10:00',
-      reminder: { kind: 'minutes', minutes: 30 }
-    })
+    const t = task10('2026-11-09')
     const { wrapper, api } = await mountWidget([
-      taskReminder(t, { kind: 'minutes', minutes: 30 },
-        at('2026-11-09', 15, 45))
+      minutes30(t, at('2026-11-09', 15, 45))
     ])
     expect(wrapper.findAll('.entry')).toHaveLength(1)
 
@@ -287,13 +272,8 @@ describe('RemindersWidget', () => {
   })
 
   it('drops a Reminder once its Task is done', async () => {
-    const t = task('2026-11-09', {
-      time: '10:00',
-      reminder: { kind: 'minutes', minutes: 30 }
-    })
-    const fixture = [taskReminder(t, {
-      kind: 'minutes', minutes: 30
-    }, at('2026-11-09', 16, 0))]
+    const t = task10('2026-11-09')
+    const fixture = [minutes30(t, at('2026-11-09', 16, 0))]
     const { wrapper, api } = await mountWidget(fixture)
     expect(wrapper.findAll('.entry')).toHaveLength(1)
 
@@ -307,13 +287,9 @@ describe('RemindersWidget', () => {
   })
 
   it('opens the Task in the editor when an entry is clicked', async () => {
-    const t = task('2026-11-09', {
-      time: '10:00',
-      reminder: { kind: 'minutes', minutes: 30 }
-    })
+    const t = task10('2026-11-09')
     const { wrapper } = await mountWidget([
-      taskReminder(t, { kind: 'minutes', minutes: 30 },
-        at('2026-11-09', 16, 0))
+      minutes30(t, at('2026-11-09', 16, 0))
     ])
 
     await wrapper.get('.entry').trigger('click')
@@ -342,13 +318,13 @@ describe('RemindersWidget', () => {
       error: { code: 'internal' }
     })
     setActivePinia(createPinia())
-    const wrapper = mount(RemindersWidget, {
+    widget = mount(RemindersWidget, {
       attachTo: document.body
     })
     await flushPromises()
 
-    expect(wrapper.get('.message').text())
+    expect(widget.get('.message').text())
       .toBe('Couldn’t load Reminders.')
-    expect(wrapper.get('.message').attributes('role')).toBe('alert')
+    expect(widget.get('.message').attributes('role')).toBe('alert')
   })
 })

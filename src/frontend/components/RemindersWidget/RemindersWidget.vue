@@ -22,6 +22,7 @@ import Widget from '@/components/Widget/Widget.vue'
 import { useDataVersion }
   from '@/composables/use-data-version'
 import { formatReminderText } from '@shared/reminders'
+import type { DueReminder } from '@shared/reminders'
 import type { Task } from '@shared/tasks'
 import {
   reminderLabel,
@@ -37,7 +38,11 @@ interface Entry {
 }
 
 const version = useDataVersion('tasks')
-const entries = shallowRef<readonly Entry[]>([])
+// The raw Reminders and the snapshot time they were
+// loaded for; labels are derived in a computed, so a
+// Locale change re-renders them at once.
+const reminders = shallowRef<readonly DueReminder[]>([])
+const snapshot = ref<Date | null>(null)
 const loaded = ref(false)
 const failed = ref(false)
 const scroller = useTemplateRef<HTMLElement>('scroller')
@@ -63,21 +68,8 @@ const load = async (): Promise<void> => {
   }
   failed.value = false
   loaded.value = true
-  entries.value = result.value.map(r => {
-    const isTask = r.kind === 'task'
-    return {
-      id: isTask
-        ? `task-${r.task.id}`
-        : `occurrence-${r.occurrence.ruleId}-${r.occurrence.scheduled}`,
-      task: isTask ? r.task : null,
-      dueAt: r.dueAt,
-      label: reminderLabel(r.dueAt, now),
-      text: formatReminderText(
-        isTask ? r.task.title : r.occurrence.title,
-        r.offset
-      )
-    }
-  })
+  snapshot.value = now
+  reminders.value = result.value
 }
 
 watch(
@@ -93,6 +85,28 @@ const timer = setInterval(
   60_000
 )
 onBeforeUnmount(() => clearInterval(timer))
+
+// Labels and text derive from the raw Reminders, so a
+// Locale change re-renders them without a reload.
+const entries = computed((): Entry[] => {
+  const now = snapshot.value
+  if (!now) return []
+  return reminders.value.map(r => {
+    const isTask = r.kind === 'task'
+    return {
+      id: isTask
+        ? `task-${r.task.id}`
+        : `occurrence-${r.occurrence.ruleId}-${r.occurrence.scheduled}`,
+      task: isTask ? r.task : null,
+      dueAt: r.dueAt,
+      label: reminderLabel(r.dueAt, now),
+      text: formatReminderText(
+        isTask ? r.task.title : r.occurrence.title,
+        r.offset
+      )
+    }
+  })
+})
 
 const empty = computed((): boolean =>
   loaded.value && !failed.value && entries.value.length === 0)
@@ -212,12 +226,9 @@ const onKeydown = (
   }
 
   > .body > .message {
-    padding-left: rem(3px);
-    font-size: rem(9px);
-    font-weight: 700;
-    line-height: rem(10px);
-    text-transform: uppercase;
-    color: var(--color-widget-title);
+    padding: space(2) rem(4px) 0;
+    font-size: rem(11px);
+    color: var(--color-text-muted);
   }
 
   .scroller {
@@ -253,20 +264,26 @@ const onKeydown = (
       top: 0;
       bottom: 0;
       width: 1px;
-      background: rgb(255 255 255 / 10%);
+      background: color-mix(
+        in sRGB, var(--color-text) 10%, transparent
+      );
     }
 
-    &:first-child::before { top: rem(13px); }
+    &:first-child::before { top: rem(17px); }
 
     &:last-child::before {
       bottom: auto;
-      height: rem(13px);
+      height: rem(17px);
+    }
+
+    &:only-child::before {
+      display: none;
     }
 
     .dot {
       position: absolute;
       left: rem(-20px);
-      top: rem(9px);
+      top: rem(13px);
       width: rem(9px);
       height: rem(9px);
       border-radius: 50%;
@@ -314,10 +331,14 @@ const onKeydown = (
     .bell {
       position: absolute;
       right: rem(12px);
-      top: rem(12px);
+      top: rem(16px);
       width: rem(11px);
       height: rem(11px);
       color: var(--color-tile-icon);
+      opacity: 0.4;
+    }
+
+    &[data-soonest='true'] .bell {
       opacity: 0.85;
     }
   }
